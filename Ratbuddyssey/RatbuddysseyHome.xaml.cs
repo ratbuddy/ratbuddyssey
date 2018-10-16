@@ -90,23 +90,46 @@ namespace Ratbuddyssey
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 });
-            trimmedFilename = (filename.Substring(0, filename.Length - 3));
-            File.WriteAllText(trimmedFilename + "modified_by_ratbuddyssey.ady", reSerialized);
+//            trimmedFilename = (filename.Substring(0, filename.Length - 3));
+//            File.WriteAllText(trimmedFilename + "modified_by_ratbuddyssey.ady", reSerialized);
+
+            File.WriteAllText(filename, reSerialized);
         }
 
         private void SaveFileAs_OnClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
+            trimmedFilename = (filename.Substring(0, filename.Length - 3));
+            dlg.FileName = filename;
+            dlg.DefaultExt = ".ady";
+            dlg.Filter = "Audyssey calibration (.ady)|*.ady";
+
+            // Show save file dialog box
+            Nullable<bool> result = dlg.ShowDialog();
+
+            // Process save file dialog box results
+            if (result == true)
+            {
+                // Save document
+                filename = dlg.FileName;
+                string reSerialized = JsonConvert.SerializeObject(parsedAudyssey, new JsonSerializerSettings
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                });
+
+                File.WriteAllText(filename, reSerialized);
+
+            }
         }
 
         private void ExitProgram_OnClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            App.Current.MainWindow.Close();
         }
 
         private void About_OnClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            System.Windows.MessageBox.Show("Shout out to AVS Forum, use at your own risk!");
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
