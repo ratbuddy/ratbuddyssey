@@ -127,7 +127,6 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <None Include="Ratbuddyssey_TemporaryKey.pfx" />
-    <None Include="sampledata\psa2.ady" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
