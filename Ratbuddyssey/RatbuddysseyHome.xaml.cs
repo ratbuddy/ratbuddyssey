@@ -17,6 +17,11 @@ using System.Windows.Shapes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+using System.Numerics;
+using System.Globalization;
+using OxyPlot;
+using System.Collections.ObjectModel;
+using OxyPlot.Series;
 
 namespace Ratbuddyssey
 {
@@ -28,10 +33,80 @@ namespace Ratbuddyssey
         Audyssey parsedAudyssey = null;
         private string filename;
         private string trimmedFilename;
+        PlotModel plotModel = new PlotModel();
+        ObservableCollection<DataPoint> points = new ObservableCollection<DataPoint>();
 
         public RatbuddysseyHome()
         {
             InitializeComponent();
+            responseCombo.SelectionChanged += ResponseCombo_SelectionChanged;
+            channelsView.SelectionChanged += ChannelsView_SelectionChanged;
+            plot.PreviewMouseWheel += Plot_PreviewMouseWheel;
+        }
+
+        private void Plot_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            e.Handled = true;
+        }
+
+        private void ChannelsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            DetectedChannel selectedChannel = (DetectedChannel)channelsView.SelectedValue;
+            if (selectedChannel.ResponseData.Count > 0)
+            {
+                responseCombo.SelectedIndex = 0;
+            }
+        }
+
+        private void ResponseCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (plot.Model != null && plot.Model.Series != null)
+            {
+                plot.Model.Series.Clear();
+                plot.Model = null;
+            }
+
+            DetectedChannel selectedChannel = (DetectedChannel)channelsView.SelectedValue;
+            if (responseCombo.SelectedValue != null)
+            {
+                string s = ((KeyValuePair<string, string[]>)responseCombo.SelectedValue).Key;
+                string[] values = selectedChannel.ResponseData[s];
+                int count = values.Length;
+                Complex[] cValues = new Complex[count];
+                for (int i = 0; i < count; i++)
+                {
+                    decimal d = Decimal.Parse(values[i], NumberStyles.AllowExponent | NumberStyles.Float);
+                    Complex cValue = (Complex)d;
+                    cValues[i] = cValue;
+
+                }
+
+
+                Complex[] result = FFT.fft(cValues);
+                int x = 0;
+                points.Clear();
+                foreach (Complex cValue in result)
+                {
+                    //Add data point here
+                    points.Add(new DataPoint(x, cValue.Real));
+                    x++;
+                    //if (x == 5000) break;
+                }
+                LineSeries lineserie = new LineSeries
+                {
+                    ItemsSource = points,
+                    DataFieldX = "x",
+                    DataFieldY = "Y",
+                    StrokeThickness = 0.3,
+                    MarkerSize = 0,
+                    LineStyle = LineStyle.Solid,
+                    Color = OxyColors.Red,
+                    Title = "Frequency",
+                    MarkerType = MarkerType.None,
+                };
+                plotModel.Series.Add(lineserie);
+                plot.Model = plotModel;
+            }
         }
 
         private void OpenFile_OnClick(object sender, RoutedEventArgs e)

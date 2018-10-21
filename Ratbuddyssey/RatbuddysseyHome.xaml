@@ -4,6 +4,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:converters="clr-namespace:Ratbuddyssey.Converters"
+      xmlns:oxy="http://oxyplot.org/wpf"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="1100"
       Title="Ratbuddyssey - Home" ShowsNavigationUI="false">
@@ -325,7 +326,20 @@
 
                         <Grid Grid.Column="1">
                             <GroupBox Header="Graph View">
-
+                                <Grid DataContext="{Binding SelectedValue, ElementName=channelsView}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="30" DataContext="{Binding SelectedValue, ElementName=channelsView}"/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <ComboBox ItemsSource="{Binding ResponseData}" Name="responseCombo">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Key}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <oxy:PlotView Grid.Row="1" Name="plot"/>
+                                </Grid>
                             </GroupBox>
                         </Grid>
                     </Grid>
