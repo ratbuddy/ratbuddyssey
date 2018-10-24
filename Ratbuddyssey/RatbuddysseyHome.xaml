@@ -2,15 +2,11 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:converters="clr-namespace:Ratbuddyssey.Converters"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:oxy="http://oxyplot.org/wpf"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="1100"
       Title="Ratbuddyssey - Home" ShowsNavigationUI="false">
-    <Page.Resources>
-        <converters:StringValueConverter x:Key="StringConverter"/>
-    </Page.Resources>
     <Grid Background="White">
         <Grid.RowDefinitions>
             <RowDefinition Height="0"/>
@@ -262,13 +258,7 @@
                                             <TextBox Text="{Binding CommandId}" Grid.Column="2" Grid.Row="3" Margin="2,2,2,2"/>
                                             <Label Content="Custom Crossover" Grid.Row="4" VerticalContentAlignment="Center" HorizontalAlignment="Left" Width="118" Grid.Column="1" Margin="10,0,0,0"/>
                                             <!--<TextBox Text="{Binding CustomCrossover}" Grid.Column="2" Grid.Row="4" Margin="2,2,2,0" Height="27" VerticalAlignment="Top"/>-->
-                                            <ComboBox Grid.Column="2" Grid.Row="4" Margin="2,2,2,0" SelectedValue="{Binding CustomCrossover}" ItemsSource="{Binding CustomCrossoverList}" Height="27" VerticalAlignment="Top">
-                                                <ComboBox.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding ., Converter={StaticResource StringConverter}}"/>
-                                                    </DataTemplate>
-                                                </ComboBox.ItemTemplate>
-                                            </ComboBox>
+                                            <ComboBox Grid.Column="2" Grid.Row="4" Margin="2,2,2,0" SelectedIndex="{Binding CustomCrossoverIndex}" ItemsSource="{Binding CustomCrossoverList}" Height="27" VerticalAlignment="Top"/>
                                             <Label Content="Custom Speaker Type" Grid.Row="5" VerticalContentAlignment="Center" HorizontalAlignment="Left" Width="128" Grid.Column="1" Margin="10,0,0,0"/>
                                             <!--<TextBox Text="{Binding CustomSpeakerType}" Grid.Column="2" Grid.Row="5" Margin="10,2,99,2" Grid.ColumnSpan="2"/>-->
                                             <StackPanel Orientation="Horizontal" Grid.Column="2" Grid.Row="5" Grid.ColumnSpan="3" VerticalAlignment="Center">
@@ -330,6 +320,7 @@
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="30" DataContext="{Binding SelectedValue, ElementName=channelsView}"/>
                                         <RowDefinition/>
+                                        <RowDefinition Height="20"/>
                                     </Grid.RowDefinitions>
                                     <ComboBox ItemsSource="{Binding ResponseData}" Name="responseCombo">
                                         <ComboBox.ItemTemplate>
@@ -339,7 +330,9 @@
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
                                     <oxy:PlotView Grid.Row="1" Name="plot"/>
+                                    <CheckBox Content="Use logarithmic X axis" Name="chbxLogX" IsChecked="true" Grid.Row="2"/>
                                 </Grid>
+                                
                             </GroupBox>
                         </Grid>
                     </Grid>

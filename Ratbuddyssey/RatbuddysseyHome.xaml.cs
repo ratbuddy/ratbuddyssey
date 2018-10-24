@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
+using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -17,10 +21,8 @@ using System.Windows.Shapes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
-using System.Numerics;
-using System.Globalization;
 using OxyPlot;
-using System.Collections.ObjectModel;
+using OxyPlot.Axes;
 using OxyPlot.Series;
 
 namespace Ratbuddyssey
@@ -73,14 +75,16 @@ namespace Ratbuddyssey
                 string[] values = selectedChannel.ResponseData[s];
                 int count = values.Length;
                 Complex[] cValues = new Complex[count];
+                double[] Xs = new double[count];
+                float sample_rate = 48000;
+                float total_time = count / sample_rate;
                 for (int i = 0; i < count; i++)
                 {
                     decimal d = Decimal.Parse(values[i], NumberStyles.AllowExponent | NumberStyles.Float);
                     Complex cValue = (Complex)d;
                     cValues[i] = cValue;
-
+                    Xs[i] = (double)i / count * sample_rate/1000; // units are in kHz
                 }
-
 
                 Complex[] result = FFT.fft(cValues);
                 int x = 0;
@@ -88,16 +92,16 @@ namespace Ratbuddyssey
                 foreach (Complex cValue in result)
                 {
                     //Add data point here
-                    points.Add(new DataPoint(x, cValue.Real));
+                    points.Add(new DataPoint(Xs[x], 20 * Math.Log10(cValue.Magnitude)));
                     x++;
-                    //if (x == 5000) break;
+                    if (x == count / 2) break;
                 }
                 LineSeries lineserie = new LineSeries
                 {
                     ItemsSource = points,
                     DataFieldX = "x",
                     DataFieldY = "Y",
-                    StrokeThickness = 0.3,
+                    StrokeThickness = 1,
                     MarkerSize = 0,
                     LineStyle = LineStyle.Solid,
                     Color = OxyColors.Red,
@@ -105,6 +109,16 @@ namespace Ratbuddyssey
                     MarkerType = MarkerType.None,
                 };
                 plotModel.Series.Add(lineserie);
+                plotModel.Axes.Clear();
+                if (chbxLogX.IsChecked.Value)
+                {
+                    plotModel.Axes.Add(new LogarithmicAxis { Position = AxisPosition.Bottom, Title = "kHz", AbsoluteMinimum=0.01 });
+                }
+                else
+                {
+                    plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "kHz" });
+                }
+                plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "dB" });
                 plot.Model = plotModel;
             }
         }
