@@ -321,16 +321,35 @@
                                         <RowDefinition Height="30" DataContext="{Binding SelectedValue, ElementName=channelsView}"/>
                                         <RowDefinition/>
                                         <RowDefinition Height="20"/>
+                                        <RowDefinition Height="20"/>
                                     </Grid.RowDefinitions>
-                                    <ComboBox ItemsSource="{Binding ResponseData}" Name="responseCombo">
-                                        <ComboBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Key}"/>
-                                            </DataTemplate>
-                                        </ComboBox.ItemTemplate>
-                                    </ComboBox>
+                                    <StackPanel Orientation="Horizontal" Name="stpKeys">
+                                        <Label Content="Measurment position:" Margin="0, -3, 0, 0"/>
+                                        <CheckBox Content="1" Name="chbx1" IsChecked="True" Margin="3" Foreground="Black" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
+                                        <CheckBox Content="2" Name="chbx2" Margin="3" Foreground="Blue" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
+                                        <CheckBox Content="3" Name="chbx3" Margin="3" Foreground="Violet" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
+                                        <CheckBox Content="4" Name="chbx4" Margin="3" Foreground="Green" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
+                                        <CheckBox Content="5" Name="chbx5" Margin="3" Foreground="Orange" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
+                                        <CheckBox Content="6" Name="chbx6" Margin="3" Foreground="Red" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
+                                        <CheckBox Content="7" Name="chbx7" Margin="3" Foreground="Cyan" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
+                                        <CheckBox Content="8" Name="chbx8" Margin="3" Foreground="DeepPink" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
+                                        <CheckBox Content="Select/Unselect all" Name="allChbx" Foreground="Black" Margin="30, 3, 3, 3" Checked="allChbx_Checked" Unchecked="allChbx_Unchecked"/>
+                                    </StackPanel>
                                     <oxy:PlotView Grid.Row="1" Name="plot"/>
-                                    <CheckBox Content="Use logarithmic X axis" Name="chbxLogX" IsChecked="true" Grid.Row="2"/>
+                                    <StackPanel Orientation="Horizontal" Grid.Row="2">
+                                        <RadioButton Content="No Smoothing" Name="rbtnNo" Margin="4, 0" Checked="rbtn_Checked" IsChecked="True"/>
+                                        <RadioButton Content="1/2" Name="rbtn2" Margin="4, 0" Checked="rbtn_Checked"/>
+                                        <RadioButton Content="1/3" Name="rbtn3" Margin="4, 0" Checked="rbtn_Checked"/>
+                                        <RadioButton Content="1/6" Name="rbtn6" Margin="4, 0" Checked="rbtn_Checked"/>
+                                        <RadioButton Content="1/12" Name="rbtn12" Margin="4, 0" Checked="rbtn_Checked"/>
+                                        <RadioButton Content="1/24" Name="rbtn24" Margin="4, 0" Checked="rbtn_Checked"/>                                        
+                                    </StackPanel>
+                                    <CheckBox Content="Use logarithmic X axis" Name="chbxLogX" IsChecked="true" Grid.Row="3" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Grid.Row="3" Margin="0, 0, 20, 0">
+                                        <Label Content="X Axis:" Margin="0, -6, 0, 0" FontWeight="Bold" />
+                                        <RadioButton Name="rbtnXRangeSubwoower" Content="5-200hz" Margin="0, 0, 10, 0" Checked="rbtnXRangeSubwoower_Checked"/>
+                                        <RadioButton Name="rbtnXRangeOther" Content="15hz-20khz" IsChecked="True" Checked="rbtnXRangeOther_Checked"/>
+                                    </StackPanel>                                    
                                 </Grid>
                                 
                             </GroupBox>
