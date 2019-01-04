@@ -134,7 +134,7 @@ namespace Ratbuddyssey
                 float total_time = count / sample_rate;
                 for (int j = 0; j < count; j++)
                 {
-                    decimal d = Decimal.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float);
+                    decimal d = Decimal.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
                     Complex cValue = (Complex)d;
                     cValues[j] = cValue;
                     Xs[j] = (double)j / count * sample_rate; // units are in kHz
