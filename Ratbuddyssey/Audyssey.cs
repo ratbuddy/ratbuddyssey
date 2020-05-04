@@ -12,37 +12,45 @@ namespace Ratbuddyssey
 {
     class Audyssey : INotifyPropertyChanged
     {
-        private string _title = string.Empty;
+        // according to JSON .ady file
+        private int _enAmpAssignType = 0;
+        private bool _dynamicVolume = false;
+        private int _enTargetCurveType = 0;
+        private bool _lfcSupport = false;
+        private List<DetectedChannel> _detectedChannels = null;
         private string _targetModelName = string.Empty;
+        private string _title = string.Empty;
         private string _interfaceVersion = string.Empty;
         private bool _dynamicEq = false;
-        private bool _dynamicVolume = false;
-        private bool _lfcSupport = false;
+        private string _ampAssignInfo = string.Empty;
         private bool _lfc = false;
         private int _systemDelay = 0;
-        private decimal _adcLineup = 0;
-        private int _enTargetCurveType = 0;
-        private bool _enTargetCurveType0 = false;
-        private bool _enTargetCurveType1 = false;
-        private int _enAmpAssignType = 0;
-        private ObservableCollection<string> _enAmpAssignTypeList = new ObservableCollection<string>()
-        { "Type1", "Type2", "Type3", "Type4",
-            "Type5", "Type6", "Type7", "Type8", "Type9", "Type10", "Type11" ,
-            "Type12" , "Type13" , "Type14" , "Type15" , "Type16" , "Type17" , "Type18" , "Type19" , "Type20"  };
-        private int _enMultEQType = 0;
-        private bool _enMultEQType0 = false;
-        private bool _enMultEQType1 = false;
-        private bool _enMultEQType2 = false;
-        private string _ampAssignInfo = string.Empty;
         private bool _auro = false;
         private string _upgradeInfo = string.Empty;
+        private int _enMultEQType = 0;
+        private decimal _adcLineup = 0;
 
-        private List<DetectedChannel> _detectedChannels = new List<DetectedChannel>();
+        // some enums we understand
+        private ObservableCollection<string> _enAmpAssignTypeList = new ObservableCollection<string>()
+        { "Type1", "Type2", "Type3", "Type4",
+          "Type5", "Type6", "Type7", "Type8",
+          "Type9", "Type10", "Type11", "Type12",
+          "Type13", "Type14", "Type15", "Type16",
+          "Type17", "Type18", "Type19", "Type20"};
+
+        private ObservableCollection<string> _enTargetCurveTypeList = new ObservableCollection<string>()
+        { "Undefined", "High Frequency Roll Off 1", "High Frequency Roll Off 2"};
+
+        private ObservableCollection<string> _enMultEQTypeList = new ObservableCollection<string>()
+        { "MultEQ", "MultEQ XT", "MultEQ XT32" };
 
         #region Properties
         public string Title
         {
-            get { return _title; }
+            get
+            {
+                return _title;
+            }
             set
             {
                 _title = value;
@@ -51,7 +59,10 @@ namespace Ratbuddyssey
         }
         public string TargetModelName
         {
-            get { return _targetModelName; }
+            get
+            {
+                return _targetModelName;
+            }
             set
             {
                 _targetModelName = value;
@@ -60,7 +71,10 @@ namespace Ratbuddyssey
         }
         public string InterfaceVersion
         {
-            get { return _interfaceVersion; }
+            get
+            {
+                return _interfaceVersion;
+            }
             set
             {
                 _interfaceVersion = value;
@@ -68,7 +82,11 @@ namespace Ratbuddyssey
             }
         }
         public bool DynamicEq
-        {   get => _dynamicEq;
+        {
+            get
+            {
+                return _dynamicEq;
+            }
             set
             {
                 _dynamicEq = value;
@@ -77,7 +95,10 @@ namespace Ratbuddyssey
         }
         public bool DynamicVolume
         {
-            get => _dynamicVolume;
+            get
+            {
+                return _dynamicVolume;
+            }
             set
             {
                 _dynamicVolume = value;
@@ -86,7 +107,10 @@ namespace Ratbuddyssey
         }
         public bool LfcSupport
         {
-            get => _lfcSupport;
+            get
+            {
+                return _lfcSupport;
+            }
             set
             {
                 _lfcSupport = value;
@@ -95,7 +119,10 @@ namespace Ratbuddyssey
         }
         public bool Lfc
         {
-            get => _lfc;
+            get
+            {
+                return _lfc;
+            }
             set
             {
                 _lfc = value;
@@ -104,7 +131,10 @@ namespace Ratbuddyssey
         }
         public int SystemDelay
         {
-            get => _systemDelay;
+            get
+            {
+                return _systemDelay;
+            }
             set
             {
                 _systemDelay = value;
@@ -113,7 +143,10 @@ namespace Ratbuddyssey
         }
         public decimal AdcLineup
         {
-            get => _adcLineup;
+            get
+            {
+                return _adcLineup;
+            }
             set
             {
                 _adcLineup = value;
@@ -122,55 +155,34 @@ namespace Ratbuddyssey
         }
         public int EnTargetCurveType
         {
-            get => _enTargetCurveType;
+            get
+            {
+                return _enTargetCurveType;
+            }
             set
             {
-                if(_enTargetCurveType != value)
-                {
-                    _enTargetCurveType = value;
-                    switch (value)
-                    {
-                        case 0:
-                            EnTargetCurveType0 = true;
-                            break;
-                        case 1:
-                            EnTargetCurveType1 = true;
-                            break;
-                        default:
-                            break;
-                    }
-                }                                
+                _enTargetCurveType = value;
                 RaisePropertyChanged("EnTargetCurveType");
             }
         }
         [JsonIgnore]
-        public bool EnTargetCurveType0
+        public ObservableCollection<string> EnTargetCurveTypeList
         {
-            get => _enTargetCurveType0;
-            set
+            get
             {
-                if(_enTargetCurveType0 != value)
-                {
-                    _enTargetCurveType0 = value;
-                }                
-                if (value) EnTargetCurveType = 0;
-                RaisePropertyChanged("EnTargetCurveType0");
+                return _enTargetCurveTypeList;
             }
-        }
-        [JsonIgnore]
-        public bool EnTargetCurveType1
-        {
-            get => _enTargetCurveType1;
             set
             {
-                _enTargetCurveType1 = value;
-                if (value) EnTargetCurveType = 1;
-                RaisePropertyChanged("EnTargetCurveType1");
+                _enTargetCurveTypeList = value;
             }
         }
         public int EnAmpAssignType
         {
-            get => _enAmpAssignType;
+            get
+            {
+                return _enAmpAssignType;
+            }
             set
             {
                 _enAmpAssignType = value;                
@@ -188,70 +200,26 @@ namespace Ratbuddyssey
         }
         public int EnMultEQType
         {
-            get => _enMultEQType;
+            get
+            {
+                return _enMultEQType;
+            }
             set
             {
-                if(_enMultEQType!=value)
-                {
-                    _enMultEQType = value;
-                    switch (value)
-                    {
-                        case 0:
-                            EnMultEQType0 = true;
-                            break;
-                        case 1:
-                            EnMultEQType1 = true;
-                            break;
-                        case 2:
-                            EnMultEQType2 = true;
-                            break;
-                        default:
-                            break;
-                    }
-                }                               
+                _enMultEQType = value;
                 RaisePropertyChanged("EnMultEQType");
             }
         }
         [JsonIgnore]
-        public bool EnMultEQType0
+        public ObservableCollection<string> EnMultEQTypeList
         {
-            get => _enMultEQType0;
-            set
+            get
             {
-                if (_enMultEQType0 != value)
-                {
-                    _enMultEQType0 = value;
-                    if (value) EnMultEQType = 0;
-                }                
-                RaisePropertyChanged("EnMultEQType0");
+                return _enMultEQTypeList;
             }
-        }
-        [JsonIgnore]
-        public bool EnMultEQType1
-        {
-            get => _enMultEQType1;
             set
             {
-                if (_enMultEQType1 != value)
-                {
-                    _enMultEQType1 = value;
-                    if (value) EnMultEQType = 1;
-                }
-                RaisePropertyChanged("EnMultEQType1");
-            }
-        }
-        [JsonIgnore]
-        public bool EnMultEQType2
-        {
-            get => _enMultEQType2;
-            set
-            {
-                if (_enMultEQType2 != value)
-                {
-                    _enMultEQType2 = value;
-                    if (value) EnMultEQType = 2;
-                }
-                RaisePropertyChanged("EnMultEQType2");
+                _enMultEQTypeList = value;
             }
         }
         public string AmpAssignInfo
