@@ -29,7 +29,6 @@ namespace Ratbuddyssey
         private bool _midrangeCompensation = false;
 
         // local for data binding (shall not be serialised)
-        private ReferenceCurveFilter _referenceCurveFilter = new ReferenceCurveFilter();
         private ObservableCollection<MyKeyValuePair> _customTargetCurvePointsDictionary = new ObservableCollection<MyKeyValuePair>();
         private ObservableCollection<string> _customCrossoverList = new ObservableCollection<string>() { "U", "40", "60", "80", "90", "100", "110", "120", "150", "180", "200", "250" };
         private int _customCrossoverIndex = 0;
@@ -110,18 +109,7 @@ namespace Ratbuddyssey
                 RaisePropertyChanged("ResponseData");
             }
         }
-        public ReferenceCurveFilter ReferenceCurveFilter
-        {
-            get
-            {
-                return _referenceCurveFilter;
-            }
-            set
-            {
-                _referenceCurveFilter = value;
-                RaisePropertyChanged("ReferenceCurveFilter");
-            }
-        }
+
         public string[] CustomTargetCurvePoints
         {
             get

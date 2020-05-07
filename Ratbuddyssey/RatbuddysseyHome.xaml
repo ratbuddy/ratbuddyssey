@@ -176,7 +176,7 @@
                             <Label Content="Target Curve Type" Grid.Column="2" VerticalContentAlignment="Center" HorizontalAlignment="Left" Margin="0" Grid.Row="2"/>
 
                             <ComboBox Grid.Column="1" Grid.Row="2" Margin="0" SelectedIndex="{Binding EnMultEQType}" ItemsSource="{Binding EnMultEQTypeList}" VerticalAlignment="Center"/>
-                            <ComboBox Grid.Column="3" Grid.Row="2" Margin="0" SelectedIndex="{Binding EnTargetCurveType}" ItemsSource="{Binding EnTargetCurveTypeList}" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Column="3" Grid.Row="2" Margin="0" Name = "TargetCurveType" SelectedIndex="{Binding EnTargetCurveType}" ItemsSource="{Binding EnTargetCurveTypeList}" VerticalAlignment="Center" SelectionChanged="TargetCurveTypeSelectionChanged"/>
                         </Grid>
 
                         <Grid Grid.Row="2">
@@ -341,7 +341,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Grid.Row="3" HorizontalAlignment="Left" VerticalAlignment="Center">
                                         <RadioButton Name="rbtnXRangeChirp" Content="0-350ms" Checked="rbtnXRange_Checked" Margin="0,0,10,0"/>
-                                        <RadioButton Name="rbtnXRangeSubwoofer" Content="5-1000Hz" Checked="rbtnXRange_Checked" Margin="0,0,10,0"/>
+                                        <RadioButton Name="rbtnXRangeSubwoofer" Content="10-1000Hz" Checked="rbtnXRange_Checked" Margin="0,0,10,0"/>
                                         <RadioButton Name="rbtnXRangeFull" Content="10Hz-24kHz" IsChecked="True" Checked="rbtnXRange_Checked" Margin="0,0,10,0"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Grid.Row="4" HorizontalAlignment="Left" VerticalAlignment="Center">

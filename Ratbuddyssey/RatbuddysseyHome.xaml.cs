@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
-using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -45,7 +44,6 @@ namespace Ratbuddyssey
         private Audyssey parsedAudyssey = null;
         
         private string filename;
-        private string trimmedFilename;
         private PlotModel plotModel = new PlotModel();
         
         private List<int> keys = new List<int>();
@@ -63,6 +61,8 @@ namespace Ratbuddyssey
             {"rbtnXRangeChirp", new AxisLimit { XMin = 0, XMax = 350, YMin = -0.1, YMax = 0.1, YShift = 0, MajorStep = 0.01, MinorStep = 0.001 } }
         };
 
+        private ReferenceCurveFilter referenceCurveFilter = new ReferenceCurveFilter();
+
         public RatbuddysseyHome()
         {
             InitializeComponent();
@@ -75,8 +75,36 @@ namespace Ratbuddyssey
             if (plot != null)
             {
                 ClearPlot();
-                if (selectedChannel != null) PlotLine(selectedChannel);
-                if ((subwooferChannel != null) && (chbxStickSubwoofer.IsChecked == true)) PlotLine(subwooferChannel, true);
+                if (selectedChannel != null)
+                {
+                    PlotLine(selectedChannel);
+                }
+                if (subwooferChannel != null)
+                {
+                    if (chbxStickSubwoofer != null)
+                    {
+                        if (chbxStickSubwoofer.IsChecked == true)
+                        {
+                            PlotLine(subwooferChannel, true);
+                        }
+                    }
+                }
+                switch(TargetCurveType.SelectedIndex)
+                {
+                    case 0:
+                        break;
+                    case 1:
+                        PlotLine(null, false);
+                        break;
+                    case 2:
+                        PlotLine(null, true);
+                        break;
+                    default:
+                        PlotLine(null, false);
+                        PlotLine(null, true);
+                        break;
+
+                }
                 PlotAxis();
                 PlotChart();
             }
@@ -98,11 +126,11 @@ namespace Ratbuddyssey
 
         private void PlotAxis()
         {
-            if (plotModel.Series.Count > 0)
+            plotModel.Axes.Clear();
+            AxisLimit Limits = AxisLimits[selectedAxisLimits];
+            if (selectedAxisLimits == "rbtnXRangeChirp")
             {
-                plotModel.Axes.Clear();
-                AxisLimit Limits = AxisLimits[selectedAxisLimits];
-                if (selectedAxisLimits == "rbtnXRangeChirp")
+                if (chbxLogarithmicAxis != null)
                 {
                     if (chbxLogarithmicAxis.IsChecked == true)
                     {
@@ -112,10 +140,12 @@ namespace Ratbuddyssey
                     {
                         plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "ms", Minimum = Limits.XMin, Maximum = Limits.XMax, MajorGridlineStyle = LineStyle.Dot });
                     }
-
-                    plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "", Minimum = Limits.YMin, Maximum = Limits.YMax, MajorStep = Limits.MajorStep, MinorStep = Limits.MinorStep, MajorGridlineStyle = LineStyle.Solid });
                 }
-                else
+                plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "", Minimum = Limits.YMin, Maximum = Limits.YMax, MajorStep = Limits.MajorStep, MinorStep = Limits.MinorStep, MajorGridlineStyle = LineStyle.Solid });
+            }
+            else
+            {
+                if (chbxLogarithmicAxis != null)
                 {
                     if (chbxLogarithmicAxis.IsChecked == true)
                     {
@@ -125,94 +155,129 @@ namespace Ratbuddyssey
                     {
                         plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "Hz", Minimum = Limits.XMin, Maximum = Limits.XMax, MajorGridlineStyle = LineStyle.Dot });
                     }
-                    plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "dB", Minimum = Limits.YMin + Limits.YShift, Maximum = Limits.YMax + Limits.YShift, MajorStep = Limits.MajorStep, MinorStep = Limits.MinorStep, MajorGridlineStyle = LineStyle.Solid });
                 }
+                plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "dB", Minimum = Limits.YMin + Limits.YShift, Maximum = Limits.YMax + Limits.YShift, MajorStep = Limits.MajorStep, MinorStep = Limits.MinorStep, MajorGridlineStyle = LineStyle.Solid });
             }
         }
 
         private void PlotLine(DetectedChannel selectedChannel, bool secondaryChannel = false)
         {
-            for (int i = 0; i < keys.Count; i++)
+            if (selectedChannel == null)
             {
-                ObservableCollection<DataPoint> points = new ObservableCollection<DataPoint>();
-
-                string s = keys[i].ToString();
-                string[] values = selectedChannel.ResponseData[s];
-                int count = values.Length;
-                Complex[] cValues = new Complex[count];
-                double[] Xs = new double[count];
-
-                float sample_rate = 48000;
-                float total_time = count / sample_rate;
-
-                AxisLimit Limits = AxisLimits[selectedAxisLimits];
+                Collection<DataPoint> points = null;
+                //time domain data
                 if (selectedAxisLimits == "rbtnXRangeChirp")
                 {
-                    Limits.XMax = 1000 * total_time;
-                    for (int j = 0; j < count; j++)
-                    {
-                        double d = Double.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
-                        points.Add(new DataPoint(1000 * j * total_time / count, d));
-                        //if (Math.Abs(d) > Limits.YMax) { Limits.YMax = Math.Abs(d); Limits.YMin = 0 - Limits.YMax; }
-                    }
                 }
+                //frequency domain data
                 else
                 {
-                    for (int j = 0; j < count; j++)
+                    if (secondaryChannel)
                     {
-                        decimal d = Decimal.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
-                        Complex cValue = (Complex)d;
-                        cValues[j] = cValue;
-                        Xs[j] = (double)j / count * sample_rate; // units are in kHz
+                        points = referenceCurveFilter.High_Frequency_Roll_Off_2();
+                    }
+                    else
+                    {
+                        points = referenceCurveFilter.High_Frequency_Roll_Off_1();
                     }
 
-                    Complex[] result = FFT.fft(cValues);
-
-                    int x = 0;
-
-                    double[] smoothed = new double[count];
-                    for (int j = 0; j < count; j++)
+                    if (points != null)
                     {
-                        smoothed[j] = result[j].Magnitude;
-                    }
-
-                    if (rbtnNo.IsChecked.Value)
-                    {
-                        foreach (Complex cValue in result)
+                        OxyColor color = OxyColor.FromRgb(255, 0, 0);
+                        LineSeries lineserie = new LineSeries
                         {
-                            //Add data point here
-                            points.Add(new DataPoint(Xs[x], Limits.YShift + 20 * Math.Log10(cValue.Magnitude)));
-                            x++;
-                            if (x == count / 2) break;
+                            ItemsSource = points,
+                            DataFieldX = "X",
+                            DataFieldY = "Y",
+                            StrokeThickness = 2,
+                            MarkerSize = 0,
+                            LineStyle = LineStyle.Solid,
+                            Color = color,
+                            MarkerType = MarkerType.None,
+                        };
+                        plotModel.Series.Add(lineserie);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    Collection<DataPoint> points = new Collection<DataPoint>();
+
+                    string s = keys[i].ToString();
+                    string[] values = selectedChannel.ResponseData[s];
+                    int count = values.Length;
+                    Complex[] cValues = new Complex[count];
+                    double[] Xs = new double[count];
+
+                    float sample_rate = 48000;
+                    float total_time = count / sample_rate;
+
+                    AxisLimit Limits = AxisLimits[selectedAxisLimits];
+                    if (selectedAxisLimits == "rbtnXRangeChirp")
+                    {
+                        Limits.XMax = 1000 * total_time; // horizotal scale: s to ms
+                        for (int j = 0; j < count; j++)
+                        {
+                            double d = Double.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
+                            points.Add(new DataPoint(1000 * j * total_time / count, d));
                         }
                     }
                     else
                     {
-                        LinSpacedFracOctaveSmooth(smoothingFactor, ref smoothed, 1, 1d / 48);
-
-                        foreach (double smoothetResult in smoothed)
+                        for (int j = 0; j < count; j++)
                         {
-                            points.Add(new DataPoint(Xs[x], Limits.YShift + 20 * Math.Log10(smoothetResult)));
-                            x++;
-                            if (x == count / 2) break;
+                            decimal d = Decimal.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
+                            Complex cValue = (Complex)d;
+                            cValues[j] = 100 * cValue;
+                            Xs[j] = (double)j / count * sample_rate;
+                        }
+
+                        MathNet.Numerics.IntegralTransforms.Fourier.Forward(cValues);
+
+                        int x = 0;
+                        if (rbtnNo.IsChecked.Value)
+                        {
+                            foreach (Complex cValue in cValues)
+                            {
+                                points.Add(new DataPoint(Xs[x++], Limits.YShift + 20 * Math.Log10(cValue.Magnitude)));
+                                if (x == count / 2) break;
+                            }
+                        }
+                        else
+                        {
+                            double[] smoothed = new double[count];
+                            for (int j = 0; j < count; j++)
+                            {
+                                smoothed[j] = cValues[j].Magnitude;
+                            }
+
+                            LinSpacedFracOctaveSmooth(smoothingFactor, ref smoothed, 1, 1d / 48);
+
+                            foreach (double smoothetResult in smoothed)
+                            {
+                                points.Add(new DataPoint(Xs[x++], Limits.YShift + 20 * Math.Log10(smoothetResult)));
+                                if (x == count / 2) break;
+                            }
                         }
                     }
+
+                    OxyColor color = OxyColor.Parse(colors[keys[i]].ToString());
+                    LineSeries lineserie = new LineSeries
+                    {
+                        ItemsSource = points,
+                        DataFieldX = "X",
+                        DataFieldY = "Y",
+                        StrokeThickness = 1,
+                        MarkerSize = 0,
+                        LineStyle = secondaryChannel ? LineStyle.Dot : LineStyle.Solid,
+                        Color = color,
+                        MarkerType = MarkerType.None,
+                    };
+
+                    plotModel.Series.Add(lineserie);
                 }
-
-                OxyColor color = OxyColor.Parse(colors[keys[i]].ToString());
-                LineSeries lineserie = new LineSeries
-                {
-                    ItemsSource = points,
-                    DataFieldX = "x",
-                    DataFieldY = "Y",
-                    StrokeThickness = secondaryChannel ? 2 : 1,
-                    MarkerSize = 0,
-                    LineStyle = LineStyle.Solid,
-                    Color = color,
-                    MarkerType = MarkerType.None,
-                };
-
-                plotModel.Series.Add(lineserie);
             }
         }
 
@@ -351,11 +416,9 @@ namespace Ratbuddyssey
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
 #if DEBUG
-            trimmedFilename = (filename.Substring(0, filename.Length - 3));
-            File.WriteAllText(trimmedFilename + "_modified_by_ratbuddyssey.ady", reSerialized);
-#else
-            File.WriteAllText(filename, reSerialized);
+            filename = System.IO.Path.ChangeExtension(filename, ".json");
 #endif
+            File.WriteAllText(filename, reSerialized);
         }
 
         private void SaveFileAs_OnClick(object sender, RoutedEventArgs e)
@@ -484,6 +547,11 @@ namespace Ratbuddyssey
         }
 
         private void chbxLogarithmicAxis_Unchecked(object sender, RoutedEventArgs e)
+        {
+            DrawChart();
+        }
+
+        private void TargetCurveTypeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             DrawChart();
         }
