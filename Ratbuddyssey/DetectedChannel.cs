@@ -12,27 +12,29 @@ namespace Ratbuddyssey
 {
     class DetectedChannel : INotifyPropertyChanged
     {
+        // according to JSON .ady file
+        private string _customCrossover = null;
         private int _enChannelType = 0;
         private bool _isSkipMeasurement = false;
-        private string _delayAdjustment = string.Empty;
-        private string _commandId = string.Empty;
-        private string _trimAdjustment = string.Empty;
-        private ChannelReport _channelReport;
-        private Dictionary<string, string[]> _responseData = new Dictionary<string, string[]>();
-        private ReferenceCurveFilter _referenceCurveFilter = new ReferenceCurveFilter();
-        private string[] _customTargetCurvePoints;
-        private ObservableCollection<MyKeyValuePair> _customTargetCurvePointsDictionary = new ObservableCollection<MyKeyValuePair>();
-        private bool _midrangeCompensation = false;
-        private decimal _frequencyRangeRolloff = 0;
         private string _customLevel = null;
+        private decimal? _customDistance = null;
+        private decimal _frequencyRangeRolloff = 0;
+        private string[] _customTargetCurvePoints;
+        private string _commandId = string.Empty;
         private string _customSpeakerType = null;
+        private string _delayAdjustment = string.Empty;
+        private ChannelReport _channelReport;
+        private Dictionary<string, string[]> _responseData = null;
+        private string _trimAdjustment = string.Empty;
+        private bool _midrangeCompensation = false;
+
+        // local for data binding (shall not be serialised)
+        private ObservableCollection<MyKeyValuePair> _customTargetCurvePointsDictionary = new ObservableCollection<MyKeyValuePair>();
+        private ObservableCollection<string> _customCrossoverList = new ObservableCollection<string>() { "U", "40", "60", "80", "90", "100", "110", "120", "150", "180", "200", "250" };
+        private int _customCrossoverIndex = 0;
         private bool _customSpeakerTypeSmall = false;
         private bool _customSpeakerTypeLarge = false;
         private bool _customSpeakerTypeSubwoofer = false;
-        private decimal? _customDistance = null;
-        private string _customCrossover = null;
-        private ObservableCollection<string> _customCrossoverList = new ObservableCollection<string>() { "40", "50", "60", "80", "90", "100", "110", "120", "150", "200", "250", "U" };
-        private int _customCrossoverIndex = 0;
 
         #region Properties
         public int EnChannelType
@@ -97,23 +99,17 @@ namespace Ratbuddyssey
         }
         public Dictionary<string, string[]> ResponseData
         {
-            get { return _responseData; }
+            get
+            {
+                return _responseData;
+            }
             set
             {
                 _responseData = value;
-                RaisePropertyChanged("ResponceData");
+                RaisePropertyChanged("ResponseData");
             }
         }
-        public ReferenceCurveFilter ReferenceCurveFilter
-        {
-            get { return _referenceCurveFilter; }
-            set
-            {
-                _referenceCurveFilter = value;
-                RaisePropertyChanged("ReferenceCurveFilter");
-            }
-        }
-        string[] tempCustomTargetCurvePoints = null;
+
         public string[] CustomTargetCurvePoints
         {
             get
@@ -123,9 +119,8 @@ namespace Ratbuddyssey
             }
             set
             {
-                _customTargetCurvePoints = value;
-                tempCustomTargetCurvePoints = _customTargetCurvePoints;
-                CustomTargetCurvePointsDictionary = ConvertStringArrayToDictionary(tempCustomTargetCurvePoints);
+                _customTargetCurvePoints = (string[]) value.Clone();
+                CustomTargetCurvePointsDictionary = ConvertStringArrayToDictionary(value);
                 RaisePropertyChanged("CustomTargetCurvePoints");
             }
         }
@@ -252,6 +247,8 @@ namespace Ratbuddyssey
             set
             {
                 _customCrossover = value;
+                _customCrossoverIndex = CustomCrossoverList.IndexOf(value + "0");
+                if (_customCrossoverIndex == -1) _customCrossoverIndex = CustomCrossoverList.IndexOf("U");
                 RaisePropertyChanged("CustomCrossover");
             }
         }
@@ -272,13 +269,13 @@ namespace Ratbuddyssey
             {
                 _customCrossoverIndex = value;
                 RaisePropertyChanged("CustomCrossoverIndex");
+                _customCrossover = CustomCrossoverList[value].Remove(CustomCrossoverList[value].Length-1, 1);
+                RaisePropertyChanged("CustomCrossover");
             }
         }
         #endregion
-
         public bool ShouldSerializeResponseData()
         {
-            //            return (responseData != null && responseData.Count > 0);
             return true;
         }
 
@@ -326,12 +323,7 @@ namespace Ratbuddyssey
             {
                 string str = s.Substring(1, s.Length - 2);
                 string[] arr = str.Split(',');
-                decimal key = decimal.Parse(arr[0].Trim());
-                decimal value = decimal.Parse(arr[1].Trim());
-                if((key>=0 && key<=20000) && (value>=-20 && value<=20))
-                {
-                    result.Add(new MyKeyValuePair(arr[0], arr[1]));
-                }                
+                result.Add(new MyKeyValuePair(arr[0], arr[1]));
             }
             return new ObservableCollection<MyKeyValuePair>(result.OrderBy(x => Double.Parse(x.Key)));
         }
@@ -344,8 +336,6 @@ namespace Ratbuddyssey
             }
             return result;
         }
-
-
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
@@ -375,6 +365,10 @@ namespace Ratbuddyssey
 
     public class MyKeyValuePair : INotifyPropertyChanged
     {
+        private double KeyMin = 10; //Hz Chris Kyriakakis
+        private double KeyMax = 24000; //Hz Chris Kyriakakis
+        private double ValueMin = -12; //dB AUDYSSEY MultiEQ app
+        private double ValueMax = 12; //dB AUDYSSEY MultiEQ app
         string _key;
         string _value;
         public string Key
@@ -382,8 +376,8 @@ namespace Ratbuddyssey
             get { return _key; }
             set
             {
-                double dValue = Double.Parse(value);
-                if (dValue >= 0 && dValue <= 20000)
+                double dValue = Double.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+                if (dValue >= KeyMin && dValue <= KeyMax)
                 {
                     _key = value;
                 }                
@@ -395,8 +389,8 @@ namespace Ratbuddyssey
             get { return _value; }
             set
             {
-                double dValue = Double.Parse(value);
-                if (dValue >= -20 && dValue <= 20)
+                double dValue = Double.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+                if (dValue >= ValueMin && dValue <= ValueMax)
                 {
                     _value = value;
                 }                
@@ -407,6 +401,11 @@ namespace Ratbuddyssey
         {
             Key = key.Trim();
             Value = value.Trim();
+        }
+        public MyKeyValuePair(decimal key, decimal value)
+        {
+            Key = key.ToString();
+            Value = value.ToString();
         }
         public override string ToString()
         {
