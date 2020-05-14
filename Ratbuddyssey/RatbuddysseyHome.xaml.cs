@@ -23,6 +23,8 @@ using Newtonsoft.Json.Serialization;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
+using System.Net.Sockets;
+using System.Reflection;
 
 namespace Ratbuddyssey
 {
@@ -42,7 +44,7 @@ namespace Ratbuddyssey
     public partial class RatbuddysseyHome : Page
     {
         private Audyssey parsedAudyssey = null;
-        
+
         private string filename;
         private PlotModel plotModel = new PlotModel();
         
@@ -63,11 +65,23 @@ namespace Ratbuddyssey
 
         private ReferenceCurveFilter referenceCurveFilter = new ReferenceCurveFilter();
 
+        private Avr parsedAvr = null;
         public RatbuddysseyHome()
         {
             InitializeComponent();
             channelsView.SelectionChanged += ChannelsView_SelectionChanged;
             plot.PreviewMouseWheel += Plot_PreviewMouseWheel;
+            // Establish ethernet connection with receiver and load Info and Status
+            parsedAvr = new Avr();
+            // Data Binding
+            if (parsedAvr != null)
+            {
+                this.DataContext = parsedAvr;
+            }
+        }
+
+        ~RatbuddysseyHome()
+        {
         }
 
         private void DrawChart()
@@ -418,7 +432,7 @@ namespace Ratbuddyssey
 #if DEBUG
             filename = System.IO.Path.ChangeExtension(filename, ".json");
 #endif
-            File.WriteAllText(filename, reSerialized);
+            if (reSerialized != null) File.WriteAllText(filename, reSerialized);
         }
 
         private void SaveFileAs_OnClick(object sender, RoutedEventArgs e)
@@ -440,7 +454,7 @@ namespace Ratbuddyssey
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 });
-                File.WriteAllText(filename, reSerialized);
+                if (reSerialized != null) File.WriteAllText(filename, reSerialized);
             }
         }
 
