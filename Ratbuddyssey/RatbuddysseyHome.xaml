@@ -40,11 +40,33 @@
             <DockPanel Grid.Row="0">
                 <Menu>
                     <MenuItem Header="_File" HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <MenuItem Header="Open Audyssey file" x:Name="openFile" Click="OpenFile_OnClick"/>
-                        <MenuItem Header="Reload (discard unsaved changes)" x:Name="reloadFile" Click="ReloadFile_OnClick"/>
-                        <MenuItem Header="Save" x:Name="saveFile" Click="SaveFile_OnClick"/>
-                        <MenuItem Header="Save As" x:Name="saveFileAs" Click="SaveFileAs_OnClick"/>
-                        <MenuItem Header="Exit" x:Name="exitProgram" Click="ExitProgram_OnClick"/>
+                        <MenuItem Header="_Open Audyssey file" x:Name="openFile" Click="OpenFile_OnClick"/>
+                        <MenuItem Header="_Reload (discard unsaved changes)" x:Name="reloadFile" Click="ReloadFile_OnClick"/>
+                        <MenuItem Header="_Save" x:Name="saveFile" Click="SaveFile_OnClick"/>
+                        <MenuItem Header="Save _As" x:Name="saveFileAs" Click="SaveFileAs_OnClick"/>
+                        <Separator Height="0" Margin="0" RenderTransformOrigin="0.5,0.5">
+                            <Separator.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform ScaleY="-1"/>
+                                    <SkewTransform/>
+                                    <RotateTransform/>
+                                    <TranslateTransform/>
+                                </TransformGroup>
+                            </Separator.RenderTransform>
+                        </Separator>
+                        <MenuItem Header="_Ethernet" x:Name="connectEthernet" Click="connectEthernet_Click" IsCheckable="True"/>
+                        <MenuItem Header="S_niffer" x:Name="connectSniffer" Click="connectSniffer_Click" IsCheckable="True"/>
+                        <Separator Height="0" Margin="0" RenderTransformOrigin="0.5,0.5">
+                            <Separator.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform ScaleY="-1"/>
+                                    <SkewTransform/>
+                                    <RotateTransform/>
+                                    <TranslateTransform/>
+                                </TransformGroup>
+                            </Separator.RenderTransform>
+                        </Separator>
+                        <MenuItem Header="E_xit" x:Name="exitProgram" Click="ExitProgram_OnClick"/>
                     </MenuItem>
                     <MenuItem Header="_About">
                         <MenuItem Header="About Ratbuddyssey" x:Name="about" Click="About_OnClick"/>
@@ -175,7 +197,7 @@
                             <Label Content="MultEQ Type" Grid.Column="0" VerticalContentAlignment="Center" HorizontalAlignment="Left" Margin="0" Grid.Row="2"/>
                             <Label Content="Target Curve Type" Grid.Column="2" VerticalContentAlignment="Center" HorizontalAlignment="Left" Margin="0" Grid.Row="2"/>
 
-                            <ComboBox Grid.Column="1" Grid.Row="2" Margin="0" SelectedIndex="{Binding EnMultEQType}" ItemsSource="{Binding EnMultEQTypeList}" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Column="1" Grid.Row="2" Margin="0" ItemsSource="{Binding EnMultEQTypeList}" SelectedIndex="{Binding EnMultEQType}" VerticalAlignment="Center"/>
                             <ComboBox Grid.Column="3" Grid.Row="2" Margin="0" Name = "TargetCurveType" SelectedIndex="{Binding EnTargetCurveType}" ItemsSource="{Binding EnTargetCurveTypeList}" VerticalAlignment="Center" SelectionChanged="TargetCurveTypeSelectionChanged"/>
                         </Grid>
 

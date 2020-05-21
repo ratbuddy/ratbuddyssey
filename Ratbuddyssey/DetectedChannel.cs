@@ -345,8 +345,8 @@ namespace Ratbuddyssey
                 sb.Append(property + "=" + property.GetValue(this, null) + "\r\n");
             }
 
-            sb.Append(ChannelReport.ToString());
-            sb.Append(ResponseData.ToString());
+            if (ChannelReport != null) sb.Append(ChannelReport.ToString());
+            if (ResponseData != null) sb.Append(ResponseData.ToString());
 
             return sb.ToString();
         }
@@ -365,10 +365,10 @@ namespace Ratbuddyssey
 
     public class MyKeyValuePair : INotifyPropertyChanged
     {
-        private double KeyMin = 10; //Hz Chris Kyriakakis
-        private double KeyMax = 24000; //Hz Chris Kyriakakis
-        private double ValueMin = -12; //dB AUDYSSEY MultiEQ app
-        private double ValueMax = 12; //dB AUDYSSEY MultiEQ app
+        private double KeyMin = 10; //10Hz Chris Kyriakakis
+        private double KeyMax = 24000; //24000Hz Chris Kyriakakis
+        private double ValueMin = -20; //-12dB AUDYSSEY MultiEQ app -> -20dB Chris Kyriakakis
+        private double ValueMax = 9; //12dB AUDYSSEY MultiEQ app -> +9dB Chris Kyriakakis
         string _key;
         string _value;
         public string Key

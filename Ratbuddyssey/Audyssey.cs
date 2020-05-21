@@ -181,7 +181,7 @@ namespace Ratbuddyssey
             }
             set
             {
-                _enAmpAssignType = value;                
+                _enAmpAssignType = value;
                 RaisePropertyChanged("EnAmpAssignType");
             }
         }
@@ -247,7 +247,10 @@ namespace Ratbuddyssey
         }
         public List<DetectedChannel> DetectedChannels
         {
-            get { return _detectedChannels; }
+            get
+            {
+                return _detectedChannels;
+            }
             set
             {
                 _detectedChannels = value;

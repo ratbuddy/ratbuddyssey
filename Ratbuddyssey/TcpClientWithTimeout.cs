@@ -8,12 +8,6 @@ using System.Threading;
 
 namespace Ratbuddyssey
 {
-    /// <summary>
-    /// TcpClientWithTimeout is used to open a TcpClient connection, with a 
-    /// user definable connection timeout in milliseconds (1000=1second)
-    /// Use it like this:
-    /// TcpClient connection = new TcpClientWithTimeout('127.0.0.1',80,1000).Connect();
-    /// </summary>
     public class TcpClientWithTimeout
     {
         // TCPIP
@@ -29,18 +23,14 @@ namespace Ratbuddyssey
         private UInt16 TotalLength;
         private byte[] Command;
         private UInt16 CommandLength;
-        private byte[] Payload;
-        private UInt16 PayloadLength;
+        private UInt16 DataLength;
+        private const UInt16 HeaderLength = 9;
         private byte Check;
-        private UInt16 SwapUInt16(UInt16 DataWord)
-        {
-            return (UInt16)((DataWord >> 8) | (DataWord << 8));
-        }
         private byte CalculateChecksum(byte[] dataToCalculate)
         {
             return dataToCalculate.Aggregate((r, n) => r += n);
         }
-        public MemoryStream TransmitTcpAvrStream(string Cmd, string Data)
+        public MemoryStream TransmitTcpAvrStream(string Cmd, byte[] Data, int current_packet = 0, int total_packets = 0)
         {
             TransmitReceive = (byte)'T';
 
@@ -57,74 +47,107 @@ namespace Ratbuddyssey
 
             if (Data != null)
             {
-                PayloadLength = (UInt16)Encoding.ASCII.GetByteCount(Data);
-                Payload = Encoding.ASCII.GetBytes(Data);
+                DataLength = (UInt16)Data.Length;
             }
             else
             {
-                PayloadLength = 0;
-                Payload = null;
+                DataLength = 0;
             }
 
-            TotalLength = (UInt16)(9 + CommandLength + PayloadLength);
+            TotalLength = (UInt16)(HeaderLength + CommandLength + DataLength);
 
             MemoryStream memoryStream = new MemoryStream();
             BinaryWriter binaryWriter = new BinaryWriter(memoryStream);
 
             binaryWriter.Write(TransmitReceive);
-            binaryWriter.Write(SwapUInt16(TotalLength));
-            binaryWriter.Write((UInt16)0);
+            binaryWriter.Write(BinaryPrimitives.ReverseEndianness(TotalLength));
+            binaryWriter.Write((byte)current_packet);
+            binaryWriter.Write((byte)total_packets);
             binaryWriter.Write(Command);
             binaryWriter.Write((byte)0);
-            binaryWriter.Write(SwapUInt16(PayloadLength));
-            if ((PayloadLength > 0) && (Payload != null)) binaryWriter.Write(Payload);
+            binaryWriter.Write(BinaryPrimitives.ReverseEndianness(DataLength));
+            if (DataLength > 0) binaryWriter.Write(Data);
             binaryWriter.Write(CalculateChecksum(memoryStream.GetBuffer()));
 
             _stream.Write(memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
 
             return memoryStream;
         }
-        public string ReceiveTcpAvrStream(ref string Cmd, out bool ValidCheckSum)
+        public MemoryStream TransmitTcpAvrStream(string Cmd, string Data)
         {
-            string Data = "";
+            return TransmitTcpAvrStream(Cmd, Encoding.ASCII.GetBytes(Data));
+        }
+        public MemoryStream ReceiveTcpAvrStream(ref string Cmd, out byte[] Data, out bool ValidCheckSum)
+        {
+            TransmitReceive = (byte)'R';
+
+            if (Cmd != null)
+            {
+                CommandLength = (UInt16)Encoding.ASCII.GetByteCount(Cmd);
+                Command = Encoding.ASCII.GetBytes(Cmd);
+            }
+            else
+            {
+                CommandLength = 0;
+                Command = null;
+            }
+
+            MemoryStream memoryStream = null;
+            Data = null;
 
             int nBufSize = 2048;
             byte[] byBuffer = new byte[nBufSize];
             _stream.ReadTimeout = 10000;
-            int nReceived = _stream.Read(byBuffer, 0, nBufSize);
 
-            MemoryStream memoryStream = new MemoryStream(byBuffer, 0, nReceived);
-
-            // One would think that the returned checksum matches, but it does not..
-            byte[] array = memoryStream.ToArray();
-            Array.Resize<byte>(ref array, array.Length - 1);
-            byte CheckSum = CalculateChecksum(array);
-            
-            if (memoryStream.Length > 0)
+            int nReceived = 0;
+            try
             {
-                BinaryReader binaryReader = new BinaryReader(memoryStream);
-                TransmitReceive = binaryReader.ReadByte();
-                TotalLength = SwapUInt16(binaryReader.ReadUInt16());
-                binaryReader.ReadUInt16();
-                Command = binaryReader.ReadBytes(Cmd.Length);
-                Cmd = Encoding.ASCII.GetString(Command);
-                binaryReader.ReadByte();
-                PayloadLength = SwapUInt16(binaryReader.ReadUInt16());
-                Payload = binaryReader.ReadBytes(PayloadLength);
-                Check = binaryReader.ReadByte();
-                Data = Encoding.ASCII.GetString(Payload);
+                nReceived = _stream.Read(byBuffer, 0, nBufSize);
+            }
+            catch
+            {
+                ;
             }
 
-            if (CheckSum == Check)
+            ValidCheckSum = false;
+            if (nReceived > 0)
             {
-                ValidCheckSum = true;
-            }
-            else
-            {
-                ValidCheckSum = false;
+                memoryStream = new MemoryStream(byBuffer, 0, nReceived);
+
+                byte[] array = memoryStream.ToArray();
+                Array.Resize<byte>(ref array, array.Length - 1);
+                byte CheckSum = CalculateChecksum(array);
+
+                if (memoryStream.Length > 0)
+                {
+                    BinaryReader binaryReader = new BinaryReader(memoryStream);
+                    if (TransmitReceive == binaryReader.ReadByte())
+                    {
+                        TotalLength = BinaryPrimitives.ReverseEndianness(binaryReader.ReadUInt16());
+                        binaryReader.ReadUInt16();
+                        Command = binaryReader.ReadBytes(CommandLength);
+                        Cmd = Encoding.ASCII.GetString(Command);
+                        binaryReader.ReadByte();
+                        DataLength = BinaryPrimitives.ReverseEndianness(binaryReader.ReadUInt16());
+                        Data = binaryReader.ReadBytes(DataLength);
+                        Check = binaryReader.ReadByte();
+                    }
+                }
+
+                if (CheckSum == Check)
+                {
+                    ValidCheckSum = true;
+                }
             }
 
-            return Data;
+            return memoryStream;
+        }
+        public MemoryStream ReceiveTcpAvrStream(ref string Cmd, out string Data, out bool ValidCheckSum)
+        {
+            byte[] DataByte;
+            MemoryStream memoryStream = ReceiveTcpAvrStream(ref Cmd, out DataByte, out ValidCheckSum);
+            Data = Encoding.ASCII.GetString(DataByte);
+            return memoryStream;
         }
         public TcpClientWithTimeout(string hostname, int port, int timeout_milliseconds)
         {

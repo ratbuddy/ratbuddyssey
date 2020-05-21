@@ -71,19 +71,10 @@ namespace Ratbuddyssey
             InitializeComponent();
             channelsView.SelectionChanged += ChannelsView_SelectionChanged;
             plot.PreviewMouseWheel += Plot_PreviewMouseWheel;
-            // Establish ethernet connection with receiver and load Info and Status
-            parsedAvr = new Avr();
-            // Data Binding
-            if (parsedAvr != null)
-            {
-                this.DataContext = parsedAvr;
-            }
         }
-
         ~RatbuddysseyHome()
         {
         }
-
         private void DrawChart()
         {
             if (plot != null)
@@ -123,7 +114,6 @@ namespace Ratbuddyssey
                 PlotChart();
             }
         }
-
         private void ClearPlot()
         {
             if (plot.Model != null && plot.Model.Series != null)
@@ -132,12 +122,10 @@ namespace Ratbuddyssey
                 plot.Model = null;
             }
         }
-
         private void PlotChart()
         {
             plot.Model = plotModel;
         }
-
         private void PlotAxis()
         {
             plotModel.Axes.Clear();
@@ -173,7 +161,6 @@ namespace Ratbuddyssey
                 plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "dB", Minimum = Limits.YMin + Limits.YShift, Maximum = Limits.YMax + Limits.YShift, MajorStep = Limits.MajorStep, MinorStep = Limits.MinorStep, MajorGridlineStyle = LineStyle.Solid });
             }
         }
-
         private void PlotLine(DetectedChannel selectedChannel, bool secondaryChannel = false)
         {
             if (selectedChannel == null)
@@ -294,7 +281,6 @@ namespace Ratbuddyssey
                 }
             }
         }
-
         private void LinSpacedFracOctaveSmooth(double frac, ref double[] smoothed, float startFreq, double freqStep)
         {
             int passes = 8;
@@ -329,12 +315,10 @@ namespace Ratbuddyssey
                 }
             }
         }
-
         private void Plot_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             e.Handled = true;
         }
-
         private void Chbx_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox ch = sender as CheckBox;
@@ -358,22 +342,23 @@ namespace Ratbuddyssey
             }
             DrawChart();
         }
-
         private void ChannelsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (((DetectedChannel)channelsView.SelectedValue != null) && (((DetectedChannel)channelsView.SelectedValue).ResponseData.Count > 0))
+            if (((DetectedChannel)channelsView.SelectedValue != null) && (((DetectedChannel)channelsView.SelectedValue).ResponseData != null))
             {
-                selectedChannel = (DetectedChannel)channelsView.SelectedValue;
+                if (((DetectedChannel)channelsView.SelectedValue).ResponseData.Count > 0)
+                {
+                    selectedChannel = (DetectedChannel)channelsView.SelectedValue;
+                }
             }
             foreach (var currentChannel in channelsView.Items)
             {
-                if (((DetectedChannel)currentChannel).EnChannelType == 54)
+                if ((((DetectedChannel)currentChannel).EnChannelType == 54) && (((DetectedChannel)channelsView.SelectedValue).ResponseData != null))
                     if (((DetectedChannel)currentChannel).ResponseData.Count > 0)
                         subwooferChannel = (DetectedChannel)currentChannel;
             }
             DrawChart();
         }
-
         private void OpenFile_OnClick(object sender, RoutedEventArgs e)
         {
             // Create OpenFileDialog 
@@ -404,7 +389,6 @@ namespace Ratbuddyssey
                 }
             }
         }
-
         private void ReloadFile_OnClick(object sender, RoutedEventArgs e)
         {
             MessageBoxResult messageBoxResult = MessageBox.Show("This will reload the .ady file and discard all changes since last save", "Are you sure?", MessageBoxButton.YesNo);
@@ -422,7 +406,6 @@ namespace Ratbuddyssey
                 }
             }
         }
-
         private void SaveFile_OnClick(object sender, RoutedEventArgs e)
         {
             string reSerialized = JsonConvert.SerializeObject(parsedAudyssey, new JsonSerializerSettings
@@ -432,9 +415,11 @@ namespace Ratbuddyssey
 #if DEBUG
             filename = System.IO.Path.ChangeExtension(filename, ".json");
 #endif
-            if (reSerialized != null) File.WriteAllText(filename, reSerialized);
+            if ((reSerialized != null) && (!string.IsNullOrEmpty(filename)))
+            {
+                File.WriteAllText(filename, reSerialized);
+            }
         }
-
         private void SaveFileAs_OnClick(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
@@ -454,20 +439,80 @@ namespace Ratbuddyssey
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 });
-                if (reSerialized != null) File.WriteAllText(filename, reSerialized);
+                if ((reSerialized != null) && (!string.IsNullOrEmpty(filename)))
+                {
+                    File.WriteAllText(filename, reSerialized);
+                }
             }
         }
-
+        private void connectEthernet_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender == connectEthernet)
+            {
+                if(connectEthernet.IsChecked)
+                {
+                    // Establish ethernet connection with receiver
+                    parsedAvr = new Avr(connectSniffer.IsChecked);
+                    if (parsedAvr != null)
+                    {
+                        // Data Binding
+                        this.DataContext = parsedAvr;
+                    }
+                    if (connectSniffer.IsChecked)
+                    {
+                        if (parsedAvr != null)
+                        {
+                            // Attache sniffer to capture Audyssey packets
+                            parsedAvr.AttachSniffer();
+                            currentFile.Content = "Host: " + parsedAvr.GetTcpIpHost() + " Client:" + parsedAvr.GetTcpIpClient();
+                        }
+                    }
+                    else
+                    {
+                        currentFile.Content = "Client:" + parsedAvr.GetTcpIpClient();
+                    }
+                }
+                else
+                {
+                    this.DataContext = null;
+                    parsedAvr = null;
+                    // immediately clean up the object
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    currentFile.Content = "";
+                }
+            }
+        }
+        private void connectSniffer_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender == connectSniffer)
+            {
+                if (connectEthernet.IsChecked)
+                {
+                    if (parsedAvr != null)
+                    {
+                        parsedAvr.AttachSniffer();
+                        currentFile.Content = "Host: " + parsedAvr.GetTcpIpHost() + " Client:" + parsedAvr.GetTcpIpClient();
+                    }
+                }
+                else
+                {
+                    if (parsedAvr != null)
+                    {
+                        parsedAvr.DetachSniffer();
+                        currentFile.Content = "Client:" + parsedAvr.GetTcpIpClient();
+                    }
+                }
+            }
+        }
         private void ExitProgram_OnClick(object sender, RoutedEventArgs e)
         {
             App.Current.MainWindow.Close();
         }
-
         private void About_OnClick(object sender, RoutedEventArgs e)
         {
             System.Windows.MessageBox.Show("Shout out to AVS Forum, use at your own risk!");
         }
-
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             if(!string.IsNullOrEmpty(keyTbx.Text) && !string.IsNullOrEmpty(valueTbx.Text))
@@ -475,14 +520,12 @@ namespace Ratbuddyssey
                 ((DetectedChannel)channelsView.SelectedValue).CustomTargetCurvePointsDictionary.Add(new MyKeyValuePair(keyTbx.Text, valueTbx.Text));
             }
         }
-
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             Button b = sender as Button;
             MyKeyValuePair pair = b.DataContext as MyKeyValuePair;
             ((DetectedChannel)channelsView.SelectedValue).CustomTargetCurvePointsDictionary.Remove(pair);            
         }
-
         private void allChbx_Checked(object sender, RoutedEventArgs e)
         {
             chbx1.IsChecked = true;
@@ -495,7 +538,6 @@ namespace Ratbuddyssey
             chbx8.IsChecked = true;
             DrawChart();
         }
-
         private void allChbx_Unchecked(object sender, RoutedEventArgs e)
         {
             chbx1.IsChecked = false;
@@ -508,7 +550,6 @@ namespace Ratbuddyssey
             chbx8.IsChecked = false;
             DrawChart();
         }
-
         private void rbtn_Checked(object sender, RoutedEventArgs e)
         {
             RadioButton rbtn = sender as RadioButton;
@@ -537,34 +578,28 @@ namespace Ratbuddyssey
             }
             DrawChart();
         }
-
         private void rbtnXRange_Checked(object sender, RoutedEventArgs e)
         {
             RadioButton rbtn = sender as RadioButton;
             selectedAxisLimits = rbtn.Name;
             DrawChart();
         }
-
         private void chbxStickSubwoofer_Checked(object sender, RoutedEventArgs e)
         {
             DrawChart();
         }
-
         private void chbxStickSubwoofer_Unchecked(object sender, RoutedEventArgs e)
         {
             DrawChart();
         }
-
         private void chbxLogarithmicAxis_Checked(object sender, RoutedEventArgs e)
         {
             DrawChart();
         }
-
         private void chbxLogarithmicAxis_Unchecked(object sender, RoutedEventArgs e)
         {
             DrawChart();
         }
-
         private void TargetCurveTypeSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             DrawChart();
