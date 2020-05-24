@@ -76,7 +76,7 @@ namespace Ratbuddyssey
         }
         #region INotifyPropertyChanged implementation
         public event PropertyChangedEventHandler PropertyChanged;
-        public void RaisePropertyChanged(string propertyName)
+        protected void RaisePropertyChanged(string propertyName)
         {
             if (this.PropertyChanged != null)
             {

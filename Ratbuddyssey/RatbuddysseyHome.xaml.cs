@@ -65,7 +65,7 @@ namespace Ratbuddyssey
 
         private ReferenceCurveFilter referenceCurveFilter = new ReferenceCurveFilter();
 
-        private Avr parsedAvr = null;
+        private AvrAudysseyAdapter AvrAudysseyAdapter = null;
         public RatbuddysseyHome()
         {
             InitializeComponent();
@@ -452,30 +452,28 @@ namespace Ratbuddyssey
                 if(connectEthernet.IsChecked)
                 {
                     // Establish ethernet connection with receiver
-                    parsedAvr = new Avr(connectSniffer.IsChecked);
-                    if (parsedAvr != null)
+                    AvrAudysseyAdapter = new AvrAudysseyAdapter(connectSniffer.IsChecked);
+                    if (AvrAudysseyAdapter != null)
                     {
                         // Data Binding
-                        this.DataContext = parsedAvr;
-                    }
-                    if (connectSniffer.IsChecked)
-                    {
-                        if (parsedAvr != null)
+                        this.DataContext = AvrAudysseyAdapter;
+                        // Display connection details
+                        if (connectSniffer.IsChecked)
                         {
-                            // Attache sniffer to capture Audyssey packets
-                            parsedAvr.AttachSniffer();
-                            currentFile.Content = "Host: " + parsedAvr.GetTcpIpHost() + " Client:" + parsedAvr.GetTcpIpClient();
+                            currentFile.Content = "Host: " + AvrAudysseyAdapter.GetTcpHost() + " Client:" + AvrAudysseyAdapter.GetTcpClient();
+                        }
+                        else
+                        {
+                            currentFile.Content = "Client:" + AvrAudysseyAdapter.GetTcpClient();
                         }
                     }
-                    else
-                    {
-                        currentFile.Content = "Client:" + parsedAvr.GetTcpIpClient();
-                    }
+                    // Check if binding and propertychanged work
+                    AvrAudysseyAdapter.AudysseyToAvr();
                 }
                 else
                 {
                     this.DataContext = null;
-                    parsedAvr = null;
+                    AvrAudysseyAdapter = null;
                     // immediately clean up the object
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
@@ -489,18 +487,18 @@ namespace Ratbuddyssey
             {
                 if (connectEthernet.IsChecked)
                 {
-                    if (parsedAvr != null)
+                    if (AvrAudysseyAdapter != null)
                     {
-                        parsedAvr.AttachSniffer();
-                        currentFile.Content = "Host: " + parsedAvr.GetTcpIpHost() + " Client:" + parsedAvr.GetTcpIpClient();
+                        AvrAudysseyAdapter.AttachSniffer();
+                        currentFile.Content = "Host: " + AvrAudysseyAdapter.GetTcpHost() + " Client:" + AvrAudysseyAdapter.GetTcpClient();
                     }
                 }
                 else
                 {
-                    if (parsedAvr != null)
+                    if (AvrAudysseyAdapter != null)
                     {
-                        parsedAvr.DetachSniffer();
-                        currentFile.Content = "Client:" + parsedAvr.GetTcpIpClient();
+                        AvrAudysseyAdapter.DetachSniffer();
+                        currentFile.Content = "Client:" + AvrAudysseyAdapter.GetTcpClient();
                     }
                 }
             }

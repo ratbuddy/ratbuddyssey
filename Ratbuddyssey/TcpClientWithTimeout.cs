@@ -8,6 +8,20 @@ using System.Threading;
 
 namespace Ratbuddyssey
 {
+    class TcpIP
+    {
+        #region Properties
+        public string Address { get; set; }
+        public int Port { get; set; }
+        public int Timeout { get; set; }
+        #endregion
+        public TcpIP(string address = "127.0.0.1", int port = 0, int timeout = 0)
+        {
+            Address = address;
+            Port = port;
+            Timeout = timeout;
+        }
+    }
     public class TcpClientWithTimeout
     {
         // TCPIP
@@ -26,11 +40,33 @@ namespace Ratbuddyssey
         private UInt16 DataLength;
         private const UInt16 HeaderLength = 9;
         private byte Check;
+        private Int32[] ByteToInt32(byte[] Byte)
+        {
+            Int32[] Int32s = null;
+            if (Byte.Length % 4 == 0)
+            {
+                Int32s = new Int32[Byte.Length / 4];
+                for (int i = 0; i < Byte.Length / 4; i++)
+                {
+                    Int32s[i] = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt32(Byte, i * 4));
+                }
+            }
+            return Int32s;
+        }
+        private byte[] Int32ToByte(Int32[] Int32s)
+        {
+            byte[] Byte = new byte[4 * Int32s.Length];
+            for (int i = 0; i < Int32s.Length; i++)
+            {
+                Array.Copy(BitConverter.GetBytes(BinaryPrimitives.ReverseEndianness(Int32s[i])), 0, Byte, i * 4, 4);
+            }
+            return Byte;
+        }
         private byte CalculateChecksum(byte[] dataToCalculate)
         {
             return dataToCalculate.Aggregate((r, n) => r += n);
         }
-        public MemoryStream TransmitTcpAvrStream(string Cmd, byte[] Data, int current_packet = 0, int total_packets = 0)
+        public void TransmitTcpAvrStream(string Cmd, byte[] Data, int current_packet = 0, int total_packets = 0)
         {
             TransmitReceive = (byte)'T';
 
@@ -70,14 +106,26 @@ namespace Ratbuddyssey
             binaryWriter.Write(CalculateChecksum(memoryStream.GetBuffer()));
 
             _stream.Write(memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
-
-            return memoryStream;
         }
-        public MemoryStream TransmitTcpAvrStream(string Cmd, string Data)
+        public void TransmitTcpAvrStream(string Cmd, Int32[] Data)
         {
-            return TransmitTcpAvrStream(Cmd, Encoding.ASCII.GetBytes(Data));
+            // transmit packets in chunks of 256 bytes
+            int total_packets = (128 + Data.Length) / 256;
+            // the last packet has less than 256 bytes
+            int final_packet_length = Data.Length - (total_packets * 256); 
+            // transmit all the 
+            for (int current_packet = 0; current_packet < total_packets; current_packet++)
+            {
+                Int32[] CopyData = null;
+                Array.Copy(Data, current_packet * 256, CopyData, 0, current_packet < total_packets ? 256 : final_packet_length);
+                TransmitTcpAvrStream(Cmd, Int32ToByte(CopyData), current_packet, total_packets);
+            }
         }
-        public MemoryStream ReceiveTcpAvrStream(ref string Cmd, out byte[] Data, out bool ValidCheckSum)
+        public void TransmitTcpAvrStream(string Cmd, string Data)
+        {
+            TransmitTcpAvrStream(Cmd, Encoding.ASCII.GetBytes(Data));
+        }
+        public void ReceiveTcpAvrStream(ref string Cmd, out byte[] Data, out bool ValidCheckSum)
         {
             TransmitReceive = (byte)'R';
 
@@ -139,15 +187,18 @@ namespace Ratbuddyssey
                     ValidCheckSum = true;
                 }
             }
-
-            return memoryStream;
         }
-        public MemoryStream ReceiveTcpAvrStream(ref string Cmd, out string Data, out bool ValidCheckSum)
+        public void ReceiveTcpAvrStream(ref string Cmd, out Int32[] Data, out bool ValidCheckSum)
         {
             byte[] DataByte;
-            MemoryStream memoryStream = ReceiveTcpAvrStream(ref Cmd, out DataByte, out ValidCheckSum);
+            ReceiveTcpAvrStream(ref Cmd, out DataByte, out ValidCheckSum);
+            Data = ByteToInt32(DataByte);
+        }
+        public void ReceiveTcpAvrStream(ref string Cmd, out string Data, out bool ValidCheckSum)
+        {
+            byte[] DataByte;
+            ReceiveTcpAvrStream(ref Cmd, out DataByte, out ValidCheckSum);
             Data = Encoding.ASCII.GetString(DataByte);
-            return memoryStream;
         }
         public TcpClientWithTimeout(string hostname, int port, int timeout_milliseconds)
         {

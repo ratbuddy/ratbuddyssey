@@ -8,10 +8,29 @@ using System.Net.Sockets;
 using System.Text;
 using System.Windows.Forms;
 using System.Security.Principal;
-using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace Ratbuddyssey
 {
+    [StructLayout(LayoutKind.Explicit, Size = 4)]
+    struct FloatInt32
+    {
+        [FieldOffset(0)] private float Float;
+        [FieldOffset(0)] private int Int32;
+
+        private static FloatInt32 inst = new FloatInt32();
+        public static int FloatToInt32(float value)
+        {
+            inst.Float = value;
+            return inst.Int32;
+        }
+        public static float Int32ToFloat(int value)
+        {
+            inst.Int32 = value;
+            return inst.Float;
+        }
+    }
     public enum ReceiveAll
     {
         RCVALL_OFF = 0,
@@ -25,7 +44,7 @@ namespace Ratbuddyssey
         UDP = 17,
         Unknown = -1
     };
-    class AudysseyTcpIpClass
+    class AudysseyTcpIp
     {
         #region Properties
         public char TransmitReceive { get; set; }
@@ -45,48 +64,47 @@ namespace Ratbuddyssey
     }
     class TcpSniffer
     {
-        private TcpIP parsedHostTcpIP = null;
-        private TcpIP parsedClientTcpIP = null;
-        private string HostTcpIpFileName = "HostTcpIP.json";
+        private AudioVideoReceiver _Avr;
+
+        private TcpIP TcpHost = null;
+        private TcpIP TcpClient = null;
+        private string TcpHostFileName = "TcpHost.json";
+
         private string AudysseySnifferFileName = "AudysseySniffer.json";
+
         private Socket mainSocket = null;
+
         private byte[] packetData = new byte[32768];
-        private AudysseyTcpIpClass AudysseyTcpIP = new AudysseyTcpIpClass();
-        private Int32[] Int32Data = null;
-        public string GetTcpIpHost()
+
+        private AudysseyTcpIp AudysseyTcpIP = new AudysseyTcpIp();
+
+        private byte[] ByteData = null;
+        public string GetTcpHost()
         {
-            return parsedHostTcpIP.Address + "::" + parsedHostTcpIP.Port.ToString();
+            return TcpHost.Address + "::" + TcpHost.Port.ToString();
         }
-        public string GetTcpIpClient()
+        public string GetTcpClient()
         {
-            return parsedClientTcpIP.Address + "::" + parsedClientTcpIP.Port.ToString();
+            return TcpClient.Address + "::" + TcpClient.Port.ToString();
         }
-        ~TcpSniffer()
+        public TcpSniffer(AudioVideoReceiver Avr)
         {
-            var FileInfoTest = new FileInfo(HostTcpIpFileName);
-            if ((!FileInfoTest.Exists) || FileInfoTest.Length == 0)
-            {
-                string TcpIPFile = JsonConvert.SerializeObject(parsedHostTcpIP, new JsonSerializerSettings { });
-                File.WriteAllText(HostTcpIpFileName, TcpIPFile);
-            }
-        }
-        public TcpSniffer(string clientName, int clientPort)
-        {
-            parsedHostTcpIP = new TcpIP();
-            parsedClientTcpIP = new TcpIP();
-            parsedClientTcpIP.Init(clientName, clientPort, 0);
+            _Avr = Avr;
+
+            TcpHost = new TcpIP("192.168.50.66", 0, 0);
+            TcpClient = new TcpIP(_Avr.TcpClient.Address, _Avr.TcpClient.Port, _Avr.TcpClient.Timeout);
 
             if (IsUserAdministrator())
             {
                 // read host ip address from file
-                HostTcpIpFileName = Environment.CurrentDirectory + "\\" + HostTcpIpFileName;
-                var FileInfoTest = new FileInfo(HostTcpIpFileName);
+                TcpHostFileName = Environment.CurrentDirectory + "\\" + TcpHostFileName;
+                var FileInfoTest = new FileInfo(TcpHostFileName);
                 if ((FileInfoTest.Exists) && FileInfoTest.Length > 0)
                 {
-                    String HostTcpIPFile = File.ReadAllText(HostTcpIpFileName);
+                    String HostTcpIPFile = File.ReadAllText(TcpHostFileName);
                     if (HostTcpIPFile.Length > 0)
                     {
-                        parsedHostTcpIP = JsonConvert.DeserializeObject<TcpIP>(HostTcpIPFile, new JsonSerializerSettings { });
+                        TcpHost = JsonConvert.DeserializeObject<TcpIP>(HostTcpIPFile, new JsonSerializerSettings { });
                     }
                 }
                 else
@@ -98,8 +116,11 @@ namespace Ratbuddyssey
                         foreach (IPAddress ip in HosyEntry.AddressList)
                         {
                             ipAddress = ip; // fortunately for me the last one is the right one :)
-                            parsedHostTcpIP.Address = ip.ToString();
+                            TcpHost.Address = ip.ToString();
                         }
+                        // write last host ip address to file
+                        string TcpIPFile = JsonConvert.SerializeObject(TcpHost, new JsonSerializerSettings { });
+                        File.WriteAllText(TcpHostFileName, TcpIPFile);
                     }
                 }
 
@@ -112,7 +133,7 @@ namespace Ratbuddyssey
                     mainSocket.ReceiveBufferSize = 32768;
                     
                     //Bind the socket to the selected IP address IPAddress.Parse("192.168.50.66")
-                    mainSocket.Bind(new IPEndPoint(IPAddress.Parse(parsedHostTcpIP.Address), parsedHostTcpIP.Port));
+                    mainSocket.Bind(new IPEndPoint(IPAddress.Parse(TcpHost.Address), TcpHost.Port));
 
                     //Set the socket  options
                     mainSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, true);
@@ -130,6 +151,11 @@ namespace Ratbuddyssey
                     MessageBox.Show(ex.Message, "TcpSniffer", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+        ~TcpSniffer()
+        {
+            ParseAvrFile();
+            //Trace.Close();
         }
         public bool IsUserAdministrator()
         {
@@ -179,8 +205,8 @@ namespace Ratbuddyssey
             //so we start by parsing the IP header and see what protocol data
             //is being carried by it and filter source and destination address.
             IPHeader ipHeader = new IPHeader(byteData, nReceived);
-            if (ipHeader.SourceAddress.ToString().Equals(parsedClientTcpIP.Address) || 
-                ipHeader.DestinationAddress.ToString().Equals(parsedClientTcpIP.Address))
+            if (ipHeader.SourceAddress.ToString().Equals(TcpClient.Address) || 
+                ipHeader.DestinationAddress.ToString().Equals(TcpClient.Address))
             {
                 //Now according to the protocol being carried by the IP datagram we parse 
                 //the data field of the datagram if it carries TCP protocol
@@ -188,8 +214,8 @@ namespace Ratbuddyssey
                 {
                     TCPHeader tcpHeader = new TCPHeader(ipHeader.Data, ipHeader.MessageLength);
                     //Now filter only on our Denon (or Marantz) receiver
-                    if (tcpHeader.SourcePort == parsedClientTcpIP.Port.ToString() ||
-                        tcpHeader.DestinationPort == parsedClientTcpIP.Port.ToString())
+                    if (tcpHeader.SourcePort == TcpClient.Port.ToString() ||
+                        tcpHeader.DestinationPort == TcpClient.Port.ToString())
                     {
                         if (tcpHeader.MessageLength > 1)
                         {
@@ -233,7 +259,8 @@ namespace Ratbuddyssey
                     else
                     {
                         //Read the Data
-                        AudysseyTcpIP.ByteData = binaryReader.ReadBytes(AudysseyTcpIP.DataLength);
+                        int ByteToRead = AudysseyTcpIP.DataLength;
+                        AudysseyTcpIP.ByteData = binaryReader.ReadBytes(ByteToRead);
                         //Data can be single packet transfer of multiple packet transfer
                         if (AudysseyTcpIP.TotalPackets == 0)
                         {
@@ -250,21 +277,24 @@ namespace Ratbuddyssey
                             //First packet: create array and fill with data
                             if (AudysseyTcpIP.CurrentPacket == 0)
                             {
-                                Int32Data = ConvertByteArrayToInt32(AudysseyTcpIP.ByteData);
+                                ByteData = AudysseyTcpIP.ByteData;
                             }
                             //Other packets: resize array and append data
                             else
                             {
-                                Int32 PreviousInt32DataLength = Int32Data.Length;
-                                Int32[] Int32NextData = ConvertByteArrayToInt32(AudysseyTcpIP.ByteData);
-                                Array.Resize(ref Int32Data, PreviousInt32DataLength + Int32NextData.Length);
-                                Array.Copy(Int32NextData, 0, Int32Data, PreviousInt32DataLength, Int32NextData.Length);
+                                //Store length of current array
+                                Int32 PreviousBytaDataLength = ByteData.Length;
+                                //Resize the current array to add the new array
+                                Array.Resize(ref ByteData, ByteData.Length + AudysseyTcpIP.ByteData.Length);
+                                //Append the new array to the current array
+                                Array.Copy(AudysseyTcpIP.ByteData, 0, ByteData, PreviousBytaDataLength, AudysseyTcpIP.ByteData.Length);
                             }
                             //Last packet: store to class
                             if (AudysseyTcpIP.CurrentPacket == AudysseyTcpIP.TotalPackets)
                             {
-                                //TotalPackets Data as int 
-                                AudysseyTcpIP.Int32Data = Int32Data;
+                                //TotalPackets Data as int?
+                                //Reverse endianness of byte data and store
+                                AudysseyTcpIP.Int32Data = ByteToInt32Array(ByteData); 
                             }
                         }
                     }
@@ -275,8 +305,13 @@ namespace Ratbuddyssey
                         {
                             NullValueHandling = NullValueHandling.Ignore
                         });
-                        Console.WriteLine(AvrString);
+                        //Dump to file for leaning
+                        //Trace.Flush();
+                        //Trace.WriteLine(AvrString);
                         File.AppendAllText(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName, AvrString + "\n");
+                        //Console.WriteLine(AvrString);
+                        //Parse to parent to display? modify? re-transmit?
+                        ParseAvrObject(AudysseyTcpIP.TransmitReceive, AudysseyTcpIP.Command, AudysseyTcpIP.CharData, AudysseyTcpIP.Int32Data);
                     }
                 }
              }
@@ -288,18 +323,77 @@ namespace Ratbuddyssey
                 MessageBox.Show(ex.Message, "ParseAVR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-        static Int32[] ConvertByteArrayToInt32(byte[] bytes)
+        public void ParseAvrFile()
         {
-            Int32[] Ints = null;
-            if (bytes.Length % 4 == 0)
+            if (File.Exists(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName))
             {
-                Ints = new Int32[bytes.Length / 4];
-                for (int i = 0; i < Ints.Length; i++)
+                string[] AvrStrings = File.ReadAllLines(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName);
+                foreach (string _AvrString in AvrStrings)
                 {
-                    Ints[i] = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt32(bytes, i * 4));
+                    AudysseyTcpIP = JsonConvert.DeserializeObject<AudysseyTcpIp>(_AvrString, new JsonSerializerSettings { });
+                    ParseAvrObject(AudysseyTcpIP.TransmitReceive, AudysseyTcpIP.Command, AudysseyTcpIP.CharData, AudysseyTcpIP.Int32Data);
+                }
+                string AvrString = JsonConvert.SerializeObject(_Avr, new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                });
+                File.WriteAllText(Environment.CurrentDirectory + "\\" + System.IO.Path.ChangeExtension(AudysseySnifferFileName, ".aud"), AvrString);
+            }
+        }
+        public void ParseAvrObject(char TransmitReceive, string CmdString, string AvrString, Int32[] AvrData)
+        {
+            switch (CmdString)
+            {
+                case "GET_AVRINF":
+                    if (TransmitReceive == 'R')
+                        _Avr.AVRINF = JsonConvert.DeserializeObject<AVRINF>(AvrString, new JsonSerializerSettings { });
+                    break;
+                case "GET_AVRSTS":
+                    if (TransmitReceive == 'R')
+                        _Avr.AVRSTS = JsonConvert.DeserializeObject<AVRSTS>(AvrString, new JsonSerializerSettings { });
+                    break;
+                case "ENTER_AUDY":
+                    break;
+                case "EXIT_AUDMD":
+                    break;
+                case "SET_SETDAT":
+                    if (TransmitReceive == 'T')
+                        _Avr.SETDAT = JsonConvert.DeserializeObject<SETDAT>(AvrString, new JsonSerializerSettings { });
+                    break;
+                case "SET_DISFIL":
+                    if (TransmitReceive == 'T')
+                        _Avr.DISFIL.Add(JsonConvert.DeserializeObject<DISFIL>(AvrString, new JsonSerializerSettings { }));
+                    break;
+                case "INIT_COEFS":
+                    break;
+                case "SET_COEFDT":
+                    if (TransmitReceive == 'T')
+                        if (AvrData != null)
+                            _Avr.COEFDT.Add(AvrData);
+                    break;
+            }
+        }
+        private Int32[] ByteToInt32Array(byte[] Byte)
+        {
+            Int32[] Int32s = null;
+            if (Byte.Length % 4 == 0)
+            {
+                Int32s = new Int32[Byte.Length / 4];
+                for (int i = 0; i < Byte.Length / 4; i++)
+                {
+                    Int32s[i] = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt32(Byte, i * 4));
                 }
             }
-            return Ints;
+            return Int32s;
+        }
+        private byte[] Int32ToByteArray(Int32[] Int32s)
+        {
+            byte[] Byte = new byte[4*Int32s.Length];
+            for (int i = 0; i < Int32s.Length; i++)
+            {
+                Array.Copy(BitConverter.GetBytes(BinaryPrimitives.ReverseEndianness(Int32s[i])), 0, Byte, i * 4, 4);
+            }
+            return Byte;
         }
         private byte CalculateChecksum(byte[] dataToCalculate)
         {

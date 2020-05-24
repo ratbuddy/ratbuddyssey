@@ -1,47 +1,50 @@
 ﻿using System;
 using System.IO;
-using System.ComponentModel;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
-using System.Linq;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Buffers.Binary;
+using System.ComponentModel;
 
 namespace Ratbuddyssey
 {
-    class TcpIP
-    {
-        #region Properties
-        public string Address { get; set; }
-        public int Port { get; set; }
-        public int Timeout { get; set; }
-        #endregion
-        public void Init(string address, int port, int timeout)
-        {
-            Address = address;
-            Port = port;
-            Timeout = timeout;
-        }
-    }
-    class CoefWaitTimeClass
-    {
+    class CoefWaitTime : INotifyPropertyChanged
+    {   // TODO: add local var and RaisePropertyChanged
         #region Properties
         public decimal Init { get; set; }
         public decimal Final { get; set; }
         #endregion
+        #region INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged = delegate { };
+        private void RaisePropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        #endregion
     }
-    class AvrInfo
-    {
-        //{"Ifver":"00.08","DType":"FixedA","CoefWaitTime":{"Init":3000,"Final":0},"ADC":2.11500,"SysDelay":261,"EQType":"MultEQXT32","SWLvlMatch":true,"LFC":true,"Auro":false,"Upgrade":"None"}
+    class AVRINF : INotifyPropertyChanged
+    {   // TODO: add local var and RaisePropertyChanged
+        private string _Ifver;
         #region Properties
         public string Ifver
-        { get; set; }
+        { 
+            get
+            {
+                return _Ifver;
+            }
+            set 
+            {
+                _Ifver = value;
+                RaisePropertyChanged("Ifver");
+            }
+        }
         public string DType
         { get; set; }
-        public CoefWaitTimeClass CoefWaitTime
+        public CoefWaitTime CoefWaitTime
         { get; set; }
         public decimal ADC
         { get; set; }
@@ -58,10 +61,21 @@ namespace Ratbuddyssey
         public string Upgrade
         { get; set; }
         #endregion
+        #region INotifyPropertyChanged members
+        public event PropertyChangedEventHandler PropertyChanged;
+        #endregion
+        #region methods
+        protected void RaisePropertyChanged(string propertyName)
+        {
+            if (this.PropertyChanged != null)
+            {
+                this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        #endregion
     }
-    class AvrStatus
-    {
-        //{"HPPlug":false,"Mic":false,"AmpAssign":"Zone2","AssignBin":"0102030200000000010002000200200001001000200010000100200002021002020200010203040600010000","ChSetup":[{"FL":"S"},{"C":"S"},{"FR":"S"},{"SLA":"S"},{"SRA":"S"},{"SWMIX1":"E"},{"SWMIX2":"N"}],"BTTXStatus":false}
+    class AVRSTS : INotifyPropertyChanged
+    {   // TODO: add local var and RaisePropertyChanged
         #region Properties
         public bool HPPlug
         { get; set; }
@@ -71,431 +85,366 @@ namespace Ratbuddyssey
         { get; set; }
         public string AssignBin
         { get; set; }
-        public List<Dictionary<string,string>> ChSetup
+        public List<Dictionary<string, string>> ChSetup
         { get; set; }
         public bool BTTXStatus
         { get; set; }
         public bool SpPreset
         { get; set; }
         #endregion
-    }
-    class AvrSetDataAmp
-    {
-        //{"AmpAssign":"FrontB","AssignBin":"0A02030200000000010002000200200001001000200010000100200002021002020200010203040600010001","SpConfig":[{"FL":"S"},{"SLA":"S"},{"FR":"S"},{"SW1":"S"},{"SRA":"S"},{"C":"S"}],"Distance":[{"FL":310},{"SLA":220},{"FR":310},{"SW1":380},{"SRA":220},{"C":310}],"ChLevel":[{"FL":-25},{"SLA":-25},{"FR":-25},{"SW1":0},{"SRA":-25},{"C":-65}],"Crossover":[{"FL":12},{"SLA":12},{"FR":12},{"SW1":"F"},{"SRA":12},{"C":12}],"AudyFinFlg":"NotFin","AudyDynEq":false,"AudyEqRef":0}
-        #region Properties
-        public string AmpAssign
-        { get; set; } = "FrontB";
-        public string AssignBin
-        { get; set; } = "0A02030200000000010002000200200001001000200010000100200002021002020200010203040600010001";
-        public List<Dictionary<string, string>> SpConfig
-        { get; set; } // = [{"FL":"S"},{"SLA":"S"},{"FR":"S"},{"SW1":"S"},{"SRA":"S"},{"C":"S"}]
-        public List<Dictionary<string, int>> Distance // unit: .01 m or cm
-        { get; set; } //= [{"FL":310},{"SLA":220},{"FR":310},{"SW1":380},{"SRA":220},{"C":310}]
-        public List<Dictionary<string, int>> ChLevel // unit: 0.1 dB
-        { get; set; } //= [{"FL":-25},{"SLA":-25},{"FR":-25},{"SW1":0},{"SRA":-25},{"C":-65}]
-        public List<Dictionary<string, object>> Crossover // unit: 10 Hz
-        { get; set; } //= [{"FL":12},{"SLA":12},{"FR":12},{"SW1":"F"},{"SRA":12},{"C":12}]
-        public string AudyFinFlg
-        { get; set; } = "NotFin";
-        public bool AudyDynEq
-        { get; set; } = false;
-        public int AudyEqRef
-        { get; set; } = 0;
-        #endregion
-        public void AvrData()
+        #region INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged = delegate { };
+        private void RaisePropertyChanged(string propertyName)
         {
-            SpConfig = new List<Dictionary<string, string>>() { };
-            SpConfig.Add(new Dictionary<string, string>() { { "FL", "S" } });
-            SpConfig.Add(new Dictionary<string, string>() { { "FL", "S" } });
-            SpConfig.Add(new Dictionary<string, string>() { { "SLA", "S" } });
-            SpConfig.Add(new Dictionary<string, string>() { { "FR", "S" } });
-            SpConfig.Add(new Dictionary<string, string>() { { "SW1", "S" } });
-            SpConfig.Add(new Dictionary<string, string>() { { "SRA", "S" } });
-            SpConfig.Add(new Dictionary<string, string>() { { "C", "S" } });
-
-            Distance = new List<Dictionary<string, int>>() { };
-            Distance.Add(new Dictionary<string, int>() { { "FL", 310 } });
-            Distance.Add(new Dictionary<string, int>() { { "SLA", 220 } });
-            Distance.Add(new Dictionary<string, int>() { { "FR" , 310 } });
-            Distance.Add(new Dictionary<string, int>() { { "SW1", 380 } });
-            Distance.Add(new Dictionary<string, int>() { { "SRA", 220 } });
-            Distance.Add(new Dictionary<string, int>() { { "C", 310 } });
-            
-            ChLevel = new List<Dictionary<string, int>>() { };
-            Distance.Add(new Dictionary<string, int>() { { "FL", -25 } });
-            Distance.Add(new Dictionary<string, int>() { { "SLA", -25 } });
-            Distance.Add(new Dictionary<string, int>() { { "FR", -25 } });
-            Distance.Add(new Dictionary<string, int>() { { "SW1", 0 } });
-            Distance.Add(new Dictionary<string, int>() { { "SRA", -25 } });
-            Distance.Add(new Dictionary<string, int>() { { "C", -65 } });
-            
-            Crossover = new List<Dictionary<string, object>>() { };
-            Crossover.Add(new Dictionary<string, object>() { { "FL", 12 } });
-            Crossover.Add(new Dictionary<string, object>() { { "SLA", 12 } });
-            Crossover.Add(new Dictionary<string, object>() { { "FR", 12 } });
-            Crossover.Add(new Dictionary<string, object>() { { "SW1", "F" } });
-            Crossover.Add(new Dictionary<string, object>() { { "SRA", 12 } });
-            Crossover.Add(new Dictionary<string, object>() { { "C", 12 } });
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
-    }
-    class AvrSetDataAud
-    {
-        //{"AudyDynVol":false,"AudyDynSet":"M","AudyMultEq":true,"AudyEqSet":"Audy","AudyLfc":false,"AudyLfcLev":4}
-        #region Properties
-        public bool AudyDynVol
-        { get; set; } = false;
-        public string AudyDynSet
-        { get; set; } = "M";
-        public bool AudyMultEq
-        { get; set; } = true;
-        public string AudyEqSet
-        { get; set; } = "Audy";
-        public bool AudyLfc
-        { get; set; } = false;
-        public int AudyLfcLev
-        { get; set; } = 4;
         #endregion
     }
-    class AvrDisFil
+    interface IAmp
     {
-        //SET_DISFIL{"EqType":"Audy","ChData":"FL","FilData":[0,0,0,0,0,0,1,0,-10,-6,-10,0,-7,-8,-1,2,0,1,-2,0,-6,-2,-1,-1,-3,-2,-3,-1,2,0,0,0,0,0,0,0,-2,1,1,2,1,2,1,1,3,1,0,0,0,2,2,3,2,2,2,2,0,1,4,8,7],"DispData":[-6,-1,-3,-1,0,2,1,3,5]
-        //SET_DISFIL{"EqType":"Audy","ChData":"C","FilData":[0,0,0,0,0,0,0,0,-2,0,-2,1,0,-1,4,2,0,-7,-3,-8,-10,-4,-2,-2,-5,-3,2,0,-4,1,0,0,0,1,0,2,3,6,4,3,1,3,4,3,3,1,2,1,0,2,2,1,0,0,0,-1,-1,2,1,2,1],"DispData":[-1,-2,-5,-1,2,4,2,1,2]}
-        //SET_DISFIL{"EqType":"Audy","ChData":"FR","FilData":[0,0,0,-1,-1,-3,2,-1,4,3,-7,0,8,-1,0,0,0,0,-3,-2,-7,-1,0,0,-3,-5,-2,0,2,2,0,0,0,0,1,0,-1,1,1,2,0,1,1,1,3,0,-2,-2,-2,0,1,1,-1,-1,-1,-1,-4,-3,0,1,-2],"DispData":[1,-1,-3,0,0,1,-1,-1,-2]}
-        //SET_DISFIL{"EqType":"Audy","ChData":"SLA","FilData":[0,0,0,0,1,1,-1,-7,3,-4,-9,-3,-6,-3,1,0,2,2,0,-5,-2,0,-1,-3,-3,-6,-3,-2,1,2,1,0,1,1,0,0,2,0,2,1,1,1,1,2,5,0,-3,-4,-4,-1,0,0,-1,-1,-2,-3,-4,-3,-1,1,0],"DispData":[-4,0,-3,-1,1,2,-1,-1,-2]}
-        //SET_DISFIL{"EqType":"Audy","ChData":"SRA","FilData":[0,0,0,1,1,0,-4,1,0,-1,-11,3,5,0,-1,0,0,-1,0,-1,2,1,0,-3,-3,-5,-5,-2,0,1,0,0,0,1,0,0,1,1,2,1,2,2,2,3,3,-1,-4,-3,-3,-1,0,0,-1,0,-2,-2,-4,-3,-2,0,0],"DispData":[0,-1,-2,-2,0,2,-1,-1,-2]}
-        //SET_DISFIL{"EqType":"Audy","ChData":"SW1","FilData":[-1,0,3,4,6,7,8,7,-4,0,-4,4,0,1,1,8,8,8,7,5,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"DispData":[1,6,1,0,0,0,0,0,0]}
-        //SET_DISFIL{"EqType":"Flat","ChData":"FL","FilData":[0,0,0,0,0,0,1,0,-10,-6,-10,0,-7,-8,-1,2,0,1,-2,0,-6,-2,-1,-1,-3,-2,-3,-1,2,0,0,0,0,0,0,0,-2,1,1,2,1,2,1,1,3,1,0,0,0,3,4,5,5,5,5,6,4,6,8,9,9],"DispData":[-6,-1,-3,-1,0,2,1,5,8]}
-        //SET_DISFIL{"EqType":"Flat","ChData":"C","FilData":[0,0,0,0,0,0,0,0,-2,0,-2,1,0,-1,4,2,0,-7,-3,-8,-10,-4,-2,-2,-5,-3,2,0,-4,1,0,0,0,1,0,2,3,6,4,3,1,3,4,3,3,1,2,2,1,3,3,3,3,2,3,2,3,7,6,7,7],"DispData":[-1,-2,-5,-1,2,4,2,3,6]}
-        //SET_DISFIL{"EqType":"Flat","ChData":"FR","FilData":[0,0,0,-1,-1,-3,2,-1,4,3,-7,0,8,-1,0,0,0,0,-3,-2,-7,-1,0,0,-3,-5,-2,0,2,2,0,0,0,0,1,0,-1,1,1,2,0,1,1,1,3,0,-2,-2,-1,0,2,3,1,1,2,1,0,1,4,7,3],"DispData":[1,-1,-3,0,0,1,0,2,3]}
-        //SET_DISFIL{"EqType":"Flat","ChData":"SLA","FilData":[0,0,0,0,1,1,-1,-7,3,-4,-9,-3,-6,-3,1,0,2,2,0,-5,-2,0,-1,-3,-3,-6,-3,-2,1,2,1,0,1,1,0,0,2,0,2,1,1,1,1,2,5,0,-3,-4,-3,0,1,2,0,2,0,0,0,1,3,7,5],"DispData":[-4,0,-3,-1,1,2,0,1,3]}
-        //SET_DISFIL{"EqType":"Flat","ChData":"SRA","FilData":[0,0,0,1,1,0,-4,1,0,-1,-11,3,5,0,-1,0,0,-1,0,-1,2,1,0,-3,-3,-5,-5,-2,0,1,0,0,0,1,0,0,1,1,2,1,2,2,2,3,3,-1,-3,-3,-3,0,0,1,1,2,1,0,0,1,2,6,5],"DispData":[0,-1,-2,-2,0,2,-1,1,3]}
-        //SET_DISFIL{"EqType":"Flat","ChData":"SW1","FilData":[-1,0,3,4,6,7,8,7,-4,0,-4,4,0,1,1,8,8,9,9,9,8,8,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9],"DispData":[1,7,9,9,9,9,9,9,9]}
+        #region Properties
+        string AmpAssign { get; set; }
+        string AssignBin { get; set; }
+        bool AudyDynEq { get; set; }
+        int AudyEqRef { get; set; }
+        string AudyFinFlg { get; set; }
+        List<Dictionary<string, int>> ChLevel { get; set; }
+        List<Dictionary<string, object>> Crossover { get; set; }
+        List<Dictionary<string, int>> Distance { get; set; }
+        List<Dictionary<string, string>> SpConfig { get; set; }
+        #endregion
+    }
+    interface IAudy
+    {
+        #region Properties
+        bool AudyDynVol { get; set; }
+        string AudyDynSet { get; set; }
+        bool AudyMultEq { get; set; }
+        string AudyEqSet { get; set; }
+        bool AudyLfc { get; set; }
+        int AudyLfcLev { get; set; }
+        #endregion
+    }
+    class SETDAT : IAmp, IAudy, INotifyPropertyChanged
+    {   // TODO: add RaisePropertyChanged
+        // IAmp
+        static string _AmpAssign;
+        static string _AssignBin;
+        static List<Dictionary<string, string>> _SpConfig;
+        static List<Dictionary<string, int>> _Distance;
+        static List<Dictionary<string, int>> _ChLevel;
+        static List<Dictionary<string, object>> _Crossover;
+        static string _AudyFinFlg;
+        static bool _AudyDynEq;
+        static int _AudyEqRef;
+        // IAudy
+        static bool _AudyDynVol;
+        static string _AudyDynSet;
+        static string _AudyEqSet;
+        static bool _AudyLfc;
+        static int _AudyLfcLev;
+        static bool _AudyMultEq;
+        #region Properties
+        // IAmp
+        public string AmpAssign
+        {
+            get
+            {
+                return _AmpAssign;
+            }
+            set
+            {
+                if (value != null) _AmpAssign = value;
+            }
+        }
+        public string AssignBin
+        {
+            get
+            {
+                return _AssignBin;
+            }
+            set
+            {
+                _AssignBin = value;
+            }
+        }
+        public List<Dictionary<string, string>> SpConfig
+        {
+            get
+            {
+                return _SpConfig;
+            }
+            set
+            {
+                _SpConfig = value;
+            }
+        }
+        public List<Dictionary<string, int>> Distance
+        {
+            get
+            {
+                return _Distance;
+            }
+            set
+            {
+                _Distance = value;
+            }
+        }
+        public List<Dictionary<string, int>> ChLevel
+        {
+            get
+            {
+                return _ChLevel;
+            }
+            set
+            {
+                _ChLevel = value;
+            }
+        }
+        public List<Dictionary<string, object>> Crossover
+        {
+            get
+            {
+                return _Crossover;
+            }
+            set
+            {
+                _Crossover = value;
+            }
+        }
+        public string AudyFinFlg
+        {
+            get
+            {
+                return _AudyFinFlg;
+            }
+            set
+            {
+                _AudyFinFlg = value;
+            }
+        }
+        public bool AudyDynEq
+        {
+            get
+            {
+                return _AudyDynEq;
+            }
+            set
+            {
+                _AudyDynEq = value;
+            }
+        }
+        public int AudyEqRef
+        {
+            get
+            {
+                return _AudyEqRef;
+            }
+            set
+            {
+                _AudyEqRef = value;
+            }
+        }
+        // IAudy
+        public bool AudyDynVol
+        {
+            get
+            {
+                return _AudyDynVol;
+            }
+            set
+            {
+                _AudyDynVol = value;
+            }
+        }
+        public string AudyDynSet
+        {
+            get
+            {
+                return _AudyDynSet;
+            }
+            set
+            {
+                _AudyDynSet = value;
+            }
+        }
+        public string AudyEqSet
+        {
+            get
+            {
+                return _AudyEqSet;
+            }
+            set
+            {
+                _AudyEqSet = value;
+            }
+        }
+        public bool AudyLfc
+        {
+            get
+            {
+                return _AudyLfc;
+            }
+            set
+            {
+                _AudyLfc = value;
+            }
+        }
+        public int AudyLfcLev
+        {
+            get
+            {
+                return _AudyLfcLev;
+            }
+            set
+            {
+                _AudyLfcLev = value;
+            }
+        }
+        public bool AudyMultEq
+        {
+            get
+            {
+                return _AudyMultEq;
+            }
+            set
+            {
+                _AudyMultEq = value;
+            }
+        }
+        #endregion
+        #region INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged = delegate { };
+        private void RaisePropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        #endregion
+    }
+    class DISFIL : INotifyPropertyChanged
+    {   // TODO: add local var and RaisePropertyChanged
         #region Properties
         public string EqType
-        { get; set; } = "Audy";
+        { get; set; }
         public string ChData
-        { get; set; } = "FL";
-        public List<int> FilData
-        { get; set; } = new List<int>() { 0, 0, 0, 0, 0, 0, 1, 0, -10, -6, -10, 0, -7, -8, -1, 2, 0, 1, -2, 0, -6, -2, -1, -1, -3, -2, -3, -1, 2, 0, 0, 0, 0, 0, 0, 0, -2, 1, 1, 2, 1, 2, 1, 1, 3, 1, 0, 0, 0, 2, 2, 3, 2, 2, 2, 2, 0, 1, 4, 8, 7 };
-        public List<int> DispData
-        { get; set; } = new List<int>() { -6, -1, -3, -1, 0, 2, 1, 3, 5 };
-        #endregion
-    }
-    class AvrCoefData
-    {
-        #region Properties
-        public List<Int32> FilData
         { get; set; }
-        public List<Int32> DispData
+        public sbyte[] FilData
+        { get; set; }
+        public sbyte[] DispData
         { get; set; }
         #endregion
-        public AvrCoefData()
+        #region INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged = delegate { };
+        private void RaisePropertyChanged(string propertyName)
         {
-            Int32[] Array = { 0 };
-            FilData = new List<Int32>(Array);
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
+        #endregion
     }
-    class Avr : INotifyPropertyChanged
+    class AudioVideoReceiver : INotifyPropertyChanged
     {
+        private AVRINF _AVRINF = null;
+        private AVRSTS _AVRSTS = null;
+        private SETDAT _SETDAT = null;
+        private List<DISFIL> _DISFIL = null;
+        private List<Int32[]> _COEFDT = null;
+        #region Properties
+        public AVRINF AVRINF
+        {
+            get
+            {
+                return _AVRINF;
+            }
+            set
+            {
+                _AVRINF = value;
+                RaisePropertyChanged("AVRINF");
+            }
+        }
+        public AVRSTS AVRSTS
+        {
+            get
+            {
+                return _AVRSTS;
+            }
+            set
+            {
+                _AVRSTS = value;
+                RaisePropertyChanged("AVRSTS");
+            }
+        }
+        public SETDAT SETDAT
+        {
+            get
+            {
+                return _SETDAT;
+            }
+            set
+            {
+                _SETDAT = value;
+                RaisePropertyChanged("SETDAT");
+            }
+        }
+        public List<DISFIL> DISFIL
+        {
+            get
+            {
+                return _DISFIL;
+            }
+            set
+            {
+                _DISFIL = value;
+                RaisePropertyChanged("DISFIL");
+            }
+        }
+        public List<Int32[]> COEFDT
+        {
+            get
+            {
+                return _COEFDT;
+            }
+            set
+            {
+                _COEFDT = value;
+                RaisePropertyChanged("COEFDT");
+            }
+        }
+        #endregion
+
         private const string NACK = "{\"Comm\":\"NACK\"}";
         private const string ACK = "{\"Comm\":\"ACK\"}";
         private const string INPROGRESS = "{\"Comm\":\"INPROGRESS\"}";
+        private const string AUDYFINFLG = "{\"AudyFinFlg\":\"Fin\"}";
+        private string TcpClientFileName = "TcpClient.json";
 
-        private ObservableCollection<string> _enMultEQTypeList = new ObservableCollection<string>()
-        { "MultEQ", "MultEQXT", "MultEQXT32" };
-
-        private ObservableCollection<string> _enAmpAssignTypeList = new ObservableCollection<string>()
-        { "FrontA", "FrontB", "Type3", "Type4",
-          "Type5", "Type6", "Type7", "Type8",
-          "Type9", "Type10", "Type11", "Type12",
-          "Type13", "Type14", "Type15", "Type16",
-          "Type17", "Type18", "Type19", "Type20"};
-
-        private string ClientTcpIPFileName = "ClientTcpIP.json";
+        [NonSerialized]
+        public TcpIP TcpClient = null;
 
         private TcpClientWithTimeout TcpAudysseyStream = null;
 
-        private TcpIP parsedClientTcpIP = null;
-        private AvrInfo parsedAvrInfo = null;
-        private AvrStatus parsedAvrStatus = null;
-        private AvrSetDataAmp parsedAvrSetDataAmp = null;
-        private AvrSetDataAud parsedAvrSetDataAud = null;
-        private List<AvrDisFil> parsedAvrDisFil = null;
-        private List<AvrCoefData> parsedAvrCoefData = null;
-
-        TcpSniffer sniffer;
-
-        private string CmdString;
-        private string AvrString;
+        private TcpSniffer sniffer;
 
         private bool CheckSumChecked = false;
-
-        private List<DetectedChannel> _detectedChannels = new List<DetectedChannel>();
-
-        #region Properties
-        // same
-        public string InterfaceVersion
+        public string GetTcpClient()
         {
-            get
-            {
-                return parsedAvrInfo.Ifver;
-            }
-            set
-            {
-                parsedAvrInfo.Ifver = value;
-            }
+            return TcpClient.Address + "::" + TcpClient.Port.ToString();
         }
-        //new
-        public string DType
+        public string GetTcpHost()
         {
-            get
-            {
-                return parsedAvrInfo.DType;
-            }
-            set
-            {
-                parsedAvrInfo.DType = value;
-            }
-        }
-        // new
-        public CoefWaitTimeClass coefWaitTime
-        {
-            get
-            {
-                return parsedAvrInfo.CoefWaitTime;
-            }
-            set
-            {
-                parsedAvrInfo.CoefWaitTime = value;
-            }
-        }
-        // different: name
-        public decimal AdcLineup
-        {
-            get
-            {
-                return parsedAvrInfo.ADC;
-            }
-            set
-            {
-                parsedAvrInfo.ADC = value;
-            }
-        }
-        // same
-        public int SystemDelay
-        {
-            get
-            {
-                return parsedAvrInfo.SysDelay;
-            }
-            set
-            {
-                parsedAvrInfo.SysDelay = value;
-            }
-        }
-        // local var for backwards compatibility with enum in file
-        public ObservableCollection<string> EnMultEQTypeList
-        {
-            get
-            {
-                return _enMultEQTypeList;
-            }
-            set
-            {
-                _enMultEQTypeList = value;
-            }
-        }
-        // different: enum in file but string in eth
-        public int EnMultEQType
-        {
-            get
-            {
-                return _enMultEQTypeList.IndexOf(parsedAvrInfo.EQType);
-            }
-            set
-            {
-                parsedAvrInfo.EQType = _enMultEQTypeList.ElementAt(value);
-            }
-        }
-        // different (not sure if those are the same keys)
-        public bool LfcSupport
-        {
-            get
-            {
-                return parsedAvrInfo.SWLvMatch;
-            }
-            set
-            {
-                parsedAvrInfo.SWLvMatch = value;
-            }
-        }
-        // same (but capitals)
-        public bool Lfc
-        {
-            get
-            {
-                return parsedAvrInfo.LFC;
-            }
-            set
-            {
-                parsedAvrInfo.LFC = value;
-            }
-        }
-        // same
-        public bool Auro
-        {
-            get
-            {
-                return parsedAvrInfo.Auro;
-            }
-            set
-            {
-                parsedAvrInfo.Auro = value;
-            }
-        }
-        // different: name
-        public string UpgradeInfo
-        {
-            get
-            {
-                return parsedAvrInfo.Upgrade;
-            }
-            set
-            {
-                parsedAvrInfo.Upgrade = value;
-            }
-        }
-        // new
-        public bool HpPlug
-        {
-            get
-            {
-                return parsedAvrStatus.HPPlug;
-            }
-            set
-            {
-                parsedAvrStatus.HPPlug = value;
-            }
-        }
-        //  new
-        public bool Mic
-        {
-            get
-            {
-                return parsedAvrStatus.Mic;
-            }
-            set
-            {
-                parsedAvrStatus.Mic = value;
-            }
-        }
-        // local var for backwards compatibility with enum in file
-        public ObservableCollection<string> EnAmpAssignTypeList
-        {
-            get
-            {
-                return _enAmpAssignTypeList;
-            }
-            set
-            {
-                _enAmpAssignTypeList = value;
-            }
-        }
-        // different: type in file but string in eth
-        public int EnAmpAssignType
-        {
-            get
-            {
-                return _enAmpAssignTypeList.IndexOf(parsedAvrStatus.AmpAssign);
-            }
-            set
-            {
-                parsedAvrStatus.AmpAssign = _enAmpAssignTypeList.ElementAt(value);
-            }
-        }
-        // different: name
-        public string AmpAssignInfo
-        {
-            get
-            {
-                return parsedAvrStatus.AssignBin;
-            }
-            set
-            {
-                parsedAvrStatus.AssignBin = value;
-            }
-        }
-        // different: !!!
-        public List<DetectedChannel> DetectedChannels
-        {
-            get
-            {
-                foreach (var chsetup in parsedAvrStatus.ChSetup)
-                {
-                    foreach (var ch in chsetup)
-                    {
-                        if (_detectedChannels != null)
-                        {
-                            foreach (var channel in _detectedChannels)
-                            {
-                                if (channel.CommandId == ch.Key.ToUpper())
-                                    break;
-                            }
-                            _detectedChannels.Add(new DetectedChannel());
-                            _detectedChannels.Last().CommandId = ch.Key;
-                            _detectedChannels.Last().CustomSpeakerType = ch.Value;
-                        }
-                        else
-                        {
-                            _detectedChannels.Add(new DetectedChannel());
-                            _detectedChannels.Last().CommandId = ch.Key;
-                            _detectedChannels.Last().CustomSpeakerType = ch.Value;
-                        }
-                    }
-                }
-                return _detectedChannels;
-            }
-            set
-            {
-                _detectedChannels = value;
-            }
-        }
-        // new
-        public bool BTTXStatus
-        {
-            get
-            {
-                return parsedAvrStatus.BTTXStatus;
-            }
-            set
-            {
-                parsedAvrStatus.BTTXStatus = value;
-            }
-        }
-        // new
-        public bool SpPreset
-        {
-            get
-            {
-                return parsedAvrStatus.SpPreset;
-            }
-            set
-            {
-                parsedAvrStatus.SpPreset = value;
-            }
-        }
-        #endregion
-        public string GetTcpIpClient()
-        {
-            return parsedClientTcpIP.Address + "::"+ parsedClientTcpIP.Port.ToString();
-        }
-        public string GetTcpIpHost()
-        {
-            return (sniffer != null ? sniffer.GetTcpIpHost() : "");
+            return (sniffer != null ? sniffer.GetTcpHost() : "");
         }
         public void AttachSniffer()
         {
-            sniffer = new TcpSniffer(parsedClientTcpIP.Address, parsedClientTcpIP.Port);
+            if (sniffer == null) sniffer = new TcpSniffer(this);
         }
         public void DetachSniffer()
         {
@@ -504,68 +453,104 @@ namespace Ratbuddyssey
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
-        public Avr(bool bAttachSniffer = false)
+        ~AudioVideoReceiver()
         {
-            parsedClientTcpIP = new TcpIP();
-            parsedAvrInfo = new AvrInfo();
-            parsedAvrStatus = new AvrStatus();
-            parsedAvrSetDataAmp = new AvrSetDataAmp();
-            parsedAvrSetDataAud = new AvrSetDataAud();
-            parsedAvrDisFil = new List<AvrDisFil>();
-            parsedAvrCoefData = new List<AvrCoefData>();
+            var FileInfoTest = new FileInfo(TcpClientFileName);
+            if ((!FileInfoTest.Exists) || FileInfoTest.Length == 0)
+            {
+                string TcpFile = JsonConvert.SerializeObject(TcpClient, new JsonSerializerSettings
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver()
+                });
+                File.WriteAllText(TcpClientFileName, TcpFile);
+            }
+        }
+        public AudioVideoReceiver(AvrAudysseyAdapter AvrAudysseyAdapter, bool bAttachSniffer)
+        {
+            this.PropertyChanged += AvrAudysseyAdapter._PropertyChanged; // bind parent to nofify property changed (it's a bitch)
 
-            ClientTcpIPFileName = Environment.CurrentDirectory + "\\" + ClientTcpIPFileName;
-            var FileInfoTest = new FileInfo(ClientTcpIPFileName);
+            _AVRINF = new AVRINF();
+            _AVRSTS = new AVRSTS();
+            _SETDAT = new SETDAT();
+            _DISFIL = new List<DISFIL>();
+            _COEFDT = new List<Int32[]>();
+
+            TcpClient = new TcpIP("192.168.50.82", 1256, 5000);
+
+            TcpClientFileName = Environment.CurrentDirectory + "\\" + TcpClientFileName;
+            var FileInfoTest = new FileInfo(TcpClientFileName);
             if ((FileInfoTest.Exists) && FileInfoTest.Length > 0)
             {
-                String ClientTcpIPFile = File.ReadAllText(ClientTcpIPFileName);
+                String ClientTcpIPFile = File.ReadAllText(TcpClientFileName);
                 if (ClientTcpIPFile.Length > 0)
                 {
-                    parsedClientTcpIP = JsonConvert.DeserializeObject<TcpIP>(ClientTcpIPFile,
+                    TcpClient = JsonConvert.DeserializeObject<TcpIP>(ClientTcpIPFile,
                         new JsonSerializerSettings { });
                 }
             }
-            else
+
+            TcpAudysseyStream = new TcpClientWithTimeout(TcpClient.Address, TcpClient.Port, TcpClient.Timeout);
+
+            if (bAttachSniffer)
             {
-                parsedClientTcpIP.Init("192.168.50.82", 1256, 5000);
+                AttachSniffer();
+            }
+        }
+        public AudioVideoReceiver(bool bAttachSniffer)
+        {
+            TcpClient = new TcpIP("192.168.50.82", 1256, 5000);
+
+            TcpClientFileName = Environment.CurrentDirectory + "\\" + TcpClientFileName;
+            var FileInfoTest = new FileInfo(TcpClientFileName);
+            if ((FileInfoTest.Exists) && FileInfoTest.Length > 0)
+            {
+                String ClientTcpIPFile = File.ReadAllText(TcpClientFileName);
+                if (ClientTcpIPFile.Length > 0)
+                {
+                    TcpClient = JsonConvert.DeserializeObject<TcpIP>(ClientTcpIPFile,
+                        new JsonSerializerSettings { });
+                }
             }
 
-            if(bAttachSniffer)
+            TcpAudysseyStream = new TcpClientWithTimeout(TcpClient.Address, TcpClient.Port, TcpClient.Timeout);
+
+            if (bAttachSniffer)
             {
                 AttachSniffer();
             }
 
-            TcpAudysseyStream = new TcpClientWithTimeout(parsedClientTcpIP.Address, parsedClientTcpIP.Port, parsedClientTcpIP.Timeout);
-
+        }
+        public void AudysseyToAvr()
+        {
             if (GetAvrInfo())
             {
-                string AvrInfoFile = JsonConvert.SerializeObject(parsedAvrInfo, new JsonSerializerSettings { });
+                string AvrInfoFile = JsonConvert.SerializeObject(AVRINF, new JsonSerializerSettings { });
                 File.WriteAllText(Environment.CurrentDirectory + "\\AvrInfo.json", AvrInfoFile);
             }
 
             if (GetAvrStatus())
             {
-                string AvrStatusFile = JsonConvert.SerializeObject(parsedAvrStatus, new JsonSerializerSettings{ });
+                string AvrStatusFile = JsonConvert.SerializeObject(AVRSTS, new JsonSerializerSettings { });
                 File.WriteAllText(Environment.CurrentDirectory + "\\AvrStatus.json", AvrStatusFile);
             }
 
             //EnterAudysseyMode();
 
-            //if (SetAvrSetDataAmp())
+            //if (SetAvrSetAmp())
             {
-                string AvrSetDataAmpFile = JsonConvert.SerializeObject(parsedAvrSetDataAmp, new JsonSerializerSettings { });
+                string AvrSetDataAmpFile = JsonConvert.SerializeObject(SETDAT, new JsonSerializerSettings { });
                 File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAmp.json", AvrSetDataAmpFile);
             }
 
-            //if (SetAvrSetDataAud())
+            //if (SetAvrSetAudy())
             {
-                string AvrSetDataAudFile = JsonConvert.SerializeObject(parsedAvrSetDataAud, new JsonSerializerSettings { });
+                string AvrSetDataAudFile = JsonConvert.SerializeObject(SETDAT, new JsonSerializerSettings { });
                 File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAud.json", AvrSetDataAudFile);
             }
 
             //if (SetAvrDisFil())
             {
-                string AvrDisFilFile = JsonConvert.SerializeObject(parsedAvrDisFil, new JsonSerializerSettings { });
+                string AvrDisFilFile = JsonConvert.SerializeObject(DISFIL, new JsonSerializerSettings { });
                 File.WriteAllText(Environment.CurrentDirectory + "\\AvrDisFil.json", AvrDisFilFile);
             }
 
@@ -573,19 +558,9 @@ namespace Ratbuddyssey
 
             //if (SetAudysseyCoefData())
 
+            //if (SetAudysseyFinishedFlag())
+
             //ExitAudysseyMode();
-        }
-        ~Avr()
-        {
-            var FileInfoTest = new FileInfo(ClientTcpIPFileName);
-            if ((!FileInfoTest.Exists) || FileInfoTest.Length == 0)
-            {
-                string TcpFile = JsonConvert.SerializeObject(parsedClientTcpIP, new JsonSerializerSettings
-                {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver()
-                });
-                File.WriteAllText(ClientTcpIPFileName, TcpFile);
-            }
         }
         private string MakeQuery(string Serialized)
         {
@@ -595,10 +570,10 @@ namespace Ratbuddyssey
         }
         public bool GetAvrInfo()
         {
-            CmdString = "GET_AVRINF";
+            string CmdString = "GET_AVRINF";
             Console.Write(CmdString);
             // build JSON and replace values with "?"
-            AvrString = MakeQuery(JsonConvert.SerializeObject(parsedAvrInfo, new JsonSerializerSettings { }));
+            string AvrString = MakeQuery(JsonConvert.SerializeObject(AVRINF, new JsonSerializerSettings { }));
             Console.WriteLine(AvrString);
             // transmit request
             TcpAudysseyStream.TransmitTcpAvrStream(CmdString, AvrString);
@@ -607,16 +582,16 @@ namespace Ratbuddyssey
             Console.Write(CmdString);
             Console.WriteLine(AvrString);
             // parse JSON to class member variables
-            parsedAvrInfo = JsonConvert.DeserializeObject<AvrInfo>(AvrString,
+            AVRINF = JsonConvert.DeserializeObject<AVRINF>(AvrString,
                 new JsonSerializerSettings { FloatParseHandling = FloatParseHandling.Decimal });
             return (CmdString.Equals("GET_AVRINF") && !AvrString.Equals(NACK) && CheckSumChecked);
         }
         public bool GetAvrStatus()
         {
-            CmdString = "GET_AVRSTS";
+            string CmdString = "GET_AVRSTS";
             Console.Write(CmdString);
             // build JSON and replace values with "?"
-            AvrString = MakeQuery(JsonConvert.SerializeObject(parsedAvrStatus, new JsonSerializerSettings { }));
+            string AvrString = MakeQuery(JsonConvert.SerializeObject(AVRSTS, new JsonSerializerSettings { }));
             Console.WriteLine(AvrString);
             // transmit request
             TcpAudysseyStream.TransmitTcpAvrStream(CmdString, AvrString);
@@ -625,17 +600,18 @@ namespace Ratbuddyssey
             Console.Write(CmdString);
             Console.WriteLine(AvrString);
             // parse JSON to class member variables
-            parsedAvrStatus = JsonConvert.DeserializeObject<AvrStatus>(AvrString,
+            AVRSTS = JsonConvert.DeserializeObject<AVRSTS>(AvrString,
                 new JsonSerializerSettings { FloatParseHandling = FloatParseHandling.Decimal });
             return (CmdString.Equals("GET_AVRSTS") && !AvrString.Equals(NACK) && CheckSumChecked);
         }
         public bool EnterAudysseyMode()
         {
-            CmdString = "ENTER_AUDY";
+            string CmdString = "ENTER_AUDY";
             Console.WriteLine(CmdString);
             // transmit request
             TcpAudysseyStream.TransmitTcpAvrStream(CmdString, "");
             // receive rseponse
+            string AvrString;
             TcpAudysseyStream.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
             Console.Write(CmdString);
             Console.WriteLine(AvrString);
@@ -643,22 +619,38 @@ namespace Ratbuddyssey
         }
         public bool ExitAudysseyMode()
         {
-            CmdString = "EXIT_AUDMD";
+            string CmdString = "EXIT_AUDMD";
             Console.WriteLine(CmdString);
             // transmit request
             TcpAudysseyStream.TransmitTcpAvrStream(CmdString, "");
             // receive rseponse
+            string AvrString;
             TcpAudysseyStream.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
             Console.Write(CmdString);
             Console.WriteLine(AvrString);
             return (CmdString.Equals("EXIT_AUDMD") && AvrString.Equals(ACK) && CheckSumChecked);
         }
-        public bool SetAvrSetDataAmp()
+        public bool SetAudysseyFinishedFlag()
         {
-            CmdString = "SET_SETDAT";
+            string CmdString = "SET_SETDAT";
+            Console.WriteLine(CmdString);
+            // transmit request
+            TcpAudysseyStream.TransmitTcpAvrStream(CmdString, AUDYFINFLG);
+            // receive rseponse
+            string AvrString;
+            TcpAudysseyStream.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
             Console.Write(CmdString);
-            // build JSON
-            AvrString = JsonConvert.SerializeObject(parsedAvrSetDataAmp, new JsonSerializerSettings { });
+            Console.WriteLine(AvrString);
+            return (CmdString.Equals("SET_SETDAT") && AvrString.Equals(ACK) && CheckSumChecked);
+        }
+        public bool SetAvrSetAmp()
+        {
+            string CmdString = "SET_SETDAT";
+            Console.Write(CmdString);
+            // build JSON for class Dat on interface Iamp
+            string AvrString = JsonConvert.SerializeObject(SETDAT, new JsonSerializerSettings {
+                ContractResolver = new InterfaceContractResolver(typeof(IAmp))
+            });
             Console.WriteLine(AvrString);
             // transmit request
             TcpAudysseyStream.TransmitTcpAvrStream(CmdString, AvrString);
@@ -668,29 +660,33 @@ namespace Ratbuddyssey
             Console.WriteLine(AvrString);
             return (CmdString.Equals("SET_SETDAT") && AvrString.Equals(ACK) && CheckSumChecked);
         }
-        public bool SetAvrSetDataAud()
+        public bool SetAvrSetAudy()
         {
-            CmdString = "SET_SETDAT";
+            string CmdString = "SET_SETDAT";
             Console.Write(CmdString);
-            // build JSON
-            AvrString = JsonConvert.SerializeObject(parsedAvrSetDataAud, new JsonSerializerSettings { });
-            Console.WriteLine(AvrString);
-            // transmit request
-            TcpAudysseyStream.TransmitTcpAvrStream(CmdString, AvrString);
-            // receive rseponse
-            TcpAudysseyStream.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
-            Console.Write(CmdString);
-            Console.WriteLine(AvrString);
-            return (CmdString.Equals("SET_SETDAT") && AvrString.Equals(ACK) && CheckSumChecked);
-        }
-        public void SetAvrDisFil()
-        {
-            foreach (var AvrDisFil in parsedAvrDisFil)
+            // build JSON for class Dat on interface IAudy
+            string AvrString = JsonConvert.SerializeObject(SETDAT, new JsonSerializerSettings
             {
-                CmdString = "SET_DISFIL";
+                ContractResolver = new InterfaceContractResolver(typeof(IAudy))
+            });
+            Console.WriteLine(AvrString);
+            // transmit request
+            TcpAudysseyStream.TransmitTcpAvrStream(CmdString, AvrString);
+            // receive rseponse
+            TcpAudysseyStream.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
+            Console.Write(CmdString);
+            Console.WriteLine(AvrString);
+            return (CmdString.Equals("SET_SETDAT") && AvrString.Equals(ACK) && CheckSumChecked);
+        }
+        public bool SetDisFil()
+        {
+            // there are multiple speaker?
+            foreach (var AvrDisFil in DISFIL)
+            {
+                string CmdString = "SET_DISFIL";
                 Console.Write(CmdString);
                 // build JSON
-                AvrString = JsonConvert.SerializeObject(AvrDisFil, new JsonSerializerSettings { });
+                string AvrString = JsonConvert.SerializeObject(AvrDisFil, new JsonSerializerSettings { });
                 Console.WriteLine(AvrString);
                 // transmit request
                 TcpAudysseyStream.TransmitTcpAvrStream(CmdString, AvrString);
@@ -698,16 +694,20 @@ namespace Ratbuddyssey
                 TcpAudysseyStream.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
                 Console.Write(CmdString);
                 Console.WriteLine(AvrString);
+                // check every transmission
+                if (!(CmdString.Equals("SET_SETDAT") && AvrString.Equals(ACK) && CheckSumChecked)) return false;
             }
+            return true;
         }
-        public bool InitAudysseyCoef()
+        public bool InitAvrCoefs()
         {
-            CmdString = "INIT_COEFS";
+            string CmdString = "INIT_COEFS";
             Console.WriteLine(CmdString);
             // transmit request
             TcpAudysseyStream.TransmitTcpAvrStream(CmdString, "");
             // response may take some processing time for the receiver
             var TimeElapsed = Stopwatch.StartNew();
+            string AvrString;
             do
             {   // receive reseponse
                 TcpAudysseyStream.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
@@ -716,266 +716,37 @@ namespace Ratbuddyssey
             } while ((TimeElapsed.ElapsedMilliseconds < 10000) && AvrString.Equals(INPROGRESS));
             return (CmdString.Equals("INIT_COEFS") && AvrString.Equals(ACK) && CheckSumChecked);
         }
-        public void SetAvrCoefData()
+        public bool SetAvrCoefDt()
         {
-            foreach (var AvrCoefData in parsedAvrCoefData)
+            bool Success = true;
+            // data for each speaker... this is a very dumb binary data pump
+            foreach (Int32[] Coef in COEFDT)
             {
-                if (AvrCoefData.FilData.Count() > 0)
-                {
-                    int[] Data = AvrCoefData.FilData.GetRange(0,128).ToArray();
-                    AvrCoefData.FilData.RemoveRange(0, 128);
-                    CmdString = "SET_COEFDT";
-                    Console.Write(CmdString);
-                    Console.WriteLine(AvrCoefData.FilData);
-                    // transmit request
-                    // TcpAudysseyStream.TransmitTcpAvrStream(CmdString, BitConverter.GetBytes(Data));
-                    // receive rseponse
-                    TcpAudysseyStream.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
-                    Console.Write(CmdString);
-                    Console.WriteLine(AvrString);
-                }
-                if (AvrCoefData.DispData.Count > 0)
-                {
-                    CmdString = "SET_COEFDT";
-                    Console.Write(CmdString);
-                    Console.WriteLine(AvrCoefData.DispData);
-                    // transmit request
-                    TcpAudysseyStream.TransmitTcpAvrStream(CmdString, AvrString);
-                    // receive rseponse
-                    TcpAudysseyStream.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
-                    Console.Write(CmdString);
-                    Console.WriteLine(AvrString);
-                }
+                string CmdString = "SET_COEFDT";
+                Console.Write(CmdString);
+                Console.WriteLine(Coef.ToString());
+                // transmit request
+                TcpAudysseyStream.TransmitTcpAvrStream(CmdString, Coef);
+                string AvrString;
+                // receive rseponse
+                TcpAudysseyStream.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
+                Console.Write(CmdString);
+                Console.WriteLine(AvrString);
+                // success if all succeed
+                Success &= (CmdString.Equals("SET_COEFDT") && AvrString.Equals(ACK) && CheckSumChecked);
             }
+            return Success;
         }
+
         #region INotifyPropertyChanged implementation
-        public event PropertyChangedEventHandler PropertyChanged;
-        public void RaisePropertyChanged(string propertyName)
+        public event PropertyChangedEventHandler PropertyChanged = delegate { };
+        private void RaisePropertyChanged(string propertyName)
         {
-            if (this.PropertyChanged != null)
+            if (PropertyChanged != null)
             {
-                this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }
         #endregion
     }
 }
-
-/* 64 FilData and 5*4100 bytes => 5*4100*8 bits per element => 32-bit data => 5125 float => 64 elements of 80 float */
-/*  9 DispData and 1*2820 bytes => 313
-
-/* FL? */
-//Following process repeats 5 times, each time with different data: (4100 bytes)
-//T 02 13 00 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 05 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 06 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 07 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 00 17 08 08 SET_COEFDT 00 00 04 followed by 4 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-//Following process repeats 1 time, data: 2820 (bytes)
-//T 02 13 00 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 01 17 05 05 SET_COEFDT 00 01 04 followed by 260 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-/* C? */
-//Following process repeats 5 times, each time with different data: (4100 bytes)
-//T 02 13 00 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 05 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 06 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 07 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 00 17 08 08 SET_COEFDT 00 00 04 followed by 4 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-//Following process repeats 1 time, data: 2820 (bytes)
-//T 02 13 00 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 01 17 05 05 SET_COEFDT 00 01 04 followed by 260 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-/* FR? */
-//Following process repeats 5 times, each time with different data: (4100 bytes)
-//T 02 13 00 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 05 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 06 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 07 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 00 17 08 08 SET_COEFDT 00 00 04 followed by 4 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-//Following process repeats 1 time, data: 2820 (bytes)
-//T 02 13 00 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 01 17 05 05 SET_COEFDT 00 01 04 followed by 260 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-/* SLA? */
-//Following process repeats 5 times, each time with different data: (4100 bytes)
-//T 02 13 00 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 05 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 06 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 07 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 00 17 08 08 SET_COEFDT 00 00 04 followed by 4 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-//Following process repeats 1 time, data: 2820 (bytes)
-//T 02 13 00 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 01 17 05 05 SET_COEFDT 00 01 04 followed by 260 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-/* SRA? */
-//Following process repeats 5 times, each time with different data: (4100 bytes)
-//T 02 13 00 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 05 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 06 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 07 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 00 17 08 08 SET_COEFDT 00 00 04 followed by 4 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-//Following process repeats 1 time, data: 2820 (bytes)
-//T 02 13 00 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 01 17 05 05 SET_COEFDT 00 01 04 followed by 260 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-/* SW1? */
-//Following process repeats 5 times, each time with different data: (4100 bytes)
-//T 02 13 00 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 05 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 06 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 07 08 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 00 17 08 08 SET_COEFDT 00 00 04 followed by 4 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-//Following process repeats 1 time, data: 2820 (bytes)
-//T 02 13 00 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 01 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 02 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 03 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 02 13 04 05 SET_COEFDT 00 02 00 followed by 512 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-//T 01 17 05 05 SET_COEFDT 00 01 04 followed by 260 bytes payload plus 1 byte checksum
-//R 00 21 00 00 SET_COEFDT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  96
-
-//T 00 27 00 00 SET_SETDAT 00 00 14 {  "  A  u  d  y  F  i  n  F  l  g  "  :  "  F  i  n  "  } 3f
-//R 00 21 00 00 SET_SETDAT 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  a6
-
-//T 00 27 00 00 EXIT_AUDMD 00 00 00 6b
-//R 00 21 00 00 EXIT_AUDMD 00 00 0e {  "  C  o  m  m  "  :  "  A  C  K  "  }  9a
