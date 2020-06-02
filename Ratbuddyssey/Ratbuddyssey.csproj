@@ -133,12 +133,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Audyssey.cs" />
-    <Compile Include="AvrAudysseyAdapter.cs" />
-    <Compile Include="ChannelReport.cs" />
+    <Compile Include="AudysseyMultEQ.cs" />
+    <Compile Include="AudysseyMultEQAvr.cs" />
+    <Compile Include="AudysseyMultEQAvrAdapter.cs" />
+    <Compile Include="AudysseyMultEQChannelReport.cs" />
+    <Compile Include="AudysseyMultEQDetectedChannel.cs" />
     <Compile Include="ClassInterfaceContractResolver.cs" />
-    <Compile Include="DetectedChannel.cs" />
     <Compile Include="IPHeader.cs" />
+    <Compile Include="RatbuddysseyHome.tab1.cs" />
     <Compile Include="RatbuddysseyHome.xaml.cs">
       <DependentUpon>RatbuddysseyHome.xaml</DependentUpon>
     </Compile>
@@ -148,7 +150,6 @@
     </Compile>
     <Compile Include="ReferenceCurveFilter.cs" />
     <Compile Include="StringValueConverter.cs" />
-    <Compile Include="AudioVideoReceiver.cs" />
     <Compile Include="TcpClientWithTimeout.cs" />
     <Compile Include="TCPHeader.cs" />
     <Compile Include="TcpSniffer.cs" />

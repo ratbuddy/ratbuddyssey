@@ -18,8 +18,8 @@
                 <MenuItem Header="_Save" x:Name="saveFile" Click="SaveFile_OnClick"/>
                 <MenuItem Header="Save _As" x:Name="saveFileAs" Click="SaveFileAs_OnClick"/>
                 <Separator />
-                <MenuItem Header="_Ethernet" x:Name="connectEthernet" Click="connectEthernet_Click" IsCheckable="True"/>
-                <MenuItem Header="S_niffer" x:Name="connectSniffer" Click="connectSniffer_Click" IsCheckable="True"/>
+                <MenuItem Header="_Ethernet" x:Name="connectEthernet" Click="ConnectEthernet_OnClick" IsCheckable="True"/>
+                <MenuItem Header="S_niffer" x:Name="connectSniffer" Click="ConnectSniffer_OnClick" IsCheckable="True"/>
                 <Separator/>
                 <MenuItem Header="E_xit" x:Name="exitProgram" Click="ExitProgram_OnClick"/>
             </MenuItem>
@@ -72,7 +72,7 @@
                                             <DataGridTemplateColumn>
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <Button Content="Delete" Click="Button_Click_1" Width="auto"/>
+                                                        <Button Content="Delete" Click="ButtonClickRemoveTargetCurvePoint" Width="auto"/>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
@@ -82,7 +82,7 @@
                                         <TextBox Width="6" Height="auto"/>
                                         <TextBox x:Name="keyTbx" Width="30"/>
                                         <TextBox x:Name="valueTbx" Width="30"/>
-                                        <Button Content="Add" Click="Button_Click" Width="60"/>
+                                        <Button Content="Add" Click="ButtonClickAddTargetCurvePoint" Width="60"/>
                                     </StackPanel>
                                 </StackPanel>
                             </ScrollViewer>
@@ -240,25 +240,25 @@
                                         </Grid.RowDefinitions>
                                         <StackPanel Grid.Row="0" Orientation="Horizontal">
                                             <Label Content="Measurement position:" VerticalAlignment="Center"/>
-                                            <CheckBox Content="1" x:Name="chbx1" Foreground="Black" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked" VerticalAlignment="Center" Margin="3,0,0,0" IsChecked="True"/>
-                                            <CheckBox Content="2" x:Name="chbx2" Foreground="Blue" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                                            <CheckBox Content="3" x:Name="chbx3" Foreground="Violet" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                                            <CheckBox Content="4" x:Name="chbx4" Foreground="Green" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                                            <CheckBox Content="5" x:Name="chbx5" Foreground="Orange" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                                            <CheckBox Content="6" x:Name="chbx6" Foreground="Red" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                                            <CheckBox Content="7" x:Name="chbx7" Foreground="Cyan" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                                            <CheckBox Content="8" x:Name="chbx8" Foreground="DeepPink" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                                            <CheckBox Content="Select/Unselect all" x:Name="allChbx" Foreground="Black" Checked="allChbx_Checked" Unchecked="allChbx_Unchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="1" x:Name="chbx1" Foreground="Black" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0" IsChecked="True"/>
+                                            <CheckBox Content="2" x:Name="chbx2" Foreground="Blue" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="3" x:Name="chbx3" Foreground="Violet" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="4" x:Name="chbx4" Foreground="Green" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="5" x:Name="chbx5" Foreground="Orange" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="6" x:Name="chbx6" Foreground="Red" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="7" x:Name="chbx7" Foreground="Cyan" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="8" x:Name="chbx8" Foreground="DeepPink" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="Select/Unselect all" x:Name="allChbx" Foreground="Black" Checked="AllCheckBoxMeasurementPositionChecked" Unchecked="AllCheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
                                         </StackPanel>
                                         <oxy:PlotView Grid.Row="1" x:Name="plot" DataContext="{Binding SelectedValue, ElementName=channelsView}"/>
                                         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                            <RadioButton Content="No Smoothing" x:Name="rbtnNo" Checked="rbtn_Checked" Margin="0,0,10,0" IsChecked="True"/>
-                                            <RadioButton Content="1/2" x:Name="rbtn2" Checked="rbtn_Checked" Margin="0,0,10,0"/>
-                                            <RadioButton Content="1/3" x:Name="rbtn3" Checked="rbtn_Checked" Margin="0,0,10,0"/>
-                                            <RadioButton Content="1/6" x:Name="rbtn6" Checked="rbtn_Checked" Margin="0,0,10,0"/>
-                                            <RadioButton Content="1/12" x:Name="rbtn12" Checked="rbtn_Checked" Margin="0,0,10,0"/>
-                                            <RadioButton Content="1/24" x:Name="rbtn24" Checked="rbtn_Checked" Margin="0,0,10,0"/>
-                                            <RadioButton Content="1/48" x:Name="rbtn48" Checked="rbtn_Checked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="No Smoothing" x:Name="radioButtonSmoothingFactorNone" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0" IsChecked="True"/>
+                                            <RadioButton Content="1/2" x:Name="radioButtonSmoothingFactor2" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="1/3" x:Name="radioButtonSmoothingFactor3" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="1/6" x:Name="radioButtonSmoothingFactor6" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="1/12" x:Name="radioButtonSmoothingFactor12" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="1/24" x:Name="radioButtonSmoothingFactor24" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="1/48" x:Name="radioButtonSmoothingFactor48" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
                                         </StackPanel>
                                         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                                             <RadioButton x:Name="rbtnXRangeChirp" Content="0-350ms" Checked="rbtnXRange_Checked" Margin="0,0,10,0"/>

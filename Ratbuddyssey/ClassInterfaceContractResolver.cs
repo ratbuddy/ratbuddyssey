@@ -5,7 +5,7 @@ using Newtonsoft.Json.Serialization;
 using System.Linq;
 using System.Collections.Concurrent;
 
-namespace Ratbuddyssey
+namespace Audyssey
 {
     public class InterfaceContractResolver : DefaultContractResolver
     {
