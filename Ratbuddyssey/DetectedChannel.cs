@@ -30,13 +30,31 @@ namespace Ratbuddyssey
 
         // local for data binding (shall not be serialised)
         private ObservableCollection<MyKeyValuePair> _customTargetCurvePointsDictionary = new ObservableCollection<MyKeyValuePair>();
+
+        // local for data binding (not serialised)
         private ObservableCollection<string> _customCrossoverList = new ObservableCollection<string>() { "U", "40", "60", "80", "90", "100", "110", "120", "150", "180", "200", "250" };
         private int _customCrossoverIndex = 0;
-        private bool _customSpeakerTypeSmall = false;
-        private bool _customSpeakerTypeLarge = false;
-        private bool _customSpeakerTypeSubwoofer = false;
+
+        // local for data binding (not serialised)
+        private ObservableCollection<string> _customSpeakerTypeList = new ObservableCollection<string>() { "U", "S", "M", "L" };
+        private int _customSpeakerTypeIndex = 0;
+
+        private bool _sticky;
 
         #region Properties
+        [JsonIgnore]
+        public bool Sticky
+        {
+            get
+            {
+                return _sticky;
+            }
+            set
+            {
+                _sticky = value;
+                RaisePropertyChanged("Sticky");
+            }
+        }
         public int EnChannelType
         {
             get
@@ -166,70 +184,44 @@ namespace Ratbuddyssey
         }
         public string CustomSpeakerType
         {
-            get { return _customSpeakerType; }
+            get
+            {
+                return _customSpeakerType;
+            }
             set
             {
-                if(_customSpeakerType != value)
-                {
-                    _customSpeakerType = value;
-                    switch (value)
-                    {
-                        case "S":
-                            CustomSpeakerTypeSmall = true;
-                            break;
-                        case "L":
-                            CustomSpeakerTypeLarge = true;
-                            break;
-                        case "E":
-                            CustomSpeakerTypeSubwoofer = true;
-                            break;
-                        default:
-                            break;
-                    }
-                }                               
+                _customSpeakerType = value;
+                _customSpeakerTypeIndex = CustomSpeakerTypeList.IndexOf(value);
+                if (_customSpeakerTypeIndex == -1) _customSpeakerTypeIndex = CustomSpeakerTypeList.IndexOf("U");
                 RaisePropertyChanged("CustomSpeakerType");
             }
         }
         [JsonIgnore]
-        public bool CustomSpeakerTypeSmall
+        public ObservableCollection<string> CustomSpeakerTypeList
         {
-            get { return _customSpeakerTypeSmall; }
+            get
+            {
+                return _customSpeakerTypeList;
+            }
             set
             {
-                if(_customSpeakerTypeSmall != value)
-                {
-                    _customSpeakerTypeSmall = value;
-                    if (value) CustomSpeakerType = "S";
-                }      
-                RaisePropertyChanged("CustomSpeakerTypeSmall");
+                _customSpeakerTypeList = value;
+                RaisePropertyChanged("CustomSpeakerTypeList");
             }
         }
         [JsonIgnore]
-        public bool CustomSpeakerTypeLarge
+        public int CustomSpeakerTypeIndex
         {
-            get { return _customSpeakerTypeLarge; }
-            set
+            get
             {
-                if(_customSpeakerTypeLarge != value)
-                {
-                    _customSpeakerTypeLarge = value;
-                    if (value) CustomSpeakerType = "L";
-                }      
-                RaisePropertyChanged("CustomSpeakerTypeLarge");
+                return _customSpeakerTypeIndex;
             }
-        }
-        [JsonIgnore]
-        public bool CustomSpeakerTypeSubwoofer
-        {
-            get { return _customSpeakerTypeSubwoofer; }
             set
             {
-                if(_customSpeakerTypeSubwoofer != value)
-                {
-                    _customSpeakerTypeSubwoofer = value;
-                    if (value) CustomSpeakerType = "E";
-                }                
-                RaisePropertyChanged("CustomSpeakerTypeSubwoofer");
+                _customSpeakerTypeIndex = value;
+                RaisePropertyChanged("CustomSpeakerTypeIndex");
+                _customSpeakerType = CustomSpeakerTypeList[value];
+                RaisePropertyChanged("CustomSpeakerType");
             }
         }
         public decimal? CustomDistance

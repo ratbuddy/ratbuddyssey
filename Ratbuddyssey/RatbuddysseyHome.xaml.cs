@@ -1,43 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Data;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
-using System.Net.Sockets;
-using System.Reflection;
 
 namespace Ratbuddyssey
 {
-    class AxisLimit
-    {
-        public double XMin { get; set; }
-        public double XMax { get; set; }
-        public double YMin { get; set; }
-        public double YMax { get; set; }
-        public double YShift { get; set; }
-        public double MajorStep { get; set; }
-        public double MinorStep { get; set; }
-    }
     /// <summary>
     /// Interaction logic for RatbuddysseyHome.xaml
     /// </summary>
@@ -50,10 +28,11 @@ namespace Ratbuddyssey
         
         private List<int> keys = new List<int>();
         private Dictionary<int, Brush> colors = new Dictionary<int, Brush>();
-        private double smoothingFactor = 2;
+        
+        private double smoothingFactor = 0;
         
         private DetectedChannel selectedChannel = null;
-        private DetectedChannel subwooferChannel = null;
+        private List<DetectedChannel> stickyChannel = new List<DetectedChannel>();
 
         private string selectedAxisLimits = "rbtnXRangeFull";
         private Dictionary<string, AxisLimit> AxisLimits = new Dictionary<string, AxisLimit>()
@@ -84,13 +63,13 @@ namespace Ratbuddyssey
                 {
                     PlotLine(selectedChannel);
                 }
-                if (subwooferChannel != null)
+                if (stickyChannel != null)
                 {
-                    if (chbxStickSubwoofer != null)
+                    foreach(var channel in stickyChannel)
                     {
-                        if (chbxStickSubwoofer.IsChecked == true)
+                        if (channel.Sticky == true)
                         {
-                            PlotLine(subwooferChannel, true);
+                            PlotLine(channel, true);
                         }
                     }
                 }
@@ -321,8 +300,8 @@ namespace Ratbuddyssey
         }
         private void Chbx_Unchecked(object sender, RoutedEventArgs e)
         {
-            CheckBox ch = sender as CheckBox;
-            int val = int.Parse(ch.Content.ToString()) - 1;
+            CheckBox checkBoc = sender as CheckBox;
+            int val = int.Parse(checkBoc.Content.ToString()) - 1;
             if (keys.Contains(val))
             {
                 keys.Remove(val);
@@ -330,15 +309,14 @@ namespace Ratbuddyssey
             }
             DrawChart();
         }
-
         private void Chbx_Checked(object sender, RoutedEventArgs e)
         {
-            CheckBox ch = sender as CheckBox;
-            int val = int.Parse(ch.Content.ToString()) - 1;
+            CheckBox checkBox = sender as CheckBox;
+            int val = int.Parse(checkBox.Content.ToString()) - 1;
             if (!keys.Contains(val))
             {
                 keys.Add(val);
-                colors.Add(val, ch.Foreground);
+                colors.Add(val, checkBox.Foreground);
             }
             DrawChart();
         }
@@ -349,15 +327,25 @@ namespace Ratbuddyssey
                 if (((DetectedChannel)channelsView.SelectedValue).ResponseData.Count > 0)
                 {
                     selectedChannel = (DetectedChannel)channelsView.SelectedValue;
+                    DrawChart();
                 }
             }
-            foreach (var currentChannel in channelsView.Items)
+        }
+        private void ChannelsView_OnClickSticky(object sender, RoutedEventArgs e)
+        {
+            foreach (var channel in parsedAudyssey.DetectedChannels)
             {
-                if ((((DetectedChannel)currentChannel).EnChannelType == 54) && (((DetectedChannel)channelsView.SelectedValue).ResponseData != null))
-                    if (((DetectedChannel)currentChannel).ResponseData.Count > 0)
-                        subwooferChannel = (DetectedChannel)currentChannel;
+                if (channel.Sticky)
+                {
+                    stickyChannel.Add(channel);
+                    DrawChart();
+                }
+                else if (stickyChannel.Contains(channel))
+                {
+                    stickyChannel.Remove(channel);
+                    DrawChart();
+                }
             }
-            DrawChart();
         }
         private void OpenFile_OnClick(object sender, RoutedEventArgs e)
         {
@@ -550,8 +538,8 @@ namespace Ratbuddyssey
         }
         private void rbtn_Checked(object sender, RoutedEventArgs e)
         {
-            RadioButton rbtn = sender as RadioButton;
-            switch (rbtn.Name)
+            RadioButton radioButton = sender as RadioButton;
+            switch (radioButton.Name)
             {
                 case "rbtn2":
                     smoothingFactor = 2;
@@ -578,15 +566,11 @@ namespace Ratbuddyssey
         }
         private void rbtnXRange_Checked(object sender, RoutedEventArgs e)
         {
-            RadioButton rbtn = sender as RadioButton;
-            selectedAxisLimits = rbtn.Name;
+            RadioButton radioButton = sender as RadioButton;
+            selectedAxisLimits = radioButton.Name;
             DrawChart();
         }
         private void chbxStickSubwoofer_Checked(object sender, RoutedEventArgs e)
-        {
-            DrawChart();
-        }
-        private void chbxStickSubwoofer_Unchecked(object sender, RoutedEventArgs e)
         {
             DrawChart();
         }
@@ -602,5 +586,15 @@ namespace Ratbuddyssey
         {
             DrawChart();
         }
+    }
+    class AxisLimit
+    {
+        public double XMin { get; set; }
+        public double XMax { get; set; }
+        public double YMin { get; set; }
+        public double YMax { get; set; }
+        public double YShift { get; set; }
+        public double MajorStep { get; set; }
+        public double MinorStep { get; set; }
     }
 }

@@ -188,7 +188,10 @@ namespace Ratbuddyssey
         [JsonIgnore]
         public ObservableCollection<string> EnAmpAssignTypeList
         {
-            get { return _enAmpAssignTypeList; }
+            get
+            {
+                return _enAmpAssignTypeList;
+            }
             set
             {
                 _enAmpAssignTypeList = value;

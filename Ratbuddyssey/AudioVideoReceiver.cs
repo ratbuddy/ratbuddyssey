@@ -467,7 +467,7 @@ namespace Ratbuddyssey
         }
         public AudioVideoReceiver(AvrAudysseyAdapter AvrAudysseyAdapter, bool bAttachSniffer)
         {
-            this.PropertyChanged += AvrAudysseyAdapter._PropertyChanged; // bind parent to nofify property changed (it's a bitch)
+            this.PropertyChanged += AvrAudysseyAdapter._PropertyChanged; // bind parent to nofify property changed (adapter's a bitch)
 
             _AVRINF = new AVRINF();
             _AVRSTS = new AVRSTS();
@@ -495,9 +495,18 @@ namespace Ratbuddyssey
             {
                 AttachSniffer();
             }
+            ;
+
+            //ObjectToTreeView.SetObjectAsJson(this);
         }
         public AudioVideoReceiver(bool bAttachSniffer)
         {
+            _AVRINF = new AVRINF();
+            _AVRSTS = new AVRSTS();
+            _SETDAT = new SETDAT();
+            _DISFIL = new List<DISFIL>();
+            _COEFDT = new List<Int32[]>();
+
             TcpClient = new TcpIP("192.168.50.82", 1256, 5000);
 
             TcpClientFileName = Environment.CurrentDirectory + "\\" + TcpClientFileName;
@@ -518,7 +527,6 @@ namespace Ratbuddyssey
             {
                 AttachSniffer();
             }
-
         }
         public void AudysseyToAvr()
         {
