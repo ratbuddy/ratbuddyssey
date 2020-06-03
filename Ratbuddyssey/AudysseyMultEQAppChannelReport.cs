@@ -1,5 +1,5 @@
-﻿using System.ComponentModel;
-using System.Text;
+﻿using System.Text;
+using System.ComponentModel;
 
 namespace Audyssey
 {
@@ -7,14 +7,17 @@ namespace Audyssey
     {
         public class ChannelReport : INotifyPropertyChanged
         {
-            int _enSpeakerConnect = 0;
-            int? _customEnSpeakerConnect = null;
-            bool _isReversePolarity = false;
-            decimal _distance = 0;
+            private int? _enSpeakerConnect = null;
+            private int? _customEnSpeakerConnect = null;
+            private bool? _isReversePolarity = null;
+            private decimal? _distance = null;
 
-            public int EnSpeakerConnect
+            public int? EnSpeakerConnect
             {
-                get { return _enSpeakerConnect; }
+                get
+                {
+                    return _enSpeakerConnect;
+                }
                 set
                 {
                     _enSpeakerConnect = value;
@@ -30,7 +33,7 @@ namespace Audyssey
                     RaisePropertyChanged("CustomEnSpeakerConnect");
                 }
             }
-            public bool IsReversePolarity
+            public bool? IsReversePolarity
             {
                 get { return _isReversePolarity; }
                 set
@@ -39,7 +42,7 @@ namespace Audyssey
                     RaisePropertyChanged("IsReversePolarity");
                 }
             }
-            public decimal Distance
+            public decimal? Distance
             {
                 get { return _distance; }
                 set
@@ -72,8 +75,12 @@ namespace Audyssey
 
                 return sb.ToString();
             }
+
             #region INotifyPropertyChanged implementation
             public event PropertyChangedEventHandler PropertyChanged;
+            #endregion
+
+            #region methods
             protected void RaisePropertyChanged(string propertyName)
             {
                 if (this.PropertyChanged != null)

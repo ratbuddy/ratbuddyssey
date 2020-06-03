@@ -1,8 +1,7 @@
-﻿using System.ComponentModel;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
+using System.ComponentModel;
 using System.Collections.ObjectModel;
-using System;
 using Audyssey.MultEQApp;
 using Audyssey.MultEQAvr;
 
@@ -13,9 +12,9 @@ namespace Audyssey
         // Adapter class needed as long as ethernet traffic uses the file GUI
         // TODO: design GUI TAB dedicated to ethernet traffic which makes this
         // adapter redundant -> directly access avr class and sniffer class!
-        class MultEQAvrAdapter : INotifyPropertyChanged
+        class AudysseyMultEQAvrAdapter : INotifyPropertyChanged
         {
-            private AudioVideoReceiver AudioVideoReceiver = null;
+            private AudysseyMultEQAvr _audysseyMultEQAvr;
 
             private ObservableCollection<string> _enMultEQTypeList = new ObservableCollection<string>()
             { "MultEQ", "MultEQXT", "MultEQXT32" };
@@ -27,7 +26,7 @@ namespace Audyssey
               "Type13", "Type14", "Type15", "Type16",
               "Type17", "Type18", "Type19", "Type20"};
 
-            private List<DetectedChannel> _detectedChannels = new List<DetectedChannel>();
+            private ObservableCollection<DetectedChannel> _detectedChannels = new ObservableCollection<DetectedChannel>();
 
             #region Properties
             // same
@@ -35,20 +34,20 @@ namespace Audyssey
             {
                 get
                 {
-                    return AudioVideoReceiver.AVRINF.Ifver;
+                    return _audysseyMultEQAvr.Info.Ifver;
                 }
                 set
                 {
-                    AudioVideoReceiver.AVRINF.Ifver = value;
+                    _audysseyMultEQAvr.Info.Ifver = value;
                     RaisePropertyChanged("InterfaceVersion");
                 }
             }
             // different: name
-            public decimal AdcLineup
+            public decimal? AdcLineup
             {
                 get
                 {
-                    return AudioVideoReceiver.AVRINF.ADC;
+                    return _audysseyMultEQAvr.Info.ADC;
                 }
                 set
                 {
@@ -56,11 +55,11 @@ namespace Audyssey
                 }
             }
             // same
-            public int SystemDelay
+            public int? SystemDelay
             {
                 get
                 {
-                    return AudioVideoReceiver.AVRINF.SysDelay;
+                    return _audysseyMultEQAvr.Info.SysDelay;
                 }
                 set
                 {
@@ -84,7 +83,7 @@ namespace Audyssey
             {
                 get
                 {
-                    return _enMultEQTypeList.IndexOf(AudioVideoReceiver.AVRINF.EQType);
+                    return _enMultEQTypeList.IndexOf(_audysseyMultEQAvr.Info.EQType);
                 }
                 set
                 {
@@ -92,11 +91,11 @@ namespace Audyssey
                 }
             }
             // same (but capitals)
-            public bool Lfc
+            public bool? Lfc
             {
                 get
                 {
-                    return AudioVideoReceiver.AVRINF.LFC;
+                    return _audysseyMultEQAvr.Info.LFC;
                 }
                 set
                 {
@@ -104,11 +103,11 @@ namespace Audyssey
                 }
             }
             // same
-            public bool Auro
+            public bool? Auro
             {
                 get
                 {
-                    return AudioVideoReceiver.AVRINF.Auro;
+                    return _audysseyMultEQAvr.Info.Auro;
                 }
                 set
                 {
@@ -120,7 +119,7 @@ namespace Audyssey
             {
                 get
                 {
-                    return AudioVideoReceiver.AVRINF.Upgrade;
+                    return _audysseyMultEQAvr.Info.Upgrade;
                 }
                 set
                 {
@@ -144,11 +143,11 @@ namespace Audyssey
             {
                 get
                 {
-                    return _enAmpAssignTypeList.IndexOf(AudioVideoReceiver.AVRSTS.AmpAssign);
+                    return _enAmpAssignTypeList.IndexOf(_audysseyMultEQAvr.Status.AmpAssign);
                 }
                 set
                 {
-                    AudioVideoReceiver.AVRSTS.AmpAssign = _enAmpAssignTypeList.ElementAt(value);
+                    _audysseyMultEQAvr.Status.AmpAssign = _enAmpAssignTypeList.ElementAt(value);
                     RaisePropertyChanged("EnAmpAssignType");
                 }
             }
@@ -157,7 +156,7 @@ namespace Audyssey
             {
                 get
                 {
-                    return AudioVideoReceiver.AVRSTS.AssignBin;
+                    return _audysseyMultEQAvr.Status.AssignBin;
                 }
                 set
                 {
@@ -165,13 +164,13 @@ namespace Audyssey
                 }
             }
             // different: !!!
-            public List<DetectedChannel> DetectedChannels
+            public ObservableCollection<DetectedChannel> DetectedChannels
             {
                 get
                 {
-                    if (AudioVideoReceiver.AVRSTS.ChSetup != null)
+                    if (_audysseyMultEQAvr.Status.ChSetup != null)
                     {
-                        foreach (var chsetup in AudioVideoReceiver.AVRSTS.ChSetup)
+                        foreach (var chsetup in _audysseyMultEQAvr.Status.ChSetup)
                         {
                             foreach (var ch in chsetup)
                             {
@@ -203,54 +202,37 @@ namespace Audyssey
                 }
             }
             #endregion
-            public MultEQAvrAdapter(bool bAttachSniffer = false)
+
+            public AudysseyMultEQAvrAdapter(AudysseyMultEQAvr audysseyMultEQAvr)
             {
-                AudioVideoReceiver = new AudioVideoReceiver(bAttachSniffer);
-                AudioVideoReceiver.PropertyChanged += _PropertyChanged; // bind parent to nofify property changed (adapter's a bitch)
+                _audysseyMultEQAvr = audysseyMultEQAvr;
+                // bind parent to nofify property changed
+                audysseyMultEQAvr.PropertyChanged += _PropertyChanged;
             }
-            ~MultEQAvrAdapter()
+
+            ~AudysseyMultEQAvrAdapter()
             {
-                AudioVideoReceiver = null;
-            }
-            public void AttachSniffer()
-            {
-                AudioVideoReceiver.AttachSniffer();
-            }
-            public void DetachSniffer()
-            {
-                AudioVideoReceiver.DetachSniffer();
-            }
-            public string GetTcpClient()
-            {
-                return AudioVideoReceiver.GetTcpClient();
-            }
-            public string GetTcpHost()
-            {
-                return AudioVideoReceiver.GetTcpHost();
-            }
-            public void AudysseyToAvr()
-            {
-                AudioVideoReceiver.AudysseyToAvr();
             }
 
             #region INotifyPropertyChanged members
             public event PropertyChangedEventHandler PropertyChanged = delegate { };
-            #endregion
-            #region methods
+
             protected void RaisePropertyChanged(string propertyName)
             {
                 if (this.PropertyChanged != null)
                 {
+                    Console.WriteLine("Changed: " + propertyName);
                     this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
                 }
             }
+
             public void _PropertyChanged(object sender, PropertyChangedEventArgs e)
             {
                 // simple adapter forward notification of class 
-                Console.WriteLine("Changed: " + e.PropertyName);
+                Console.WriteLine("Changed: e." + e.PropertyName);
                 switch (e.PropertyName)
                 {
-                    case "AVRINF":
+                    case "Info":
                         RaisePropertyChanged("InterfaceVersion");
                         RaisePropertyChanged("AdcLineup");
                         RaisePropertyChanged("SystemDelay");
@@ -259,7 +241,7 @@ namespace Audyssey
                         RaisePropertyChanged("Auro");
                         RaisePropertyChanged("UpgradeInfo");
                         break;
-                    case "AVRSTS":
+                    case "Status":
                         RaisePropertyChanged("DetectedChannels");
                         RaisePropertyChanged("EnAmpAssignType");
                         RaisePropertyChanged("AmpAssignInfo");

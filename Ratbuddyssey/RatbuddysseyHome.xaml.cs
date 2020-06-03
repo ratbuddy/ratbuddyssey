@@ -8,6 +8,7 @@ using Audyssey;
 using Audyssey.MultEQApp;
 using Audyssey.MultEQAvr;
 using Audyssey.MultEQAvrAdapter;
+using Audyssey.MultEQTcp;
 
 namespace Ratbuddyssey
 {
@@ -16,9 +17,11 @@ namespace Ratbuddyssey
     /// </summary>
     public partial class RatbuddysseyHome : Page
     {
-        private MultEQReferenceFilterCurve MultEQReferenceFilterCurve = new MultEQReferenceFilterCurve();
-        private MultEQApp MultEQApp = null;
-        private MultEQAvrAdapter MultEQAvrAdapter = null;
+        private AudysseyMultEQReferenceCurveFilter audysseyMultEQReferenceCurveFilter = new AudysseyMultEQReferenceCurveFilter();
+        private AudysseyMultEQApp audysseyMultEQApp = null;
+        private AudysseyMultEQAvr audysseyMultEQAvr = null;
+        private AudysseyMultEQAvrAdapter audysseyMultEQAvrAdapter = null;
+        private AudysseyMultEQTcpSniffer audysseyMultEQTcpSniffer = null;
 
         public RatbuddysseyHome()
         {
@@ -26,9 +29,11 @@ namespace Ratbuddyssey
             channelsView.SelectionChanged += ChannelsView_SelectionChanged;
             plot.PreviewMouseWheel += Plot_PreviewMouseWheel;
         }
+
         ~RatbuddysseyHome()
         {
         }
+
         private void OpenFile_OnClick(object sender, RoutedEventArgs e)
         {
             // Create OpenFileDialog 
@@ -50,15 +55,40 @@ namespace Ratbuddyssey
                 // Load document 
                 String audysseyFile = File.ReadAllText(filename);
                 // Parse JSON data
-                MultEQApp = JsonConvert.DeserializeObject<MultEQApp>(audysseyFile,
-                    new JsonSerializerSettings { FloatParseHandling = FloatParseHandling.Decimal });
-                // Data Binding
-                if (MultEQApp != null)
+                audysseyMultEQApp = JsonConvert.DeserializeObject<AudysseyMultEQApp>(audysseyFile, new JsonSerializerSettings
                 {
-                    this.DataContext = MultEQApp;
+                    FloatParseHandling = FloatParseHandling.Decimal
+                });
+                // Data Binding
+                if (audysseyMultEQApp != null)
+                {
+                    // cleanup: do not leave dangling
+                    if (audysseyMultEQAvr != null)
+                    {
+                        audysseyMultEQAvr = null;
+                    }
+                    if (audysseyMultEQAvrAdapter != null)
+                    {
+                        audysseyMultEQAvrAdapter = null;
+                    }
+                    if (audysseyMultEQTcpSniffer != null)
+                    {
+                        audysseyMultEQTcpSniffer = null;
+                    }
+                    // update checkboxes
+                    if (connectReceiver.IsChecked)
+                    {
+                        connectReceiver.IsChecked = false;
+                    }
+                    if (connectSniffer.IsChecked)
+                    {
+                        connectSniffer.IsChecked = false;
+                    }
+                    this.DataContext = audysseyMultEQApp;
                 }
             }
         }
+
         private void ReloadFile_OnClick(object sender, RoutedEventArgs e)
         {
             MessageBoxResult messageBoxResult = MessageBox.Show("This will reload the .ady file and discard all changes since last save", "Are you sure?", MessageBoxButton.YesNo);
@@ -67,18 +97,21 @@ namespace Ratbuddyssey
                 // Reload document 
                 String audysseyFile = File.ReadAllText(filename);
                 // Parse JSON data
-                MultEQApp = JsonConvert.DeserializeObject<MultEQApp>(audysseyFile,
-                    new JsonSerializerSettings { FloatParseHandling = FloatParseHandling.Decimal });
-                // Data Binding
-                if (MultEQApp != null)
+                audysseyMultEQApp = JsonConvert.DeserializeObject<AudysseyMultEQApp>(audysseyFile, new JsonSerializerSettings
                 {
-                    this.DataContext = MultEQApp;
+                    FloatParseHandling = FloatParseHandling.Decimal
+                });
+                // Data Binding
+                if (audysseyMultEQApp != null)
+                {
+                    this.DataContext = audysseyMultEQApp;
                 }
             }
         }
+
         private void SaveFile_OnClick(object sender, RoutedEventArgs e)
         {
-            string reSerialized = JsonConvert.SerializeObject(MultEQApp, new JsonSerializerSettings
+            string reSerialized = JsonConvert.SerializeObject(audysseyMultEQApp, new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
@@ -90,6 +123,7 @@ namespace Ratbuddyssey
                 File.WriteAllText(filename, reSerialized);
             }
         }
+
         private void SaveFileAs_OnClick(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
@@ -105,7 +139,7 @@ namespace Ratbuddyssey
             {
                 // Save document
                 filename = dlg.FileName;
-                string reSerialized = JsonConvert.SerializeObject(MultEQApp, new JsonSerializerSettings
+                string reSerialized = JsonConvert.SerializeObject(audysseyMultEQApp, new JsonSerializerSettings
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 });
@@ -115,68 +149,102 @@ namespace Ratbuddyssey
                 }
             }
         }
-        private void ConnectEthernet_OnClick(object sender, RoutedEventArgs e)
+
+        private void ConnectReceiver_OnClick(object sender, RoutedEventArgs e)
         {
-            if (sender == connectEthernet)
+            if (sender == connectReceiver)
             {
-                if (connectEthernet.IsChecked)
+                if (connectReceiver.IsChecked)
                 {
-                    // Establish ethernet connection with receiver
-                    MultEQAvrAdapter = new MultEQAvrAdapter(connectSniffer.IsChecked);
-                    if (MultEQAvrAdapter != null)
+                    if (audysseyMultEQAvr == null)
                     {
-                        // Data Binding
-                        this.DataContext = MultEQAvrAdapter;
-                        // Display connection details
-                        if (connectSniffer.IsChecked)
+                        // create receiver instance
+                        audysseyMultEQAvr = new AudysseyMultEQAvr(true);
+                        // adapter to interface MultEQAvr properties as if they were MultEQApp properties 
+                        audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
+                        // data Binding to adapter
+                        this.DataContext = audysseyMultEQAvrAdapter;
+                    }
+                    else
+                    {
+                        // object exists but not sure if we connected ethernet
+                        audysseyMultEQAvr.Connect();
+                    }
+                    // attach sniffer
+                    if (connectSniffer.IsChecked)
+                    {
+                        if (audysseyMultEQTcpSniffer == null)
                         {
-                            currentFile.Content = "Host: " + MultEQAvrAdapter.GetTcpHost() + " Client:" + MultEQAvrAdapter.GetTcpClient();
-                        }
-                        else
-                        {
-                            currentFile.Content = "Client:" + MultEQAvrAdapter.GetTcpClient();
+                            audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr);
                         }
                     }
-                    // Check if binding and propertychanged work
-                    MultEQAvrAdapter.AudysseyToAvr();
+                    // check if binding and propertychanged work
+                    audysseyMultEQAvr.AudysseyToAvr(); //TODO
                 }
                 else
                 {
                     this.DataContext = null;
-                    MultEQAvrAdapter = null;
+                    audysseyMultEQAvrAdapter = null;
+                    audysseyMultEQAvr = null;
                     // immediately clean up the object
                     GC.Collect();
                     GC.WaitForPendingFinalizers();
-                    currentFile.Content = "";
                 }
+                // display connection details
+                currentFile.Content = (audysseyMultEQTcpSniffer != null ? "Host: " + audysseyMultEQTcpSniffer.GetTcpHostAsString() : "") + (audysseyMultEQAvr != null ? " Client:" + audysseyMultEQAvr.GetTcpClientAsString() : "");
             }
         }
+
         private void ConnectSniffer_OnClick(object sender, RoutedEventArgs e)
         {
             if (sender == connectSniffer)
             {
-                if (connectEthernet.IsChecked)
+                if (connectSniffer.IsChecked)
                 {
-                    if (MultEQAvrAdapter != null)
+                    // can only attach sniffer to receiver if receiver object exists 
+                    if (audysseyMultEQAvr == null)
                     {
-                        MultEQAvrAdapter.AttachSniffer();
-                        currentFile.Content = "Host: " + MultEQAvrAdapter.GetTcpHost() + " Client:" + MultEQAvrAdapter.GetTcpClient();
+                        // receiver instance
+                        audysseyMultEQAvr = new AudysseyMultEQAvr(false);
+                        // create adapter to interface MultEQAvr properties as if they were MultEQApp properties 
+                        audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
+                        // data Binding to adapter
+                        this.DataContext = audysseyMultEQAvrAdapter;
+                    }
+                    // onyl create sniffer if it not already exists
+                    if (audysseyMultEQTcpSniffer == null)
+                    {
+                        // create sniffer attached to receiver
+                        audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr);
                     }
                 }
                 else
                 {
-                    if (MultEQAvrAdapter != null)
+                    if (audysseyMultEQTcpSniffer != null)
                     {
-                        MultEQAvrAdapter.DetachSniffer();
-                        currentFile.Content = "Client:" + MultEQAvrAdapter.GetTcpClient();
+                        audysseyMultEQTcpSniffer = null;
+                        // if not interested in receiver then close connection and delete objects
+                        if (connectReceiver.IsChecked == false)
+                        {
+                            this.DataContext = null;
+                            audysseyMultEQAvrAdapter = null;
+                            audysseyMultEQAvr = null;
+                        }
+                        // immediately clean up the object
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
                     }
                 }
+                // Display connection details
+                currentFile.Content = (audysseyMultEQTcpSniffer != null ? "Host: " + audysseyMultEQTcpSniffer.GetTcpHostAsString() : "") + (audysseyMultEQAvr != null ? " Client:" + audysseyMultEQAvr.GetTcpClientAsString() : "");
             }
         }
+
         private void ExitProgram_OnClick(object sender, RoutedEventArgs e)
         {
             App.Current.MainWindow.Close();
         }
+
         private void About_OnClick(object sender, RoutedEventArgs e)
         {
             System.Windows.MessageBox.Show("Shout out to AVS Forum, use at your own risk!");

@@ -1,18 +1,19 @@
-using Newtonsoft.Json;
 using System;
-using System.Buffers.Binary;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
+using System.Linq;
+using System.Net.Sockets;
 using System.Windows.Forms;
+using System.Buffers.Binary;
 using System.Security.Principal;
 using System.Runtime.InteropServices;
+using Newtonsoft.Json;
+using Audyssey.MultEQAvr;
 
 namespace Audyssey
 {
-    namespace MultEQAvr
+    namespace MultEQTcp
     {
         [StructLayout(LayoutKind.Explicit, Size = 4)]
         struct FloatInt32
@@ -32,20 +33,23 @@ namespace Audyssey
                 return inst.Float;
             }
         }
+
         public enum ReceiveAll
         {
             RCVALL_OFF = 0,
             RCVALL_ON = 1,
             RCVALL_SOCKETLEVELONLY = 2,
             RCVALL_IPLEVEL = 3,
-        };
+        }
+
         public enum Protocol
         {
             TCP = 6,
             UDP = 17,
             Unknown = -1
-        };
-        class AudysseyTcpIp
+        }
+
+        class AudysseyMultEQTcpIp
         {
             #region Properties
             public char TransmitReceive { get; set; }
@@ -63,37 +67,30 @@ namespace Audyssey
             public byte CheckSum { get; set; } = 0;
             #endregion
         }
-        class TcpSniffer
+
+        class AudysseyMultEQTcpSniffer
         {
-            private AudioVideoReceiver _Avr;
+            private string AudysseySnifferFileName = "AudysseySniffer.json";
+            private string TcpHostFileName = "TcpHost.json";
 
             private TcpIP TcpHost = null;
             private TcpIP TcpClient = null;
-            private string TcpHostFileName = "TcpHost.json";
-
-            private string AudysseySnifferFileName = "AudysseySniffer.json";
 
             private Socket mainSocket = null;
 
             private byte[] packetData = new byte[32768];
 
-            private AudysseyTcpIp AudysseyTcpIP = new AudysseyTcpIp();
-
             private byte[] ByteData = null;
-            public string GetTcpHost()
+
+            private AudysseyMultEQTcpIp audysseyMultEQTcpIp = new AudysseyMultEQTcpIp();
+            private AudysseyMultEQAvr _audysseyMultEQAvr = null;
+
+            public AudysseyMultEQTcpSniffer(AudysseyMultEQAvr audysseyMultEQAvr)
             {
-                return TcpHost.Address + "::" + TcpHost.Port.ToString();
-            }
-            public string GetTcpClient()
-            {
-                return TcpClient.Address + "::" + TcpClient.Port.ToString();
-            }
-            public TcpSniffer(AudioVideoReceiver Avr)
-            {
-                _Avr = Avr;
+                _audysseyMultEQAvr = audysseyMultEQAvr;
 
                 TcpHost = new TcpIP("192.168.50.66", 0, 0);
-                TcpClient = new TcpIP(_Avr.TcpClient.Address, _Avr.TcpClient.Port, _Avr.TcpClient.Timeout);
+                TcpClient = _audysseyMultEQAvr.GetTcpClient();
 
                 if (IsUserAdministrator())
                 {
@@ -153,11 +150,22 @@ namespace Audyssey
                     }
                 }
             }
-            ~TcpSniffer()
+
+            ~AudysseyMultEQTcpSniffer()
             {
                 ParseAvrFile();
-                //Trace.Close();
             }
+
+            public string GetTcpHostAsString()
+            {
+                return TcpHost.Address + "::" + TcpHost.Port.ToString();
+            }
+
+            public string GetTcpClientAsString()
+            {
+                return TcpClient.Address + "::" + TcpClient.Port.ToString();
+            }
+
             private bool IsUserAdministrator()
             {
                 bool isAdmin;
@@ -177,6 +185,7 @@ namespace Audyssey
                 }
                 return isAdmin;
             }
+
             private void OnReceive(IAsyncResult ar)
             {
                 try
@@ -200,6 +209,7 @@ namespace Audyssey
                     MessageBox.Show(ex.Message, "OnReceive", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+
             private void ParseTcpIPData(byte[] byteData, int nReceived)
             {
                 //Since all protocol packets are encapsulated in the IP datagram
@@ -226,6 +236,7 @@ namespace Audyssey
                     }
                 }
             }
+
             private void ParseAvrData(byte[] packetData, ushort packetLength)
             {
                 try
@@ -239,46 +250,46 @@ namespace Audyssey
                         byte[] array = packetData;
                         Array.Resize<byte>(ref array, array.Length - 1);
                         byte CheckSum = CalculateChecksum(array);
-                        AudysseyTcpIP.CheckSum = (byte)~CheckSum;
+                        audysseyMultEQTcpIp.CheckSum = (byte)~CheckSum;
 
                         BinaryReader binaryReader = new BinaryReader(memoryStream);
-                        AudysseyTcpIP.TransmitReceive = binaryReader.ReadChar();
-                        AudysseyTcpIP.TotalLength = (ushort)IPAddress.NetworkToHostOrder(binaryReader.ReadInt16()); //BinaryPrimitives.ReverseEndianness(binaryReader.ReadUInt16());
-                        AudysseyTcpIP.CurrentPacket = binaryReader.ReadByte();
-                        AudysseyTcpIP.TotalPackets = binaryReader.ReadByte();
-                        AudysseyTcpIP.Command = Encoding.ASCII.GetString(binaryReader.ReadBytes(AudysseyTcpIP.CommandLength));
-                        AudysseyTcpIP.Reserved = binaryReader.ReadByte();
-                        AudysseyTcpIP.DataLength = (ushort)IPAddress.NetworkToHostOrder(binaryReader.ReadInt16()); //BinaryPrimitives.ReverseEndianness(binaryReader.ReadUInt16());
-                        if (AudysseyTcpIP.DataLength == 0)
+                        audysseyMultEQTcpIp.TransmitReceive = binaryReader.ReadChar();
+                        audysseyMultEQTcpIp.TotalLength = (ushort)IPAddress.NetworkToHostOrder(binaryReader.ReadInt16()); //BinaryPrimitives.ReverseEndianness(binaryReader.ReadUInt16());
+                        audysseyMultEQTcpIp.CurrentPacket = binaryReader.ReadByte();
+                        audysseyMultEQTcpIp.TotalPackets = binaryReader.ReadByte();
+                        audysseyMultEQTcpIp.Command = Encoding.ASCII.GetString(binaryReader.ReadBytes(audysseyMultEQTcpIp.CommandLength));
+                        audysseyMultEQTcpIp.Reserved = binaryReader.ReadByte();
+                        audysseyMultEQTcpIp.DataLength = (ushort)IPAddress.NetworkToHostOrder(binaryReader.ReadInt16()); //BinaryPrimitives.ReverseEndianness(binaryReader.ReadUInt16());
+                        if (audysseyMultEQTcpIp.DataLength == 0)
                         {
                             //This is a packet without data
                             //Dispose irrelevant data
-                            AudysseyTcpIP.ByteData = null;
-                            AudysseyTcpIP.CharData = null;
-                            AudysseyTcpIP.Int32Data = null;
+                            audysseyMultEQTcpIp.ByteData = null;
+                            audysseyMultEQTcpIp.CharData = null;
+                            audysseyMultEQTcpIp.Int32Data = null;
                         }
                         else
                         {
                             //Read the Data
-                            int ByteToRead = AudysseyTcpIP.DataLength;
-                            AudysseyTcpIP.ByteData = binaryReader.ReadBytes(ByteToRead);
+                            int ByteToRead = audysseyMultEQTcpIp.DataLength;
+                            audysseyMultEQTcpIp.ByteData = binaryReader.ReadBytes(ByteToRead);
                             //Data can be single packet transfer of multiple packet transfer
-                            if (AudysseyTcpIP.TotalPackets == 0)
+                            if (audysseyMultEQTcpIp.TotalPackets == 0)
                             {
                                 //This is a single packet transfer
-                                AudysseyTcpIP.CharData = System.Text.Encoding.UTF8.GetString(AudysseyTcpIP.ByteData).ToString();
+                                audysseyMultEQTcpIp.CharData = System.Text.Encoding.UTF8.GetString(audysseyMultEQTcpIp.ByteData).ToString();
                                 //Keep the growing array for multi-packet transfers as we will have ACK packets in between
                                 //Dispose irrelevant data
-                                AudysseyTcpIP.Int32Data = null;
+                                audysseyMultEQTcpIp.Int32Data = null;
                             }
                             else
                             {
                                 //This is a multiple packet transfer
-                                AudysseyTcpIP.CharData = null;
+                                audysseyMultEQTcpIp.CharData = null;
                                 //First packet: create array and fill with data
-                                if (AudysseyTcpIP.CurrentPacket == 0)
+                                if (audysseyMultEQTcpIp.CurrentPacket == 0)
                                 {
-                                    ByteData = AudysseyTcpIP.ByteData;
+                                    ByteData = audysseyMultEQTcpIp.ByteData;
                                 }
                                 //Other packets: resize array and append data
                                 else
@@ -286,23 +297,23 @@ namespace Audyssey
                                     //Store length of current array
                                     Int32 PreviousBytaDataLength = ByteData.Length;
                                     //Resize the current array to add the new array
-                                    Array.Resize(ref ByteData, ByteData.Length + AudysseyTcpIP.ByteData.Length);
+                                    Array.Resize(ref ByteData, ByteData.Length + audysseyMultEQTcpIp.ByteData.Length);
                                     //Append the new array to the current array
-                                    Array.Copy(AudysseyTcpIP.ByteData, 0, ByteData, PreviousBytaDataLength, AudysseyTcpIP.ByteData.Length);
+                                    Array.Copy(audysseyMultEQTcpIp.ByteData, 0, ByteData, PreviousBytaDataLength, audysseyMultEQTcpIp.ByteData.Length);
                                 }
                                 //Last packet: store to class
-                                if (AudysseyTcpIP.CurrentPacket == AudysseyTcpIP.TotalPackets)
+                                if (audysseyMultEQTcpIp.CurrentPacket == audysseyMultEQTcpIp.TotalPackets)
                                 {
                                     //TotalPackets Data as int?
                                     //Reverse endianness of byte data and store
-                                    AudysseyTcpIP.Int32Data = ByteToInt32Array(ByteData);
+                                    audysseyMultEQTcpIp.Int32Data = ByteToInt32Array(ByteData);
                                 }
                             }
                         }
-                        AudysseyTcpIP.CheckSum = binaryReader.ReadByte();
-                        if (CheckSum == AudysseyTcpIP.CheckSum)
+                        audysseyMultEQTcpIp.CheckSum = binaryReader.ReadByte();
+                        if (CheckSum == audysseyMultEQTcpIp.CheckSum)
                         {
-                            string AvrString = JsonConvert.SerializeObject(AudysseyTcpIP, new JsonSerializerSettings
+                            string AvrString = JsonConvert.SerializeObject(audysseyMultEQTcpIp, new JsonSerializerSettings
                             {
                                 NullValueHandling = NullValueHandling.Ignore
                             });
@@ -312,7 +323,7 @@ namespace Audyssey
                             File.AppendAllText(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName, AvrString + "\n");
                             //Console.WriteLine(AvrString);
                             //Parse to parent to display? modify? re-transmit?
-                            ParseAvrObject(AudysseyTcpIP.TransmitReceive, AudysseyTcpIP.Command, AudysseyTcpIP.CharData, AudysseyTcpIP.Int32Data);
+                            ParseAvrObject(audysseyMultEQTcpIp.TransmitReceive, audysseyMultEQTcpIp.Command, audysseyMultEQTcpIp.CharData, audysseyMultEQTcpIp.Int32Data);
                         }
                     }
                 }
@@ -324,6 +335,7 @@ namespace Audyssey
                     MessageBox.Show(ex.Message, "ParseAVR", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+
             private void ParseAvrFile()
             {
                 if (File.Exists(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName))
@@ -331,27 +343,28 @@ namespace Audyssey
                     string[] AvrStrings = File.ReadAllLines(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName);
                     foreach (string _AvrString in AvrStrings)
                     {
-                        AudysseyTcpIP = JsonConvert.DeserializeObject<AudysseyTcpIp>(_AvrString, new JsonSerializerSettings { });
-                        ParseAvrObject(AudysseyTcpIP.TransmitReceive, AudysseyTcpIP.Command, AudysseyTcpIP.CharData, AudysseyTcpIP.Int32Data);
+                        audysseyMultEQTcpIp = JsonConvert.DeserializeObject<AudysseyMultEQTcpIp>(_AvrString, new JsonSerializerSettings { });
+                        ParseAvrObject(audysseyMultEQTcpIp.TransmitReceive, audysseyMultEQTcpIp.Command, audysseyMultEQTcpIp.CharData, audysseyMultEQTcpIp.Int32Data);
                     }
-                    string AvrString = JsonConvert.SerializeObject(_Avr, new JsonSerializerSettings
+                    string AvrString = JsonConvert.SerializeObject(_audysseyMultEQAvr, new JsonSerializerSettings
                     {
                         NullValueHandling = NullValueHandling.Ignore
                     });
                     File.WriteAllText(Environment.CurrentDirectory + "\\" + System.IO.Path.ChangeExtension(AudysseySnifferFileName, ".aud"), AvrString);
                 }
             }
+
             private void ParseAvrObject(char TransmitReceive, string CmdString, string AvrString, Int32[] AvrData)
             {
                 switch (CmdString)
                 {
                     case "GET_AVRINF":
                         if (TransmitReceive == 'R')
-                            _Avr.AVRINF = JsonConvert.DeserializeObject<AVRINF>(AvrString, new JsonSerializerSettings { });
+                            _audysseyMultEQAvr.Info = JsonConvert.DeserializeObject<AvrInfo>(AvrString, new JsonSerializerSettings { });
                         break;
                     case "GET_AVRSTS":
                         if (TransmitReceive == 'R')
-                            _Avr.AVRSTS = JsonConvert.DeserializeObject<AVRSTS>(AvrString, new JsonSerializerSettings { });
+                            _audysseyMultEQAvr.Status = JsonConvert.DeserializeObject<AvrStatus>(AvrString, new JsonSerializerSettings { });
                         break;
                     case "ENTER_AUDY":
                         break;
@@ -359,21 +372,22 @@ namespace Audyssey
                         break;
                     case "SET_SETDAT":
                         if (TransmitReceive == 'T')
-                            _Avr.SETDAT = JsonConvert.DeserializeObject<SETDAT>(AvrString, new JsonSerializerSettings { });
+                            _audysseyMultEQAvr.Data = JsonConvert.DeserializeObject<AvrData>(AvrString, new JsonSerializerSettings { });
                         break;
                     case "SET_DISFIL":
                         if (TransmitReceive == 'T')
-                            _Avr.DISFIL.Add(JsonConvert.DeserializeObject<DISFIL>(AvrString, new JsonSerializerSettings { }));
+                            _audysseyMultEQAvr.DisFil.Add(JsonConvert.DeserializeObject<AvrDisFil>(AvrString, new JsonSerializerSettings { }));
                         break;
                     case "INIT_COEFS":
                         break;
                     case "SET_COEFDT":
                         if (TransmitReceive == 'T')
                             if (AvrData != null)
-                                _Avr.COEFDT.Add(AvrData);
+                                _audysseyMultEQAvr.CoefData.Add(AvrData);
                         break;
                 }
             }
+
             private Int32[] ByteToInt32Array(byte[] Byte)
             {
                 Int32[] Int32s = null;
@@ -387,6 +401,7 @@ namespace Audyssey
                 }
                 return Int32s;
             }
+
             private byte[] Int32ToByteArray(Int32[] Int32s)
             {
                 byte[] Byte = new byte[4 * Int32s.Length];
@@ -396,6 +411,7 @@ namespace Audyssey
                 }
                 return Byte;
             }
+
             private byte CalculateChecksum(byte[] dataToCalculate)
             {
                 return dataToCalculate.Aggregate((r, n) => r += n);

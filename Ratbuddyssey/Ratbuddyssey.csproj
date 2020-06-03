@@ -133,11 +133,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="AudysseyMultEQ.cs" />
+    <Compile Include="AudysseyMultEQApp.cs" />
+    <Compile Include="AudysseyMultEQAppChannelReport.cs" />
+    <Compile Include="AudysseyMultEQAppDetectedChannel.cs" />
     <Compile Include="AudysseyMultEQAvr.cs" />
     <Compile Include="AudysseyMultEQAvrAdapter.cs" />
-    <Compile Include="AudysseyMultEQChannelReport.cs" />
-    <Compile Include="AudysseyMultEQDetectedChannel.cs" />
     <Compile Include="ClassInterfaceContractResolver.cs" />
     <Compile Include="IPHeader.cs" />
     <Compile Include="RatbuddysseyHome.tab1.cs" />
@@ -150,9 +150,9 @@
     </Compile>
     <Compile Include="ReferenceCurveFilter.cs" />
     <Compile Include="StringValueConverter.cs" />
-    <Compile Include="TcpClientWithTimeout.cs" />
+    <Compile Include="AudysseyMultEQAvrTcpClientWithTimeout.cs" />
     <Compile Include="TCPHeader.cs" />
-    <Compile Include="TcpSniffer.cs" />
+    <Compile Include="AudysseyMultEQTcpSniffer.cs" />
     <Page Include="RatbuddysseyHome.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

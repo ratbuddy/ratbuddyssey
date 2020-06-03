@@ -1,22 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Text;
 using System.ComponentModel;
-using System.Text;
+using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 
 namespace Audyssey
 {
     namespace MultEQApp
     {
-        public class MultEQApp : INotifyPropertyChanged
+        public class AudysseyMultEQApp : INotifyPropertyChanged
         {
             // according to JSON .ady file
             private int? _enAmpAssignType = null;
             private bool? _dynamicVolume = null;
             private int? _enTargetCurveType = null;
             private bool? _lfcSupport = null;
-            private List<DetectedChannel> _detectedChannels = null;
+            private ObservableCollection<DetectedChannel> _detectedChannels = null;
             private string _targetModelName = null;
             private string _title = null;
             private string _interfaceVersion = null;
@@ -316,7 +314,7 @@ namespace Audyssey
                 }
             }
             [JsonProperty(Order = 16)]
-            public List<DetectedChannel> DetectedChannels
+            public ObservableCollection<DetectedChannel> DetectedChannels
             {
                 get
                 {
@@ -329,6 +327,7 @@ namespace Audyssey
                 }
             }
             #endregion
+
             public override string ToString()
             {
                 StringBuilder sb = new StringBuilder();
@@ -348,11 +347,13 @@ namespace Audyssey
 
             #region INotifyPropertyChanged implementation
             public event PropertyChangedEventHandler PropertyChanged = delegate { };
+            #endregion
+
+            #region methods
             protected void RaisePropertyChanged(string propertyName)
             {
                 if (this.PropertyChanged != null)
                 {
-                    Console.WriteLine(propertyName);
                     this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
                 }
             }

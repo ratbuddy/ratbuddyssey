@@ -54,9 +54,9 @@ namespace Ratbuddyssey
                         }
                     }
                 }
-                if (MultEQApp != null)
+                if (audysseyMultEQApp != null)
                 {
-                    switch (MultEQApp.EnTargetCurveType)
+                    switch (audysseyMultEQApp.EnTargetCurveType)
                     {
                         case 0:
                             break;
@@ -138,11 +138,11 @@ namespace Ratbuddyssey
                 {
                     if (secondaryChannel)
                     {
-                        points = MultEQReferenceFilterCurve.High_Frequency_Roll_Off_2();
+                        points = audysseyMultEQReferenceCurveFilter.High_Frequency_Roll_Off_2();
                     }
                     else
                     {
-                        points = MultEQReferenceFilterCurve.High_Frequency_Roll_Off_1();
+                        points = audysseyMultEQReferenceCurveFilter.High_Frequency_Roll_Off_1();
                     }
 
                     if (points != null)
@@ -341,7 +341,7 @@ namespace Ratbuddyssey
         }
         private void ChannelsView_OnClickSticky(object sender, RoutedEventArgs e)
         {
-            foreach (var channel in MultEQApp.DetectedChannels)
+            foreach (var channel in audysseyMultEQApp.DetectedChannels)
             {
                 if (channel.Sticky)
                 {

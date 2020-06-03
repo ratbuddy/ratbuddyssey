@@ -14,11 +14,11 @@
         <Menu Grid.Row="1"> <!--menu-->
             <MenuItem Header="_File">
                 <MenuItem Header="_Open Audyssey file" x:Name="openFile" Click="OpenFile_OnClick"/>
-                <MenuItem Header="_Reload (discard unsaved changes)" x:Name="reloadFile" Click="ReloadFile_OnClick"/>
+                <MenuItem Header="Re_load (discard unsaved changes)" x:Name="reloadFile" Click="ReloadFile_OnClick"/>
                 <MenuItem Header="_Save" x:Name="saveFile" Click="SaveFile_OnClick"/>
                 <MenuItem Header="Save _As" x:Name="saveFileAs" Click="SaveFileAs_OnClick"/>
                 <Separator />
-                <MenuItem Header="_Ethernet" x:Name="connectEthernet" Click="ConnectEthernet_OnClick" IsCheckable="True"/>
+                <MenuItem Header="_Receiver" x:Name="connectReceiver" Click="ConnectReceiver_OnClick" IsCheckable="True"/>
                 <MenuItem Header="S_niffer" x:Name="connectSniffer" Click="ConnectSniffer_OnClick" IsCheckable="True"/>
                 <Separator/>
                 <MenuItem Header="E_xit" x:Name="exitProgram" Click="ExitProgram_OnClick"/>
