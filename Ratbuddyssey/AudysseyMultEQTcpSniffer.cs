@@ -70,6 +70,8 @@ namespace Audyssey
 
         class AudysseyMultEQTcpSniffer
         {
+            static readonly object _locker = new object();
+
             private string AudysseySnifferFileName = "AudysseySniffer.json";
             private string TcpHostFileName = "TcpHost.json";
 
@@ -78,23 +80,23 @@ namespace Audyssey
 
             private Socket mainSocket = null;
 
-            private byte[] packetData = new byte[32768];
+            private byte[] packetData = new byte[65536];
 
             private byte[] ByteData = null;
 
             private AudysseyMultEQTcpIp audysseyMultEQTcpIp = new AudysseyMultEQTcpIp();
             private AudysseyMultEQAvr _audysseyMultEQAvr = null;
 
-            public AudysseyMultEQTcpSniffer(AudysseyMultEQAvr audysseyMultEQAvr)
+            public AudysseyMultEQTcpSniffer(AudysseyMultEQAvr audysseyMultEQAvr, string HostAddress)
             {
                 _audysseyMultEQAvr = audysseyMultEQAvr;
 
-                TcpHost = new TcpIP("192.168.50.66", 0, 0);
+                TcpHost = new TcpIP(HostAddress, 0, 0);
                 TcpClient = _audysseyMultEQAvr.GetTcpClient();
 
-                if (IsUserAdministrator())
+                if (HostAddress.Equals(string.Empty))
                 {
-                    // read host ip address from file
+                    // try to read host ip address from file...
                     TcpHostFileName = Environment.CurrentDirectory + "\\" + TcpHostFileName;
                     var FileInfoTest = new FileInfo(TcpHostFileName);
                     if ((FileInfoTest.Exists) && FileInfoTest.Length > 0)
@@ -107,47 +109,36 @@ namespace Audyssey
                     }
                     else
                     {
-                        IPHostEntry HosyEntry = Dns.GetHostEntry((Dns.GetHostName()));
-                        if (HosyEntry.AddressList.Length > 0)
-                        {
-                            IPAddress ipAddress = new IPAddress(0);
-                            foreach (IPAddress ip in HosyEntry.AddressList)
-                            {
-                                ipAddress = ip; // fortunately for me the last one is the right one :)
-                                TcpHost.Address = ip.ToString();
-                            }
-                            // write last host ip address to file
-                            string TcpIPFile = JsonConvert.SerializeObject(TcpHost, new JsonSerializerSettings { });
-                            File.WriteAllText(TcpHostFileName, TcpIPFile);
-                        }
+                        TcpHost = new TcpIP("127.0.0.1", 0, 0);
+                        MessageBox.Show("File not found: " + TcpHostFileName, "AudysseyMultEQTcpSniffer::TcpSniffer", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
+                }
 
-                    //For sniffing the socket to capture the packets has to be a raw socket, with the
-                    //address family being of type internetwork, and protocol being IP
-                    try
-                    {
-                        mainSocket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP);
+                //For sniffing the socket to capture the packets has to be a raw socket, with the
+                //address family being of type internetwork, and protocol being IP
+                try
+                {
+                    mainSocket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP);
 
-                        mainSocket.ReceiveBufferSize = 32768;
+                    mainSocket.ReceiveBufferSize = 32768;
 
-                        //Bind the socket to the selected IP address IPAddress.Parse("192.168.50.66")
-                        mainSocket.Bind(new IPEndPoint(IPAddress.Parse(TcpHost.Address), TcpHost.Port));
+                    //Bind the socket to the selected IP address IPAddress.Parse("192.168.50.66")
+                    mainSocket.Bind(new IPEndPoint(IPAddress.Parse(TcpHost.Address), TcpHost.Port));
 
-                        //Set the socket  options
-                        mainSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, true);
+                    //Set the socket  options
+                    mainSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, true);
 
-                        mainSocket.IOControl(IOControlCode.ReceiveAll, new byte[] { (byte)ReceiveAll.RCVALL_ON, 0, 0, 0 }, new byte[] { (byte)ReceiveAll.RCVALL_ON, 0, 0, 0 });
+                    mainSocket.IOControl(IOControlCode.ReceiveAll, new byte[] { (byte)ReceiveAll.RCVALL_ON, 0, 0, 0 }, new byte[] { (byte)ReceiveAll.RCVALL_ON, 0, 0, 0 });
 
-                        //Start receiving the packets asynchronously
-                        mainSocket.BeginReceive(packetData, 0, packetData.Length, SocketFlags.None, new AsyncCallback(OnReceive), null);
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message, "TcpSniffer", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+                    //Start receiving the packets asynchronously
+                    mainSocket.BeginReceive(packetData, 0, packetData.Length, SocketFlags.None, new AsyncCallback(OnReceive), null);
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "AudysseyMultEQTcpSniffer::TcpSniffer", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
 
@@ -166,26 +157,6 @@ namespace Audyssey
                 return TcpClient.Address + "::" + TcpClient.Port.ToString();
             }
 
-            private bool IsUserAdministrator()
-            {
-                bool isAdmin;
-                try
-                {
-                    WindowsIdentity user = WindowsIdentity.GetCurrent();
-                    WindowsPrincipal principal = new WindowsPrincipal(user);
-                    isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    isAdmin = false;
-                }
-                catch (Exception ex)
-                {
-                    isAdmin = false;
-                }
-                return isAdmin;
-            }
-
             private void OnReceive(IAsyncResult ar)
             {
                 try
@@ -195,18 +166,17 @@ namespace Audyssey
                     //Analyze the bytes received...
                     ParseTcpIPData(packetData, nReceived);
 
-                    packetData = new byte[32768];
+                    packetData = new byte[65536];
 
                     //Another call to BeginReceive so that we continue to receive the incoming packets
-                    mainSocket.BeginReceive(packetData, 0, packetData.Length, SocketFlags.None,
-                        new AsyncCallback(OnReceive), null);
+                    mainSocket.BeginReceive(packetData, 0, packetData.Length, SocketFlags.None, new AsyncCallback(OnReceive), null);
                 }
                 catch (ObjectDisposedException)
                 {
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message, "OnReceive", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(ex.Message, "AudysseyMultEQTcpSniffer::OnReceive", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
 
@@ -317,11 +287,12 @@ namespace Audyssey
                             {
                                 NullValueHandling = NullValueHandling.Ignore
                             });
-                            //Dump to file for leaning
-                            //Trace.Flush();
-                            //Trace.WriteLine(AvrString);
-                            File.AppendAllText(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName, AvrString + "\n");
-                            //Console.WriteLine(AvrString);
+                            // we are running asynchronous
+                            lock (_locker)
+                            {
+                                //Dump to file for learning
+                                File.AppendAllText(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName, AvrString + "\n");
+                            }
                             //Parse to parent to display? modify? re-transmit?
                             ParseAvrObject(audysseyMultEQTcpIp.TransmitReceive, audysseyMultEQTcpIp.Command, audysseyMultEQTcpIp.CharData, audysseyMultEQTcpIp.Int32Data);
                         }
@@ -332,8 +303,13 @@ namespace Audyssey
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message, "ParseAVR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(ex.Message, "AudysseyMultEQTcpSniffer::ParseAvrData", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+            }
+
+            private void Invoke(Action action)
+            {
+                throw new NotImplementedException();
             }
 
             private void ParseAvrFile()

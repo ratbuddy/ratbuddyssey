@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Windows;
+using System.ComponentModel;
 using System.Windows.Controls;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -28,6 +29,16 @@ namespace Ratbuddyssey
             InitializeComponent();
             channelsView.SelectionChanged += ChannelsView_SelectionChanged;
             plot.PreviewMouseWheel += Plot_PreviewMouseWheel;
+
+            System.Net.IPHostEntry HosyEntry = System.Net.Dns.GetHostEntry((System.Net.Dns.GetHostName()));
+            if (HosyEntry.AddressList.Length > 0)
+            {
+                foreach (System.Net.IPAddress ip in HosyEntry.AddressList)
+                {
+                    cmbInterfaceHost.Items.Add(ip.ToString());
+                }
+                cmbInterfaceHost.SelectedIndex = cmbInterfaceHost.Items.Count - 1;
+            }
         }
 
         ~RatbuddysseyHome()
@@ -173,9 +184,20 @@ namespace Ratbuddyssey
                     // attach sniffer
                     if (connectSniffer.IsChecked)
                     {
-                        if (audysseyMultEQTcpSniffer == null)
+                        // sniffer must be elevated to capture raw packets
+                        if (!IsElevated())
                         {
-                            audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr);
+                            // we cannot create the sniffer...
+                            connectSniffer.IsChecked = false;
+                            // but we can ask the user to elevate the program!
+                            RunAsAdmin();
+                        }
+                        else
+                        {
+                            if (audysseyMultEQTcpSniffer == null)
+                            {
+                                audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr, cmbInterfaceHost.SelectedItem.ToString());
+                            }
                         }
                     }
                     // check if binding and propertychanged work
@@ -211,11 +233,22 @@ namespace Ratbuddyssey
                         // data Binding to adapter
                         this.DataContext = audysseyMultEQAvrAdapter;
                     }
-                    // onyl create sniffer if it not already exists
-                    if (audysseyMultEQTcpSniffer == null)
+                    // sniffer must be elevated to capture raw packets
+                    if (!IsElevated())
                     {
-                        // create sniffer attached to receiver
-                        audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr);
+                        // we cannot create the sniffer...
+                        connectSniffer.IsChecked = false;
+                        // but we can ask the user to elevate the program!
+                        RunAsAdmin();
+                    }
+                    else
+                    {
+                        // onyl create sniffer if it not already exists
+                        if (audysseyMultEQTcpSniffer == null)
+                        {
+                            // create sniffer attached to receiver
+                            audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr, cmbInterfaceHost.SelectedItem.ToString());
+                        }
                     }
                 }
                 else
@@ -248,6 +281,57 @@ namespace Ratbuddyssey
         private void About_OnClick(object sender, RoutedEventArgs e)
         {
             System.Windows.MessageBox.Show("Shout out to AVS Forum, use at your own risk!");
+        }
+
+        #region INotifyPropertyChanged implementation
+        public event PropertyChangedEventHandler PropertyChanged = delegate { };
+        #endregion
+
+        #region methods
+        protected void RaisePropertyChanged(string propertyName)
+        {
+            if (this.PropertyChanged != null)
+            {
+                this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+        #endregion
+
+        private static void RunAsAdmin()
+        {
+            try
+            {
+                var path = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                using (var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path, "/run_elevated_action")
+                {
+                    Verb = "runas"
+                }))
+                {
+                    process?.WaitForExit();
+                }
+
+            }
+            catch (Win32Exception ex)
+            {
+                if (ex.NativeErrorCode == 1223)
+                {
+                    System.Windows.Forms.MessageBox.Show("Sniffer needs elevated rights for raw socket!", "Warning");
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        private static bool IsElevated()
+        {
+            using (var identity = System.Security.Principal.WindowsIdentity.GetCurrent())
+            {
+                var principal = new System.Security.Principal.WindowsPrincipal(identity);
+
+                return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+            }
         }
     }
 }

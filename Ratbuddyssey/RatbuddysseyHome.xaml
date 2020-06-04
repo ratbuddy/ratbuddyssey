@@ -7,27 +7,34 @@
       >
     <Grid Background="White">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!--titlebar-->
-            <RowDefinition Height="Auto"/> <!--menu-->
-            <RowDefinition/> <!--tab-->
+            <RowDefinition Height="Auto"/>
+            <!--titlebar-->
+            <RowDefinition Height="Auto"/>
+            <!--menu-->
+            <RowDefinition/>
+            <!--tab-->
         </Grid.RowDefinitions>
-        <Menu Grid.Row="1"> <!--menu-->
+            <ComboBox x:Name="cmbInterfaceHost" Grid.Row="2" Panel.ZIndex="1" HorizontalAlignment="Right" VerticalAlignment="Top" Width="170"/>
+        <Menu Grid.Row="1">
+            <!--menu-->
             <MenuItem Header="_File">
                 <MenuItem Header="_Open Audyssey file" x:Name="openFile" Click="OpenFile_OnClick"/>
                 <MenuItem Header="Re_load (discard unsaved changes)" x:Name="reloadFile" Click="ReloadFile_OnClick"/>
                 <MenuItem Header="_Save" x:Name="saveFile" Click="SaveFile_OnClick"/>
                 <MenuItem Header="Save _As" x:Name="saveFileAs" Click="SaveFileAs_OnClick"/>
-                <Separator />
-                <MenuItem Header="_Receiver" x:Name="connectReceiver" Click="ConnectReceiver_OnClick" IsCheckable="True"/>
-                <MenuItem Header="S_niffer" x:Name="connectSniffer" Click="ConnectSniffer_OnClick" IsCheckable="True"/>
                 <Separator/>
                 <MenuItem Header="E_xit" x:Name="exitProgram" Click="ExitProgram_OnClick"/>
+            </MenuItem>
+            <MenuItem Header="_Ethernet">
+                <MenuItem Header="_Receiver" x:Name="connectReceiver" Click="ConnectReceiver_OnClick" IsCheckable="True"/>
+                <MenuItem Header="S_niffer" x:Name="connectSniffer" Click="ConnectSniffer_OnClick" IsCheckable="True"/>
             </MenuItem>
             <MenuItem Header="_About">
                 <MenuItem Header="About Ratbuddyssey" x:Name="about" Click="About_OnClick"/>
             </MenuItem>
         </Menu>
-        <TabControl Grid.Row="2"> <!--tab-->
+        <TabControl Grid.Row="2">
+            <!--tab-->
             <TabItem Header="TabItem">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -35,13 +42,15 @@
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="auto"/>
-                        <ColumnDefinition Width="auto" /> <!--splitter-->
+                        <ColumnDefinition Width="auto" />
+                        <!--splitter-->
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Grid Grid.Column="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
-                            <RowDefinition Height="auto"/><!--splitter-->
+                            <RowDefinition Height="auto"/>
+                            <!--splitter-->
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <GroupBox Header="Channels">
@@ -92,7 +101,8 @@
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="auto"/>
-                            <RowDefinition Height="auto"/><!--splitter-->
+                            <RowDefinition Height="auto"/>
+                            <!--splitter-->
                             <RowDefinition/>
                         </Grid.RowDefinitions>
                         <GroupBox x:Name="Status" Header="Status">
@@ -145,15 +155,21 @@
                         <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
                         <Grid Grid.Row="2">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="auto"/> <!--channel info|report-->
-                                <ColumnDefinition Width="auto"/> <!--splitter-->
-                                <ColumnDefinition Width="*"/> <!--graph-->
+                                <ColumnDefinition Width="auto"/>
+                                <!--channel info|report-->
+                                <ColumnDefinition Width="auto"/>
+                                <!--splitter-->
+                                <ColumnDefinition Width="*"/>
+                                <!--graph-->
                             </Grid.ColumnDefinitions>
                             <Grid Grid.Column="0">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="*"/> <!--channel info-->
-                                    <RowDefinition Height="auto"/> <!--splitter-->
-                                    <RowDefinition Height="*"/> <!--channel report-->
+                                    <RowDefinition Height="*"/>
+                                    <!--channel info-->
+                                    <RowDefinition Height="auto"/>
+                                    <!--splitter-->
+                                    <RowDefinition Height="*"/>
+                                    <!--channel report-->
                                 </Grid.RowDefinitions>
                                 <Grid Grid.Row="0">
                                     <GroupBox Header="Channel Info" DataContext="{Binding SelectedValue, ElementName=channelsView}">

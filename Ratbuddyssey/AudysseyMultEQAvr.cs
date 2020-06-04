@@ -114,7 +114,7 @@ namespace Audyssey
                     File.WriteAllText(TcpClientFileName, TcpFile);
                 }
             }
-            
+
             public AudysseyMultEQAvr(bool connectTcpClient = true)
             {
                 _AvrInfo = new AvrInfo();
@@ -122,7 +122,7 @@ namespace Audyssey
                 _AvrData = new AvrData();
                 _AvrDisFil = new List<AvrDisFil>();
                 _AvrCoefData = new List<Int32[]>();
-                // we need the ip address of the pc  
+                // we need the ip address and port of the avr
                 TcpClient = new TcpIP("192.168.50.82", 1256, 5000);
                 TcpClientFileName = Environment.CurrentDirectory + "\\" + TcpClientFileName;
                 var FileInfoTest = new FileInfo(TcpClientFileName);
@@ -135,7 +135,7 @@ namespace Audyssey
                             new JsonSerializerSettings { });
                     }
                 }
-                // suppose the sniffer uses this object but we do not want to participate TCP IP traffic
+                // suppose: the sniffer uses this object but we do not want to participate TCP IP traffic?
                 if (connectTcpClient) Connect();
             }
 
