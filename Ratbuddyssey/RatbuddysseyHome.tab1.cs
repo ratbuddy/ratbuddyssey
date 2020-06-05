@@ -16,7 +16,6 @@ namespace Ratbuddyssey
 {
     public partial class RatbuddysseyHome : Page
     {
-        private string filename;
         private PlotModel plotModel = new PlotModel();
         
         private List<int> keys = new List<int>();
@@ -422,6 +421,7 @@ namespace Ratbuddyssey
             DrawChart();
         }
     }
+
     class AxisLimit
     {
         public double XMin { get; set; }

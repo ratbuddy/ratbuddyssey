@@ -138,6 +138,11 @@
     <Compile Include="AudysseyMultEQAppDetectedChannel.cs" />
     <Compile Include="AudysseyMultEQAvr.cs" />
     <Compile Include="AudysseyMultEQAvrAdapter.cs" />
+    <Compile Include="AudysseyMultEQAvrData.cs" />
+    <Compile Include="AudysseyMultEQAvrDisFil.cs" />
+    <Compile Include="AudysseyMultEQAvrInfo.cs" />
+    <Compile Include="AudysseyMultEQAvrStatus.cs" />
+    <Compile Include="AudysseyMultEQReferenceCurveFilter.cs" />
     <Compile Include="ClassInterfaceContractResolver.cs" />
     <Compile Include="IPHeader.cs" />
     <Compile Include="RatbuddysseyHome.tab1.cs" />
@@ -148,7 +153,6 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ReferenceCurveFilter.cs" />
     <Compile Include="StringValueConverter.cs" />
     <Compile Include="AudysseyMultEQAvrTcpClientWithTimeout.cs" />
     <Compile Include="TCPHeader.cs" />

@@ -61,10 +61,9 @@ namespace Ratbuddyssey
             if (result == true)
             {
                 // Open document 
-                filename = dlg.FileName;
-                currentFile.Content = filename;
+                currentFile.Content = dlg.FileName;
                 // Load document 
-                String audysseyFile = File.ReadAllText(filename);
+                String audysseyFile = File.ReadAllText(currentFile.Content.ToString());
                 // Parse JSON data
                 audysseyMultEQApp = JsonConvert.DeserializeObject<AudysseyMultEQApp>(audysseyFile, new JsonSerializerSettings
                 {
@@ -106,7 +105,7 @@ namespace Ratbuddyssey
             if (messageBoxResult == MessageBoxResult.Yes)
             {
                 // Reload document 
-                String audysseyFile = File.ReadAllText(filename);
+                String audysseyFile = File.ReadAllText(currentFile.Content.ToString());
                 // Parse JSON data
                 audysseyMultEQApp = JsonConvert.DeserializeObject<AudysseyMultEQApp>(audysseyFile, new JsonSerializerSettings
                 {
@@ -129,16 +128,16 @@ namespace Ratbuddyssey
 #if DEBUG
             filename = System.IO.Path.ChangeExtension(filename, ".json");
 #endif
-            if ((reSerialized != null) && (!string.IsNullOrEmpty(filename)))
+            if ((reSerialized != null) && (!string.IsNullOrEmpty(currentFile.Content.ToString())))
             {
-                File.WriteAllText(filename, reSerialized);
+                File.WriteAllText(currentFile.Content.ToString(), reSerialized);
             }
         }
 
         private void SaveFileAs_OnClick(object sender, RoutedEventArgs e)
         {
             Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
-            dlg.FileName = filename;
+            dlg.FileName = currentFile.Content.ToString();
             dlg.DefaultExt = ".ady";
             dlg.Filter = "Audyssey calibration (.ady)|*.ady";
 
@@ -149,14 +148,14 @@ namespace Ratbuddyssey
             if (result == true)
             {
                 // Save document
-                filename = dlg.FileName;
+                currentFile.Content = dlg.FileName;
                 string reSerialized = JsonConvert.SerializeObject(audysseyMultEQApp, new JsonSerializerSettings
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
                 });
-                if ((reSerialized != null) && (!string.IsNullOrEmpty(filename)))
+                if ((reSerialized != null) && (!string.IsNullOrEmpty(currentFile.Content.ToString())))
                 {
-                    File.WriteAllText(filename, reSerialized);
+                    File.WriteAllText(currentFile.Content.ToString(), reSerialized);
                 }
             }
         }

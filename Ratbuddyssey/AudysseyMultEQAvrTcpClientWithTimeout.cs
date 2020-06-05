@@ -17,6 +17,7 @@ namespace Audyssey
             public int Port { get; set; }
             public int Timeout { get; set; }
             #endregion
+
             public TcpIP(string address = "127.0.0.1", int port = 0, int timeout = 0)
             {
                 Address = address;

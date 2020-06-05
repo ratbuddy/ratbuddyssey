@@ -19,7 +19,8 @@
             <!--menu-->
             <MenuItem Header="_File">
                 <MenuItem Header="_Open Audyssey file" x:Name="openFile" Click="OpenFile_OnClick"/>
-                <MenuItem Header="Re_load (discard unsaved changes)" x:Name="reloadFile" Click="ReloadFile_OnClick"/>
+                <MenuItem Header="_Reload (discard unsaved changes)" x:Name="reloadFile" Click="ReloadFile_OnClick"/>
+                <Separator/>
                 <MenuItem Header="_Save" x:Name="saveFile" Click="SaveFile_OnClick"/>
                 <MenuItem Header="Save _As" x:Name="saveFileAs" Click="SaveFileAs_OnClick"/>
                 <Separator/>
@@ -35,7 +36,7 @@
         </Menu>
         <TabControl Grid.Row="2">
             <!--tab-->
-            <TabItem Header="TabItem">
+            <TabItem x:Name="TabFile" Header="File">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
@@ -291,7 +292,7 @@
                     </Grid>
                 </Grid>
             </TabItem>
-            <TabItem Header="TabItem">
+            <TabItem x:Name="TabEthernet" Header="Ethernet">
             </TabItem>
         </TabControl>
     </Grid>
