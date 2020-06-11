@@ -170,6 +170,7 @@ namespace Audyssey
                 {
                     if (_audysseyMultEQAvr.Status.ChSetup != null)
                     {
+                        _detectedChannels = new ObservableCollection<DetectedChannel>();
                         foreach (var chsetup in _audysseyMultEQAvr.Status.ChSetup)
                         {
                             foreach (var ch in chsetup)

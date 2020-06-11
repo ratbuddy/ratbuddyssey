@@ -2,10 +2,24 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:oxy="http://oxyplot.org/wpf"
+      xmlns:local="clr-namespace:Ratbuddyssey.Converters"
       Title="Ratbuddyssey - Home"
-      ShowsNavigationUI="false"
-      >
+      ShowsNavigationUI="false">
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/css/MyStyle.xaml">
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
     <Grid Background="White">
+        <Grid.Resources>
+            <local:DebugDataBindingConverter x:Key="DebugBinding"/>
+            <local:ProgressBarPosDataConverter x:Key="ProgressBarPosData"/>
+            <local:ProgressBarNegDataConverter x:Key="ProgressBarNegData"/>
+            <local:ValueToAngleConverter x:Key="ValueToAngle"/>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!--titlebar-->
@@ -14,7 +28,7 @@
             <RowDefinition/>
             <!--tab-->
         </Grid.RowDefinitions>
-            <ComboBox x:Name="cmbInterfaceHost" Grid.Row="2" Panel.ZIndex="1" HorizontalAlignment="Right" VerticalAlignment="Top" Width="170"/>
+        <ComboBox x:Name="cmbInterfaceHost" Grid.Row="2" Panel.ZIndex="1" HorizontalAlignment="Right" VerticalAlignment="Top" Width="170"/>
         <Menu Grid.Row="1">
             <!--menu-->
             <MenuItem Header="_File">
@@ -34,8 +48,7 @@
                 <MenuItem Header="About Ratbuddyssey" x:Name="about" Click="About_OnClick"/>
             </MenuItem>
         </Menu>
-        <TabControl Grid.Row="2">
-            <!--tab-->
+        <TabControl x:Name="tabControl" Grid.Row="2" SelectionChanged="tabControl_SelectionChanged">
             <TabItem x:Name="TabFile" Header="File">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -44,14 +57,12 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="auto"/>
                         <ColumnDefinition Width="auto" />
-                        <!--splitter-->
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Grid Grid.Column="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="auto"/>
-                            <!--splitter-->
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <GroupBox Header="Channels">
@@ -124,8 +135,8 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="auto"/>
                                 </Grid.ColumnDefinitions>
-                                <Label Grid.Row="0" Grid.Column="0" x:Name="label" Content="Current File:" VerticalAlignment="Center"/>
-                                <Label Grid.Row="0" Grid.Column="1" x:Name="currentFile" Content="" VerticalAlignment="Center" Grid.ColumnSpan="5"/>
+                                <Label x:Name="label" Content="Current File:" Grid.Row="0" Grid.Column="0"/>
+                                <Label x:Name="currentFile" Content="" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="5" Margin="-7,0,0,0"/>
                                 <Label Grid.Row="1" Grid.Column="0" Content="Amp Assign Info" VerticalAlignment="Center"/>
                                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AmpAssignInfo}" VerticalAlignment="Center" Grid.ColumnSpan="5"/>
                                 <Label Grid.Row="2" Grid.Column="0" Content="Title" VerticalAlignment="Center"/>
@@ -293,6 +304,65 @@
                 </Grid>
             </TabItem>
             <TabItem x:Name="TabEthernet" Header="Ethernet">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <GroupBox Grid.Row="0" Header="Channel Setup">
+                            <ListView x:Name="ChannelSetupView" ItemsSource="{Binding Status.ChSetup}" SelectionChanged="ChannelSetupView_SelectionChanged">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Channel" Width="auto" DisplayMemberBinding="{Binding Key}" />
+                                        <GridViewColumn Header="Setup" Width="auto" DisplayMemberBinding="{Binding Value}" />
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </GroupBox>
+                        <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Height="5" />
+                        <GroupBox Grid.Row="2" Header="Equalizer Display">
+                            <StackPanel Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal" Height="auto" VerticalAlignment="Bottom">
+                                    <ProgressBar Margin="0" Width="20" Height="200" Value="{Binding CurrentDisFil.FilData[0], Converter={StaticResource ProgressBarPosData}, UpdateSourceTrigger=PropertyChanged}" Maximum="10.0" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="200" Value="{Binding CurrentDisFil.FilData[1], Converter={StaticResource ProgressBarPosData}, UpdateSourceTrigger=PropertyChanged}" Maximum="10.0" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="200" Value="{Binding CurrentDisFil.FilData[2], Converter={StaticResource ProgressBarPosData}, UpdateSourceTrigger=PropertyChanged}" Maximum="10.0" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="200" Value="{Binding CurrentDisFil.FilData[3], Converter={StaticResource ProgressBarPosData}, UpdateSourceTrigger=PropertyChanged}" Maximum="10.0" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="200" Value="{Binding CurrentDisFil.FilData[4], Converter={StaticResource ProgressBarPosData}, UpdateSourceTrigger=PropertyChanged}" Maximum="10.0" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="200" Value="{Binding CurrentDisFil.FilData[5], Converter={StaticResource ProgressBarPosData}, UpdateSourceTrigger=PropertyChanged}" Maximum="10.0" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="200" Value="{Binding CurrentDisFil.FilData[6], Converter={StaticResource ProgressBarPosData}, UpdateSourceTrigger=PropertyChanged}" Maximum="10.0" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="200" Value="{Binding CurrentDisFil.FilData[7], Converter={StaticResource ProgressBarPosData}, UpdateSourceTrigger=PropertyChanged}" Maximum="10.0" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="200" Value="{Binding CurrentDisFil.FilData[8], Converter={StaticResource ProgressBarPosData}, UpdateSourceTrigger=PropertyChanged}" Maximum="10.0" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                </StackPanel>
+                                <Rectangle VerticalAlignment="Center" Height="1" Stroke="Gray" HorizontalAlignment="Stretch"/>
+                                <StackPanel Orientation="Horizontal" Height="auto" VerticalAlignment="Top">
+                                    <ProgressBar Margin="0" Width="20" Height="400" Value="{Binding CurrentDisFil.FilData[0], Converter={StaticResource ProgressBarNegData}, UpdateSourceTrigger=PropertyChanged}" Maximum="20" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="400" Value="{Binding CurrentDisFil.FilData[1], Converter={StaticResource ProgressBarNegData}, UpdateSourceTrigger=PropertyChanged}" Maximum="20" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="400" Value="{Binding CurrentDisFil.FilData[2], Converter={StaticResource ProgressBarNegData}, UpdateSourceTrigger=PropertyChanged}" Maximum="20" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="400" Value="{Binding CurrentDisFil.FilData[3], Converter={StaticResource ProgressBarNegData}, UpdateSourceTrigger=PropertyChanged}" Maximum="20" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="400" Value="{Binding CurrentDisFil.FilData[4], Converter={StaticResource ProgressBarNegData}, UpdateSourceTrigger=PropertyChanged}" Maximum="20" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="400" Value="{Binding CurrentDisFil.FilData[5], Converter={StaticResource ProgressBarNegData}, UpdateSourceTrigger=PropertyChanged}" Maximum="20" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="400" Value="{Binding CurrentDisFil.FilData[6], Converter={StaticResource ProgressBarNegData}, UpdateSourceTrigger=PropertyChanged}" Maximum="20" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="400" Value="{Binding CurrentDisFil.FilData[7], Converter={StaticResource ProgressBarNegData}, UpdateSourceTrigger=PropertyChanged}" Maximum="20" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                    <ProgressBar Margin="0" Width="20" Height="400" Value="{Binding CurrentDisFil.FilData[8], Converter={StaticResource ProgressBarNegData}, UpdateSourceTrigger=PropertyChanged}" Maximum="20" Orientation="Vertical" Style="{StaticResource GraphEqu}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </Grid>
+                    <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
+                    <Grid Grid.Column="1">
+                    </Grid>
+                </Grid>
             </TabItem>
         </TabControl>
     </Grid>

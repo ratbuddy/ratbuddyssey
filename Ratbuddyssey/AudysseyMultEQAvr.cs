@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System.Diagnostics;
 using System.ComponentModel;
+using System.Net.Http;
 
 namespace Audyssey
 {
@@ -18,6 +19,8 @@ namespace Audyssey
             private AvrData _AvrData = null;
             private List<AvrDisFil> _AvrDisFil = null;
             private List<Int32[]> _AvrCoefData = null;
+            /*local reference for selected channel from GUI*/
+            private AvrDisFil _CurrentDisFil;
 
             #region Properties
             public AvrInfo Info
@@ -66,6 +69,19 @@ namespace Audyssey
                 {
                     _AvrDisFil = value;
                     RaisePropertyChanged("DisFil");
+                }
+            }
+            [JsonIgnore]
+            public AvrDisFil CurrentDisFil
+            {
+                get
+                {
+                    return _CurrentDisFil;
+                }
+                set
+                {
+                    _CurrentDisFil = value;
+                    RaisePropertyChanged("CurrentDisFil");
                 }
             }
             public List<Int32[]> CoefData

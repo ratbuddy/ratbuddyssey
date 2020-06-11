@@ -60,41 +60,44 @@ namespace Ratbuddyssey
             // Get the selected file name and display in a TextBox 
             if (result == true)
             {
-                // Open document 
-                currentFile.Content = dlg.FileName;
-                // Load document 
-                String audysseyFile = File.ReadAllText(currentFile.Content.ToString());
-                // Parse JSON data
-                audysseyMultEQApp = JsonConvert.DeserializeObject<AudysseyMultEQApp>(audysseyFile, new JsonSerializerSettings
+                if (File.Exists(dlg.FileName))
                 {
-                    FloatParseHandling = FloatParseHandling.Decimal
-                });
-                // Data Binding
-                if (audysseyMultEQApp != null)
-                {
-                    // cleanup: do not leave dangling
-                    if (audysseyMultEQAvr != null)
+                    // Open document 
+                    currentFile.Content = dlg.FileName;
+                    // Load document 
+                    String audysseyFile = File.ReadAllText(currentFile.Content.ToString());
+                    // Parse JSON data
+                    audysseyMultEQApp = JsonConvert.DeserializeObject<AudysseyMultEQApp>(audysseyFile, new JsonSerializerSettings
                     {
-                        audysseyMultEQAvr = null;
-                    }
-                    if (audysseyMultEQAvrAdapter != null)
+                        FloatParseHandling = FloatParseHandling.Decimal
+                    });
+                    // Data Binding
+                    if (audysseyMultEQApp != null)
                     {
-                        audysseyMultEQAvrAdapter = null;
+                        // cleanup: do not leave dangling
+                        if (audysseyMultEQAvr != null)
+                        {
+                            audysseyMultEQAvr = null;
+                        }
+                        if (audysseyMultEQAvrAdapter != null)
+                        {
+                            audysseyMultEQAvrAdapter = null;
+                        }
+                        if (audysseyMultEQTcpSniffer != null)
+                        {
+                            audysseyMultEQTcpSniffer = null;
+                        }
+                        // update checkboxes
+                        if (connectReceiver.IsChecked)
+                        {
+                            connectReceiver.IsChecked = false;
+                        }
+                        if (connectSniffer.IsChecked)
+                        {
+                            connectSniffer.IsChecked = false;
+                        }
+                        this.DataContext = audysseyMultEQApp;
                     }
-                    if (audysseyMultEQTcpSniffer != null)
-                    {
-                        audysseyMultEQTcpSniffer = null;
-                    }
-                    // update checkboxes
-                    if (connectReceiver.IsChecked)
-                    {
-                        connectReceiver.IsChecked = false;
-                    }
-                    if (connectSniffer.IsChecked)
-                    {
-                        connectSniffer.IsChecked = false;
-                    }
-                    this.DataContext = audysseyMultEQApp;
                 }
             }
         }
@@ -104,17 +107,20 @@ namespace Ratbuddyssey
             MessageBoxResult messageBoxResult = MessageBox.Show("This will reload the .ady file and discard all changes since last save", "Are you sure?", MessageBoxButton.YesNo);
             if (messageBoxResult == MessageBoxResult.Yes)
             {
-                // Reload document 
-                String audysseyFile = File.ReadAllText(currentFile.Content.ToString());
-                // Parse JSON data
-                audysseyMultEQApp = JsonConvert.DeserializeObject<AudysseyMultEQApp>(audysseyFile, new JsonSerializerSettings
+                if (File.Exists(currentFile.Content.ToString()))
                 {
-                    FloatParseHandling = FloatParseHandling.Decimal
-                });
-                // Data Binding
-                if (audysseyMultEQApp != null)
-                {
-                    this.DataContext = audysseyMultEQApp;
+                    // Reload document 
+                    String audysseyFile = File.ReadAllText(currentFile.Content.ToString());
+                    // Parse JSON data
+                    audysseyMultEQApp = JsonConvert.DeserializeObject<AudysseyMultEQApp>(audysseyFile, new JsonSerializerSettings
+                    {
+                        FloatParseHandling = FloatParseHandling.Decimal
+                    });
+                    // Data Binding
+                    if (audysseyMultEQApp != null)
+                    {
+                        this.DataContext = audysseyMultEQApp;
+                    }
                 }
             }
         }
@@ -126,7 +132,7 @@ namespace Ratbuddyssey
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             });
 #if DEBUG
-            filename = System.IO.Path.ChangeExtension(filename, ".json");
+            currentFile.Content = System.IO.Path.ChangeExtension(currentFile.Content.ToString(), ".json");
 #endif
             if ((reSerialized != null) && (!string.IsNullOrEmpty(currentFile.Content.ToString())))
             {
@@ -330,6 +336,25 @@ namespace Ratbuddyssey
                 var principal = new System.Security.Principal.WindowsPrincipal(identity);
 
                 return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+            }
+        }
+
+        private void tabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            int currentTab = (sender as TabControl).SelectedIndex;
+
+            switch (currentTab)
+            {
+                case 0:
+                    if ((connectReceiver.IsChecked) || (connectSniffer.IsChecked))
+                        this.DataContext = audysseyMultEQAvrAdapter;
+                    else
+                        this.DataContext = audysseyMultEQApp;
+                    break;
+                case 1:
+                    this.DataContext = audysseyMultEQAvr;
+                    InitializeTab2();
+                    break;
             }
         }
     }
