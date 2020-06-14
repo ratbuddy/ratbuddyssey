@@ -144,7 +144,7 @@ namespace Audyssey
 
             ~AudysseyMultEQTcpSniffer()
             {
-                ParseAvrFile();
+                ParseAvrToFile();
             }
 
             public string GetTcpHostAsString()
@@ -312,7 +312,7 @@ namespace Audyssey
                 throw new NotImplementedException();
             }
 
-            private void ParseAvrFile()
+            private void ParseAvrToFile()
             {
                 if (File.Exists(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName))
                 {

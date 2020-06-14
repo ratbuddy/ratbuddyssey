@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using Newtonsoft.Json;
 
 namespace Audyssey
 {
@@ -54,7 +55,27 @@ namespace Audyssey
             static bool? _AudyLfc = null;
             static int? _AudyLfcLev = null;
 
+            // Local
+            private string _SelectedChannel;
+
             #region Properties
+            [JsonIgnore]
+            public string SelectedChannel
+            {
+                get
+                {
+                    return _SelectedChannel;
+                }
+                set
+                {
+                    _SelectedChannel = value;
+                    RaisePropertyChanged("SelectedChannel");
+                    RaisePropertyChanged("SelectedSpConfig");
+                    RaisePropertyChanged("SelectedDistance");
+                    RaisePropertyChanged("SelectedChLevel");
+                    RaisePropertyChanged("SelectedCrossover");
+                }
+            }
             // IAmp
             public string AmpAssign
             {
@@ -92,6 +113,29 @@ namespace Audyssey
                     RaisePropertyChanged("SpConfig");
                 }
             }
+            [JsonIgnore]
+            public string SelectedSpConfig
+            {
+                get
+                {
+                    if (_SelectedChannel != null)
+                    {
+                        foreach (var spConfig in _SpConfig)
+                        {
+                            if (spConfig.ContainsKey(_SelectedChannel))
+                            {
+                                string _SelectedSpConfig;
+                                spConfig.TryGetValue(_SelectedChannel, out _SelectedSpConfig);
+                                return _SelectedSpConfig;
+                            }
+                        }
+                    }
+                    return null;
+                }
+                set
+                {
+                }
+            }
             public ObservableCollection<Dictionary<string, int>> Distance
             {
                 get
@@ -102,6 +146,29 @@ namespace Audyssey
                 {
                     _Distance = value;
                     RaisePropertyChanged("Distance");
+                }
+            }
+            [JsonIgnore]
+            public int? SelectedDistance
+            {
+                get
+                {
+                    if (_SelectedChannel != null)
+                    {
+                        foreach (var _distance in _Distance)
+                        {
+                            if (_distance.ContainsKey(_SelectedChannel))
+                            {
+                                int _SelectedDistance;
+                                _distance.TryGetValue(_SelectedChannel, out _SelectedDistance);
+                                return _SelectedDistance;
+                            }
+                        }
+                    }
+                    return null;
+                }
+                set
+                {
                 }
             }
             public ObservableCollection<Dictionary<string, int>> ChLevel
@@ -116,6 +183,29 @@ namespace Audyssey
                     RaisePropertyChanged("ChLevel");
                 }
             }
+            [JsonIgnore]
+            public int? SelectedChLevel
+            {
+                get
+                {
+                    if (_SelectedChannel != null)
+                    {
+                        foreach (var _chLevel in _ChLevel)
+                        {
+                            if (_chLevel.ContainsKey(_SelectedChannel))
+                            {
+                                int _SelectedChLevel;
+                                _chLevel.TryGetValue(_SelectedChannel, out _SelectedChLevel);
+                                return _SelectedChLevel;
+                            }
+                        }
+                    }
+                    return null;
+                }
+                set
+                {
+                }
+            }
             public ObservableCollection<Dictionary<string, object>> Crossover
             {
                 get
@@ -126,6 +216,29 @@ namespace Audyssey
                 {
                     _Crossover = value;
                     RaisePropertyChanged("Crossover");
+                }
+            }
+            [JsonIgnore]
+            public object SelectedCrossover
+            {
+                get
+                {
+                    if (_SelectedChannel != null)
+                    {
+                        foreach (var _crossover in _Crossover)
+                        {
+                            if (_crossover.ContainsKey(_SelectedChannel))
+                            {
+                                object _SelectedCrossover;
+                                _crossover.TryGetValue(_SelectedChannel, out _SelectedCrossover);
+                                return _SelectedCrossover;
+                            }
+                        }
+                    }
+                    return null;
+                }
+                set
+                {
                 }
             }
             public string AudyFinFlg

@@ -30,6 +30,8 @@ namespace Ratbuddyssey
             channelsView.SelectionChanged += ChannelsView_SelectionChanged;
             plot.PreviewMouseWheel += Plot_PreviewMouseWheel;
 
+            ParseFileToAvr(); //TODO ad file menu
+
             System.Net.IPHostEntry HosyEntry = System.Net.Dns.GetHostEntry((System.Net.Dns.GetHostName()));
             if (HosyEntry.AddressList.Length > 0)
             {
@@ -43,6 +45,16 @@ namespace Ratbuddyssey
 
         ~RatbuddysseyHome()
         {
+        }
+
+        private void ParseFileToAvr()
+        {
+            string AudysseySnifferFileName = "AudysseySniffer.json";
+            if (File.Exists(Environment.CurrentDirectory + "\\" + System.IO.Path.ChangeExtension(AudysseySnifferFileName, ".aud")))
+            {
+                string AvrStrings = File.ReadAllText(Environment.CurrentDirectory + "\\" + System.IO.Path.ChangeExtension(AudysseySnifferFileName, ".aud"));
+                audysseyMultEQAvr = JsonConvert.DeserializeObject<AudysseyMultEQAvr>(AvrStrings, new JsonSerializerSettings { });
+            }
         }
 
         private void OpenFile_OnClick(object sender, RoutedEventArgs e)

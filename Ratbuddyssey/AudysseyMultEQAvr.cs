@@ -1,28 +1,56 @@
 ﻿using System;
 using System.IO;
-using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using System.Diagnostics;
 using System.ComponentModel;
-using System.Net.Http;
+using System.Collections.ObjectModel;
 
 namespace Audyssey
 {
     namespace MultEQAvr
     {
+        //TODO: merge status <=> data AmpAssign, ssignBin, etc?
         public class AudysseyMultEQAvr : INotifyPropertyChanged
         {
             private AvrInfo _AvrInfo = null;
             private AvrStatus _AvrStatus = null;
             private AvrData _AvrData = null;
-            private List<AvrDisFil> _AvrDisFil = null;
-            private List<Int32[]> _AvrCoefData = null;
+            private ObservableCollection<AvrDisFil> _AvrDisFil = null;
+            private ObservableCollection<Int32[]> _AvrCoefData = null;
             /*local reference for selected channel from GUI*/
-            private AvrDisFil _CurrentDisFil;
+            private Int32[] _CurrentCoefData = null;
+            private string _SelectedChannel = null;
+            private string _SeletedEqType = "Audy";
 
             #region Properties
+            [JsonIgnore]
+            public string SelectedChannel
+            {
+                get
+                {
+                    return _SelectedChannel;
+                }
+                set
+                {
+                    _SelectedChannel = value;
+                    RaisePropertyChanged("CurrentDisFil");
+                }
+            }
+            [JsonIgnore]
+            public string SelectedEqType
+            {
+                get
+                {
+                    return _SeletedEqType;
+                }
+                set
+                {
+                    _SeletedEqType = value;
+                    RaisePropertyChanged("CurrentDisFil");
+                }
+            }
             public AvrInfo Info
             {
                 get
@@ -59,7 +87,7 @@ namespace Audyssey
                     RaisePropertyChanged("Data");
                 }
             }
-            public List<AvrDisFil> DisFil
+            public ObservableCollection<AvrDisFil> DisFil
             {
                 get
                 {
@@ -76,15 +104,26 @@ namespace Audyssey
             {
                 get
                 {
-                    return _CurrentDisFil;
+                    if (_SelectedChannel != null)
+                    {
+                        foreach (var avrDisFil in _AvrDisFil)
+                        {
+                            if ((avrDisFil.ChData.Equals(_SelectedChannel)) &&
+                                (avrDisFil.EqType.Equals(_SeletedEqType)))
+                            {
+                                CurrentCoefData = CoefData[_AvrDisFil.IndexOf(avrDisFil)];
+                                RaisePropertyChanged("CurrentCoefData");
+                                return avrDisFil;
+                            }
+                        }
+                    }
+                    return null;
                 }
                 set
                 {
-                    _CurrentDisFil = value;
-                    RaisePropertyChanged("CurrentDisFil");
                 }
             }
-            public List<Int32[]> CoefData
+            public ObservableCollection<Int32[]> CoefData
             {
                 get
                 {
@@ -94,6 +133,18 @@ namespace Audyssey
                 {
                     _AvrCoefData = value;
                     RaisePropertyChanged("CoefData");
+                }
+            }
+            [JsonIgnore]
+            public Int32[] CurrentCoefData //TODO add to the GUI
+            {
+                get
+                {
+                    return _CurrentCoefData;
+                }
+                set
+                {
+                    _CurrentCoefData = value;
                 }
             }
             #endregion
@@ -136,8 +187,8 @@ namespace Audyssey
                 _AvrInfo = new AvrInfo();
                 _AvrStatus = new AvrStatus();
                 _AvrData = new AvrData();
-                _AvrDisFil = new List<AvrDisFil>();
-                _AvrCoefData = new List<Int32[]>();
+                _AvrDisFil = new ObservableCollection<AvrDisFil>();
+                _AvrCoefData = new ObservableCollection<Int32[]>();
                 // we need the ip address and port of the avr
                 TcpClient = new TcpIP("192.168.50.82", 1256, 5000);
                 TcpClientFileName = Environment.CurrentDirectory + "\\" + TcpClientFileName;
