@@ -2,10 +2,10 @@
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Audyssey
 {
@@ -20,31 +20,33 @@ namespace Audyssey
             private ObservableCollection<AvrDisFil> _AvrDisFil = null;
             private ObservableCollection<Int32[]> _AvrCoefData = null;
             /*local reference for selected channel from GUI*/
-            private Int32[] _CurrentCoefData = null;
+            private int _SelectedChannelIndex = 0;
             private string _SelectedChannel = null;
             private string _SeletedEqType = "Audy";
 
             #region Properties
             [JsonIgnore]
+            public int SelectedChannelIndex
+            {
+                set
+                {
+                    _SelectedChannelIndex = value;
+                    RaisePropertyChanged("CurrentCoefData");
+                }
+            }
+            [JsonIgnore]
             public string SelectedChannel
             {
-                get
-                {
-                    return _SelectedChannel;
-                }
                 set
                 {
                     _SelectedChannel = value;
+                    _AvrData.SelectedChannel = _SelectedChannel;
                     RaisePropertyChanged("CurrentDisFil");
                 }
             }
             [JsonIgnore]
             public string SelectedEqType
             {
-                get
-                {
-                    return _SeletedEqType;
-                }
                 set
                 {
                     _SeletedEqType = value;
@@ -140,11 +142,10 @@ namespace Audyssey
             {
                 get
                 {
-                    return _CurrentCoefData;
+                    return _AvrCoefData.ElementAt(_SelectedChannelIndex);
                 }
                 set
                 {
-                    _CurrentCoefData = value;
                 }
             }
             #endregion
@@ -153,7 +154,6 @@ namespace Audyssey
             private const string ACK = "{\"Comm\":\"ACK\"}";
             private const string INPROGRESS = "{\"Comm\":\"INPROGRESS\"}";
             private const string AUDYFINFLG = "{\"AudyFinFlg\":\"Fin\"}";
-            private string TcpClientFileName = "TcpClient.json";
 
             private TcpIP TcpClient = null;
 
@@ -161,7 +161,7 @@ namespace Audyssey
 
             public string GetTcpClientAsString()
             {
-                return TcpClient.Address + "::" + TcpClient.Port.ToString();
+                return TcpClient.Address;
             }
 
             public TcpIP GetTcpClient()
@@ -171,50 +171,24 @@ namespace Audyssey
             
             ~AudysseyMultEQAvr()
             {
-                var FileInfoTest = new FileInfo(TcpClientFileName);
-                if ((!FileInfoTest.Exists) || FileInfoTest.Length == 0)
-                {
-                    string TcpFile = JsonConvert.SerializeObject(TcpClient, new JsonSerializerSettings
-                    {
-                        ContractResolver = new CamelCasePropertyNamesContractResolver()
-                    });
-                    File.WriteAllText(TcpClientFileName, TcpFile);
-                }
             }
 
-            public AudysseyMultEQAvr(bool connectTcpClient = true)
+            public AudysseyMultEQAvr(string TcpIPAddress)
             {
                 _AvrInfo = new AvrInfo();
                 _AvrStatus = new AvrStatus();
                 _AvrData = new AvrData();
                 _AvrDisFil = new ObservableCollection<AvrDisFil>();
                 _AvrCoefData = new ObservableCollection<Int32[]>();
-                // we need the ip address and port of the avr
-                TcpClient = new TcpIP("192.168.50.82", 1256, 5000);
-                TcpClientFileName = Environment.CurrentDirectory + "\\" + TcpClientFileName;
-                var FileInfoTest = new FileInfo(TcpClientFileName);
-                if ((FileInfoTest.Exists) && FileInfoTest.Length > 0)
-                {
-                    String ClientTcpIPFile = File.ReadAllText(TcpClientFileName);
-                    if (ClientTcpIPFile.Length > 0)
-                    {
-                        TcpClient = JsonConvert.DeserializeObject<TcpIP>(ClientTcpIPFile,
-                            new JsonSerializerSettings { });
-                    }
-                }
-                // suppose: the sniffer uses this object but we do not want to participate TCP IP traffic?
-                if (connectTcpClient) Connect();
+                TcpClient = new TcpIP(TcpIPAddress, 1256, 5000);
             }
 
             public void Connect()
             {
-                if (audysseyMultEQAvrTcpClientWithTimeout == null)
-                {
-                    audysseyMultEQAvrTcpClientWithTimeout = new AudysseyMultEQAvrTcpClientWithTimeout(TcpClient.Address, TcpClient.Port, TcpClient.Timeout);
-                }
+                audysseyMultEQAvrTcpClientWithTimeout = new AudysseyMultEQAvrTcpClientWithTimeout(TcpClient.Address, TcpClient.Port, TcpClient.Timeout);
             }
             
-            public void AudysseyToAvr()
+            public void QueryAudyssey()
             {
                 if (GetAvrInfo())
                 {
@@ -231,9 +205,10 @@ namespace Audyssey
                     File.WriteAllText(Environment.CurrentDirectory + "\\AvrStatus.json", AvrStatusFile);
 #endif
                 }
+            }
 
-                //EnterAudysseyMode();
-
+            public void AudysseyToAvr()
+            {
                 //if (SetAvrSetAmp())
                 {
 #if DEBUG
@@ -268,7 +243,6 @@ namespace Audyssey
 
                 //if (SetAudysseyFinishedFlag())
 
-                //ExitAudysseyMode();
             }
             
             private string MakeQuery(string Serialized)

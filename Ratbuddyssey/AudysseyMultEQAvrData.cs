@@ -37,23 +37,23 @@ namespace Audyssey
         public class AvrData : IAmp, IAudy, INotifyPropertyChanged
         {
             // IAmp
-            static string _AmpAssign;
-            static string _AssignBin;
-            static ObservableCollection<Dictionary<string, string>> _SpConfig;
-            static ObservableCollection<Dictionary<string, int>> _Distance;
-            static ObservableCollection<Dictionary<string, int>> _ChLevel;
-            static ObservableCollection<Dictionary<string, object>> _Crossover;
-            static string _AudyFinFlg;
-            static bool? _AudyDynEq;
-            static int? _AudyEqRef;
+            private string _AmpAssign;
+            private string _AssignBin;
+            private ObservableCollection<Dictionary<string, string>> _SpConfig;
+            private ObservableCollection<Dictionary<string, int>> _Distance;
+            private ObservableCollection<Dictionary<string, int>> _ChLevel;
+            private ObservableCollection<Dictionary<string, object>> _Crossover;
+            private string _AudyFinFlg;
+            private bool? _AudyDynEq;
+            private int? _AudyEqRef;
 
             // IAudy
-            static bool? _AudyDynVol = null;
-            static string _AudyDynSet = null;
-            static bool? _AudyMultEq = null;
-            static string _AudyEqSet = null;
-            static bool? _AudyLfc = null;
-            static int? _AudyLfcLev = null;
+            private bool? _AudyDynVol = null;
+            private string _AudyDynSet = null;
+            private bool? _AudyMultEq = null;
+            private string _AudyEqSet = null;
+            private bool? _AudyLfc = null;
+            private int? _AudyLfcLev = null;
 
             // Local
             private string _SelectedChannel;
@@ -62,14 +62,9 @@ namespace Audyssey
             [JsonIgnore]
             public string SelectedChannel
             {
-                get
-                {
-                    return _SelectedChannel;
-                }
                 set
                 {
                     _SelectedChannel = value;
-                    RaisePropertyChanged("SelectedChannel");
                     RaisePropertyChanged("SelectedSpConfig");
                     RaisePropertyChanged("SelectedDistance");
                     RaisePropertyChanged("SelectedChLevel");
@@ -118,7 +113,7 @@ namespace Audyssey
             {
                 get
                 {
-                    if (_SelectedChannel != null)
+                    if ((_SelectedChannel != null) && (_SpConfig != null))
                     {
                         foreach (var spConfig in _SpConfig)
                         {
@@ -153,7 +148,7 @@ namespace Audyssey
             {
                 get
                 {
-                    if (_SelectedChannel != null)
+                    if ((_SelectedChannel != null) && (_Distance != null))
                     {
                         foreach (var _distance in _Distance)
                         {
@@ -188,7 +183,7 @@ namespace Audyssey
             {
                 get
                 {
-                    if (_SelectedChannel != null)
+                    if ((_SelectedChannel != null) && (_ChLevel != null))
                     {
                         foreach (var _chLevel in _ChLevel)
                         {
@@ -223,7 +218,7 @@ namespace Audyssey
             {
                 get
                 {
-                    if (_SelectedChannel != null)
+                    if ((_SelectedChannel != null) && (_Crossover != null))
                     {
                         foreach (var _crossover in _Crossover)
                         {

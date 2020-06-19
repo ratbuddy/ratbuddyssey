@@ -94,26 +94,6 @@ namespace Audyssey
                 TcpHost = new TcpIP(HostAddress, 0, 0);
                 TcpClient = _audysseyMultEQAvr.GetTcpClient();
 
-                if (HostAddress.Equals(string.Empty))
-                {
-                    // try to read host ip address from file...
-                    TcpHostFileName = Environment.CurrentDirectory + "\\" + TcpHostFileName;
-                    var FileInfoTest = new FileInfo(TcpHostFileName);
-                    if ((FileInfoTest.Exists) && FileInfoTest.Length > 0)
-                    {
-                        String HostTcpIPFile = File.ReadAllText(TcpHostFileName);
-                        if (HostTcpIPFile.Length > 0)
-                        {
-                            TcpHost = JsonConvert.DeserializeObject<TcpIP>(HostTcpIPFile, new JsonSerializerSettings { });
-                        }
-                    }
-                    else
-                    {
-                        TcpHost = new TcpIP("127.0.0.1", 0, 0);
-                        MessageBox.Show("File not found: " + TcpHostFileName, "AudysseyMultEQTcpSniffer::TcpSniffer", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-
                 //For sniffing the socket to capture the packets has to be a raw socket, with the
                 //address family being of type internetwork, and protocol being IP
                 try
@@ -149,12 +129,12 @@ namespace Audyssey
 
             public string GetTcpHostAsString()
             {
-                return TcpHost.Address + "::" + TcpHost.Port.ToString();
+                return TcpHost.Address;
             }
 
             public string GetTcpClientAsString()
             {
-                return TcpClient.Address + "::" + TcpClient.Port.ToString();
+                return TcpClient.Address;
             }
 
             private void OnReceive(IAsyncResult ar)
