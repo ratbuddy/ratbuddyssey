@@ -12,17 +12,18 @@ namespace Audyssey
     namespace MultEQAvr
     {
         //TODO: merge status <=> data AmpAssign, ssignBin, etc?
-        public class AudysseyMultEQAvr : INotifyPropertyChanged
+        public partial class AudysseyMultEQAvr : INotifyPropertyChanged
         {
-            private AvrInfo _AvrInfo = null;
-            private AvrStatus _AvrStatus = null;
-            private AvrData _AvrData = null;
-            private ObservableCollection<AvrDisFil> _AvrDisFil = null;
-            private ObservableCollection<Int32[]> _AvrCoefData = null;
+            private AvrInfo _AvrInfo = new AvrInfo();
+            private AvrStatus _AvrStatus = new AvrStatus();
+            private AvrData _AvrData = new AvrData();
             /*local reference for selected channel from GUI*/
             private int _SelectedChannelIndex = 0;
             private string _SelectedChannel = null;
             private string _SeletedEqType = "Audy";
+            /*ethernet*/
+            private TcpIP TcpClient = null;
+            private AudysseyMultEQAvrTcpClientWithTimeout audysseyMultEQAvrTcpClientWithTimeout = null;
 
             #region Properties
             [JsonIgnore]
@@ -89,75 +90,12 @@ namespace Audyssey
                     RaisePropertyChanged("Data");
                 }
             }
-            public ObservableCollection<AvrDisFil> DisFil
-            {
-                get
-                {
-                    return _AvrDisFil;
-                }
-                set
-                {
-                    _AvrDisFil = value;
-                    RaisePropertyChanged("DisFil");
-                }
-            }
-            [JsonIgnore]
-            public AvrDisFil CurrentDisFil
-            {
-                get
-                {
-                    if (_SelectedChannel != null)
-                    {
-                        foreach (var avrDisFil in _AvrDisFil)
-                        {
-                            if ((avrDisFil.ChData.Equals(_SelectedChannel)) &&
-                                (avrDisFil.EqType.Equals(_SeletedEqType)))
-                            {
-                                CurrentCoefData = CoefData[_AvrDisFil.IndexOf(avrDisFil)];
-                                RaisePropertyChanged("CurrentCoefData");
-                                return avrDisFil;
-                            }
-                        }
-                    }
-                    return null;
-                }
-                set
-                {
-                }
-            }
-            public ObservableCollection<Int32[]> CoefData
-            {
-                get
-                {
-                    return _AvrCoefData;
-                }
-                set
-                {
-                    _AvrCoefData = value;
-                    RaisePropertyChanged("CoefData");
-                }
-            }
-            [JsonIgnore]
-            public Int32[] CurrentCoefData //TODO add to the GUI
-            {
-                get
-                {
-                    return _AvrCoefData.ElementAt(_SelectedChannelIndex);
-                }
-                set
-                {
-                }
-            }
             #endregion
 
             private const string NACK = "{\"Comm\":\"NACK\"}";
             private const string ACK = "{\"Comm\":\"ACK\"}";
             private const string INPROGRESS = "{\"Comm\":\"INPROGRESS\"}";
             private const string AUDYFINFLG = "{\"AudyFinFlg\":\"Fin\"}";
-
-            private TcpIP TcpClient = null;
-
-            private AudysseyMultEQAvrTcpClientWithTimeout audysseyMultEQAvrTcpClientWithTimeout = null;
 
             public string GetTcpClientAsString()
             {
@@ -175,11 +113,6 @@ namespace Audyssey
 
             public AudysseyMultEQAvr(string TcpIPAddress)
             {
-                _AvrInfo = new AvrInfo();
-                _AvrStatus = new AvrStatus();
-                _AvrData = new AvrData();
-                _AvrDisFil = new ObservableCollection<AvrDisFil>();
-                _AvrCoefData = new ObservableCollection<Int32[]>();
                 TcpClient = new TcpIP(TcpIPAddress, 1256, 5000);
             }
 
@@ -188,7 +121,7 @@ namespace Audyssey
                 audysseyMultEQAvrTcpClientWithTimeout = new AudysseyMultEQAvrTcpClientWithTimeout(TcpClient.Address, TcpClient.Port, TcpClient.Timeout);
             }
             
-            public void QueryAudyssey()
+            public void QueryAvr()
             {
                 if (GetAvrInfo())
                 {
@@ -205,6 +138,12 @@ namespace Audyssey
                     File.WriteAllText(Environment.CurrentDirectory + "\\AvrStatus.json", AvrStatusFile);
 #endif
                 }
+            }
+
+            public void CopyAvrStatusToAvrData()
+            {
+                _AvrData.AmpAssign = _AvrStatus.AmpAssign;
+                _AvrData.AssignBin = _AvrStatus.AssignBin;
             }
 
             public void AudysseyToAvr()

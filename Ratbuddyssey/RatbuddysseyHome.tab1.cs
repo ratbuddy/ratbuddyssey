@@ -11,7 +11,6 @@ using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
 using Audyssey.MultEQApp;
-using Audyssey.MultEQAvrAdapter;
 
 namespace Ratbuddyssey
 {

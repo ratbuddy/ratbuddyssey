@@ -51,6 +51,7 @@ namespace Audyssey
                 }
                 set
                 {
+                    _audysseyMultEQAvr.Info.ADC = value;
                     RaisePropertyChanged("AdcLineup");
                 }
             }
@@ -63,6 +64,7 @@ namespace Audyssey
                 }
                 set
                 {
+                    _audysseyMultEQAvr.Info.SysDelay = value;
                     RaisePropertyChanged("SystemDelay");
                 }
             }
@@ -87,6 +89,7 @@ namespace Audyssey
                 }
                 set
                 {
+                    _audysseyMultEQAvr.Info.EQType = _enMultEQTypeList.ElementAt(value);
                     RaisePropertyChanged("EnMultEQType");
                 }
             }
@@ -99,6 +102,7 @@ namespace Audyssey
                 }
                 set
                 {
+                    _audysseyMultEQAvr.Info.LFC = value;
                     RaisePropertyChanged("Lfc");
                 }
             }
@@ -111,6 +115,7 @@ namespace Audyssey
                 }
                 set
                 {
+                    _audysseyMultEQAvr.Info.Auro = value;
                     RaisePropertyChanged("Auro");
                 }
             }
@@ -123,6 +128,7 @@ namespace Audyssey
                 }
                 set
                 {
+                    _audysseyMultEQAvr.Info.Upgrade = value;
                     RaisePropertyChanged("UpgradeInfo");
                 }
             }
@@ -160,6 +166,7 @@ namespace Audyssey
                 }
                 set
                 {
+                    _audysseyMultEQAvr.Status.AssignBin = value;
                     RaisePropertyChanged("AmpAssignInfo");
                 }
             }

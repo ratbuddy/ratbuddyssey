@@ -1,5 +1,8 @@
+using Newtonsoft.Json;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 
 namespace Audyssey
 {
@@ -94,48 +97,69 @@ namespace Audyssey
             #endregion
         }
 
-        public class AvrFil : IFil, INotifyPropertyChanged
+        public partial class AudysseyMultEQAvr : INotifyPropertyChanged
         {
-            private ObservableCollection<sbyte> _FilData = new ObservableCollection<sbyte>();
-            private ObservableCollection<sbyte> _DispData = new ObservableCollection<sbyte>();
+            private ObservableCollection<AvrDisFil> _AvrDisFil = new ObservableCollection<AvrDisFil>();
+            private ObservableCollection<Int32[]> _AvrCoefData = new ObservableCollection<Int32[]>();
 
             #region Properties
-            public ObservableCollection<sbyte> FilData
+            public ObservableCollection<AvrDisFil> DisFil
             {
                 get
                 {
-                    return _FilData;
+                    return _AvrDisFil;
                 }
                 set
                 {
-                    _FilData = value;
-                    RaisePropertyChanged("FilData");
+                    _AvrDisFil = value;
+                    RaisePropertyChanged("DisFil");
                 }
             }
-            public ObservableCollection<sbyte> DispData
+            [JsonIgnore]
+            public AvrDisFil CurrentDisFil
             {
                 get
                 {
-                    return _DispData;
+                    if (_SelectedChannel != null)
+                    {
+                        foreach (var avrDisFil in _AvrDisFil)
+                        {
+                            if ((avrDisFil.ChData.Equals(_SelectedChannel)) &&
+                                (avrDisFil.EqType.Equals(_SeletedEqType)))
+                            {
+                                CurrentCoefData = CoefData[_AvrDisFil.IndexOf(avrDisFil)];
+                                RaisePropertyChanged("CurrentCoefData");
+                                return avrDisFil;
+                            }
+                        }
+                    }
+                    return null;
                 }
                 set
                 {
-                    _DispData = value;
-                    RaisePropertyChanged("DispData");
                 }
             }
-            #endregion
-
-            #region INotifyPropertyChanged implementation
-            public event PropertyChangedEventHandler PropertyChanged = delegate { };
-            #endregion
-
-            #region methods
-            private void RaisePropertyChanged(string propertyName)
+            public ObservableCollection<Int32[]> CoefData
             {
-                if (PropertyChanged != null)
+                get
                 {
-                    PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+                    return _AvrCoefData;
+                }
+                set
+                {
+                    _AvrCoefData = value;
+                    RaisePropertyChanged("CoefData");
+                }
+            }
+            [JsonIgnore]
+            public Int32[] CurrentCoefData //TODO add to the GUI
+            {
+                get
+                {
+                    return _AvrCoefData.ElementAt(_SelectedChannelIndex);
+                }
+                set
+                {
                 }
             }
             #endregion

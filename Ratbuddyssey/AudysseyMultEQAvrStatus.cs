@@ -6,7 +6,20 @@ namespace Audyssey
 {
     namespace MultEQAvr
     {
-        public class AvrStatus : INotifyPropertyChanged
+        interface Status
+        {
+            #region Properties
+            public bool? HPPlug { get; set; }
+            public bool? Mic { get; set; }
+            public string AmpAssign { get; set; }
+            public string AssignBin { get; set; }
+            public ObservableCollection<Dictionary<string, string>> ChSetup { get; set; }
+            public bool? BTTXStatus { get; set; }
+            public bool? SpPreset { get; set; }
+            #endregion
+        }
+
+        public class AvrStatus : Status, INotifyPropertyChanged
         {
             private bool? _HPPlug = null;
             private bool? _Mic = null;

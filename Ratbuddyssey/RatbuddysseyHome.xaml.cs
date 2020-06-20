@@ -94,10 +94,7 @@ namespace Ratbuddyssey
                 audysseyMultEQAvr = JsonConvert.DeserializeObject<AudysseyMultEQAvr>(Serialized, new JsonSerializerSettings
                 {
                 });
-                if ((audysseyMultEQAvr != null) && (tabControl.SelectedIndex == 1))
-                {
-                    this.DataContext = audysseyMultEQAvr;
-                }
+                audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
             }
         }
 
@@ -187,6 +184,17 @@ namespace Ratbuddyssey
             if (result == true)
             {
                 ParseFileToAudysseyMultEQAvr(dlg.FileName);
+                if (audysseyMultEQAvr != null)
+                {
+                    if (tabControl.SelectedIndex == 0)
+                    {
+                        this.DataContext = audysseyMultEQAvrAdapter;
+                    }
+                    if (tabControl.SelectedIndex == 1)
+                    {
+                        this.DataContext = audysseyMultEQAvr;
+                    }
+                }
             }
         }
 
@@ -259,7 +267,9 @@ namespace Ratbuddyssey
                             }
                         }
                         // query info and status from the receiver
-                        audysseyMultEQAvr.QueryAudyssey();
+                        audysseyMultEQAvr.QueryAvr();
+                        // copy some status properties to data properties
+                        audysseyMultEQAvr.CopyAvrStatusToAvrData();
                         // from here it is possible to enable the audyssey remote app mode on the receiver
                         connectAudyssey.IsEnabled = true;
                     }

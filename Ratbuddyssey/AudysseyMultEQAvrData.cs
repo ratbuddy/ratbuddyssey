@@ -37,15 +37,15 @@ namespace Audyssey
         public class AvrData : IAmp, IAudy, INotifyPropertyChanged
         {
             // IAmp
-            private string _AmpAssign;
-            private string _AssignBin;
-            private ObservableCollection<Dictionary<string, string>> _SpConfig;
-            private ObservableCollection<Dictionary<string, int>> _Distance;
-            private ObservableCollection<Dictionary<string, int>> _ChLevel;
-            private ObservableCollection<Dictionary<string, object>> _Crossover;
-            private string _AudyFinFlg;
-            private bool? _AudyDynEq;
-            private int? _AudyEqRef;
+            private string _AmpAssign = null;
+            private string _AssignBin = null;
+            private ObservableCollection<Dictionary<string, string>> _SpConfig = null;
+            private ObservableCollection<Dictionary<string, int>> _Distance = null;
+            private ObservableCollection<Dictionary<string, int>> _ChLevel = null;
+            private ObservableCollection<Dictionary<string, object>> _Crossover = null;
+            private string _AudyFinFlg = null;
+            private bool? _AudyDynEq = null;
+            private int? _AudyEqRef = null;
 
             // IAudy
             private bool? _AudyDynVol = null;
