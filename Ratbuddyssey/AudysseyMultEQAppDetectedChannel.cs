@@ -5,12 +5,13 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Newtonsoft.Json;
+using Audyssey.MultEQ;
 
 namespace Audyssey
 {
     namespace MultEQApp
     {
-        public class DetectedChannel : INotifyPropertyChanged
+        public class DetectedChannel : MultEQList, INotifyPropertyChanged
         {
             // according to JSON .ady file
             private string _customCrossover = null;
@@ -31,11 +32,9 @@ namespace Audyssey
             private ObservableCollection<MyKeyValuePair> _customTargetCurvePointsDictionary = new ObservableCollection<MyKeyValuePair>();
 
             // local for data binding (not serialised)
-            private ObservableCollection<string> _customCrossoverList = new ObservableCollection<string>() { "U", "40", "60", "80", "90", "100", "110", "120", "150", "180", "200", "250" };
             private int _customCrossoverIndex = 0;
 
             // local for data binding (not serialised)
-            private ObservableCollection<string> _customSpeakerTypeList = new ObservableCollection<string>() { "U", "S", "M", "L" };
             private int _customSpeakerTypeIndex = 0;
 
             #region Properties
@@ -196,22 +195,10 @@ namespace Audyssey
                 set
                 {
                     _customSpeakerType = value;
-                    _customSpeakerTypeIndex = CustomSpeakerTypeList.IndexOf(value);
-                    if (_customSpeakerTypeIndex == -1) _customSpeakerTypeIndex = CustomSpeakerTypeList.IndexOf("U");
                     RaisePropertyChanged("CustomSpeakerType");
-                }
-            }
-            [JsonIgnore]
-            public ObservableCollection<string> CustomSpeakerTypeList
-            {
-                get
-                {
-                    return _customSpeakerTypeList;
-                }
-                set
-                {
-                    _customSpeakerTypeList = value;
-                    RaisePropertyChanged("CustomSpeakerTypeList");
+                    CustomSpeakerTypeIndex = SpeakerTypeList.IndexOf(value);
+                    if (CustomSpeakerTypeIndex == -1) CustomSpeakerTypeIndex = SpeakerTypeList.IndexOf("U");
+                    RaisePropertyChanged("CustomSpeakerTypeIndex");
                 }
             }
             [JsonIgnore]
@@ -225,7 +212,7 @@ namespace Audyssey
                 {
                     _customSpeakerTypeIndex = value;
                     RaisePropertyChanged("CustomSpeakerTypeIndex");
-                    _customSpeakerType = CustomSpeakerTypeList[value];
+                    _customSpeakerType = SpeakerTypeList[value];
                     RaisePropertyChanged("CustomSpeakerType");
                 }
             }
@@ -250,22 +237,10 @@ namespace Audyssey
                 set
                 {
                     _customCrossover = value;
-                    _customCrossoverIndex = CustomCrossoverList.IndexOf(value + "0");
-                    if (_customCrossoverIndex == -1) _customCrossoverIndex = CustomCrossoverList.IndexOf("U");
                     RaisePropertyChanged("CustomCrossover");
-                }
-            }
-            [JsonIgnore]
-            public ObservableCollection<string> CustomCrossoverList
-            {
-                get
-                {
-                    return _customCrossoverList;
-                }
-                set
-                {
-                    _customCrossoverList = value;
-                    RaisePropertyChanged("CustomCrossoverList");
+                    CustomCrossoverIndex = CrossoverList.IndexOf(value + "0");
+                    if (CustomCrossoverIndex == -1) CustomCrossoverIndex = CrossoverList.IndexOf("U");
+                    RaisePropertyChanged("CustomCrossoverIndex");
                 }
             }
             [JsonIgnore]
@@ -279,7 +254,7 @@ namespace Audyssey
                 {
                     _customCrossoverIndex = value;
                     RaisePropertyChanged("CustomCrossoverIndex");
-                    _customCrossover = CustomCrossoverList[value].Remove(CustomCrossoverList[value].Length - 1, 1);
+                    _customCrossover = CrossoverList[value].Remove(CrossoverList[value].Length - 1, 1);
                     RaisePropertyChanged("CustomCrossover");
                 }
             }
@@ -307,20 +282,18 @@ namespace Audyssey
             {
                 return true;
             }
-        public bool ShouldSerializeCustomSpeakerType()
-        {
-            return (CustomSpeakerType != null);
-        }
-
-        public bool ShouldSerializeCustomDistance()
-        {
-            return (CustomDistance.HasValue);
-        }
-
-        public bool ShouldSerializeCustomCrossover()
-        {
-            return (CustomCrossover != null);
-        }
+            public bool ShouldSerializeCustomSpeakerType()
+            {
+                return (CustomSpeakerType != null);
+            }
+            public bool ShouldSerializeCustomDistance()
+            {
+                return (CustomDistance.HasValue);
+            }
+            public bool ShouldSerializeCustomCrossover()
+            {
+                return (CustomCrossover != null);
+            }
 
             private ObservableCollection<MyKeyValuePair> ConvertStringArrayToDictionary(string[] array)
             {

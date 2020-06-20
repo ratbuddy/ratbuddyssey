@@ -2,12 +2,13 @@
 using System.ComponentModel;
 using System.Collections.ObjectModel;
 using Newtonsoft.Json;
+using Audyssey.MultEQ;
 
 namespace Audyssey
 {
     namespace MultEQApp
     {
-        public class AudysseyMultEQApp : INotifyPropertyChanged
+        public class AudysseyMultEQApp : MultEQList, INotifyPropertyChanged
         {
             // according to JSON .ady file
             private int? _enAmpAssignType = null;
@@ -26,19 +27,6 @@ namespace Audyssey
             private string _upgradeInfo = null;
             private int? _enMultEQType = null;
             private decimal? _adcLineup = null;
-
-            private ObservableCollection<string> _enAmpAssignTypeList = new ObservableCollection<string>()
-            { "Type1", "Type2", "Type3", "Type4",
-              "Type5", "Type6", "Type7", "Type8",
-              "Type9", "Type10", "Type11", "Type12",
-              "Type13", "Type14", "Type15", "Type16",
-              "Type17", "Type18", "Type19", "Type20"};
-
-            private ObservableCollection<string> _enTargetCurveTypeList = new ObservableCollection<string>()
-            { "Undefined", "High Frequency Roll Off 1", "High Frequency Roll Off 2"};
-
-            private ObservableCollection<string> _enMultEQTypeList = new ObservableCollection<string>()
-            { "MultEQ", "MultEQ XT", "MultEQ XT32" };
 
             #region Properties
             [JsonProperty(Order = 1)]
@@ -172,28 +160,15 @@ namespace Audyssey
                 }
             }
             [JsonIgnore]
-            public ObservableCollection<string> EnTargetCurveTypeList
-            {
-                get
-                {
-                    return _enTargetCurveTypeList;
-                }
-                set
-                {
-                    _enTargetCurveTypeList = value;
-                    RaisePropertyChanged("EnTargetCurveTypeList");
-                }
-            }
-            [JsonIgnore]
             public string TargetCurveType
             {
                 get
                 {
-                    return EnTargetCurveTypeList[(int)EnTargetCurveType];
+                    return TargetCurveTypeList[(int)EnTargetCurveType];
                 }
                 set
                 {
-                    EnTargetCurveType = EnTargetCurveTypeList.IndexOf(value);
+                    EnTargetCurveType = TargetCurveTypeList.IndexOf(value);
                     RaisePropertyChanged("TargetCurveType");
                 }
             }
@@ -211,28 +186,15 @@ namespace Audyssey
                 }
             }
             [JsonIgnore]
-            public ObservableCollection<string> EnAmpAssignTypeList
-            {
-                get
-                {
-                    return _enAmpAssignTypeList;
-                }
-                set
-                {
-                    _enAmpAssignTypeList = value;
-                    RaisePropertyChanged("EnAmpAssignTypeList");
-                }
-            }
-            [JsonIgnore]
             public string AmpAssignType
             {
                 get
                 {
-                    return EnAmpAssignTypeList[(int)EnAmpAssignType];
+                    return AmpAssignTypeList[(int)EnAmpAssignType];
                 }
                 set
                 {
-                    EnAmpAssignType = EnAmpAssignTypeList.IndexOf(value);
+                    EnAmpAssignType = AmpAssignTypeList.IndexOf(value);
                     RaisePropertyChanged("AmpAssignType");
                 }
             }
@@ -250,27 +212,15 @@ namespace Audyssey
                 }
             }
             [JsonIgnore]
-            public ObservableCollection<string> EnMultEQTypeList
-            {
-                get
-                {
-                    return _enMultEQTypeList;
-                }
-                set
-                {
-                    _enMultEQTypeList = value;
-                }
-            }
-            [JsonIgnore]
             public string MultEQType
             {
                 get
                 {
-                    return EnMultEQTypeList[(int)EnMultEQType];
+                    return MultEQTypeList[(int)EnMultEQType];
                 }
                 set
                 {
-                    EnMultEQType = EnMultEQTypeList.IndexOf(value);
+                    EnMultEQType = MultEQTypeList.IndexOf(value);
                     RaisePropertyChanged("MultEQType");
                 }
             }

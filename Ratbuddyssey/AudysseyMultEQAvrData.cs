@@ -10,15 +10,15 @@ namespace Audyssey
         interface IAmp
         {
             #region Properties
-            string AmpAssign { get; set; }
-            string AssignBin { get; set; }
-            ObservableCollection<Dictionary<string, int>> ChLevel { get; set; }
-            ObservableCollection<Dictionary<string, object>> Crossover { get; set; }
-            ObservableCollection<Dictionary<string, int>> Distance { get; set; }
-            ObservableCollection<Dictionary<string, string>> SpConfig { get; set; }
-            bool? AudyDynEq { get; set; }
-            int? AudyEqRef { get; set; }
-            string AudyFinFlg { get; set; }
+            public string AmpAssign { get; set; }
+            public string AssignBin { get; set; }
+            public ObservableCollection<Dictionary<string, int>> ChLevel { get; set; }
+            public ObservableCollection<Dictionary<string, object>> Crossover { get; set; }
+            public ObservableCollection<Dictionary<string, int>> Distance { get; set; }
+            public ObservableCollection<Dictionary<string, string>> SpConfig { get; set; }
+            public bool? AudyDynEq { get; set; }
+            public int? AudyEqRef { get; set; }
+            public string AudyFinFlg { get; set; }
             #endregion
         }
 
@@ -34,11 +34,9 @@ namespace Audyssey
             #endregion
         }
 
-        public class AvrData : IAmp, IAudy, INotifyPropertyChanged
+        public partial class AudysseyMultEQAvr : IAmp, IAudy, INotifyPropertyChanged
         {
             // IAmp
-            private string _AmpAssign = null;
-            private string _AssignBin = null;
             private ObservableCollection<Dictionary<string, string>> _SpConfig = null;
             private ObservableCollection<Dictionary<string, int>> _Distance = null;
             private ObservableCollection<Dictionary<string, int>> _ChLevel = null;
@@ -55,47 +53,8 @@ namespace Audyssey
             private bool? _AudyLfc = null;
             private int? _AudyLfcLev = null;
 
-            // Local
-            private string _SelectedChannel;
-
             #region Properties
-            [JsonIgnore]
-            public string SelectedChannel
-            {
-                set
-                {
-                    _SelectedChannel = value;
-                    RaisePropertyChanged("SelectedSpConfig");
-                    RaisePropertyChanged("SelectedDistance");
-                    RaisePropertyChanged("SelectedChLevel");
-                    RaisePropertyChanged("SelectedCrossover");
-                }
-            }
             // IAmp
-            public string AmpAssign
-            {
-                get
-                {
-                    return _AmpAssign;
-                }
-                set
-                {
-                    if (value != null) _AmpAssign = value;
-                    RaisePropertyChanged("AmpAssign");
-                }
-            }
-            public string AssignBin
-            {
-                get
-                {
-                    return _AssignBin;
-                }
-                set
-                {
-                    _AssignBin = value;
-                    RaisePropertyChanged("AssignBin");
-                }
-            }
             public ObservableCollection<Dictionary<string, string>> SpConfig
             {
                 get
@@ -343,20 +302,6 @@ namespace Audyssey
                 {
                     _AudyMultEq = value;
                     RaisePropertyChanged("AudyMultEq");
-                }
-            }
-            #endregion
-
-            #region INotifyPropertyChanged implementation
-            public event PropertyChangedEventHandler PropertyChanged = delegate { };
-            #endregion
-
-            #region methods
-            private void RaisePropertyChanged(string propertyName)
-            {
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
                 }
             }
             #endregion

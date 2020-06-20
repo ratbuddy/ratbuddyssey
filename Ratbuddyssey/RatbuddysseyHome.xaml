@@ -44,10 +44,12 @@
                 <MenuItem Header="_Open Project" Name="openProjectFile" Click="openProjectFile_Click"/>
                 <MenuItem Header="_Save Project" Name="saveProjectFile" Click="saveProjectFile_Click"/>
                 <Separator/>
-                <MenuItem Header="_Receiver" Name="connectReceiver" Click="ConnectReceiver_OnClick" IsCheckable="True"/>
-                <MenuItem Header="S_niffer" Name="connectSniffer" Click="ConnectSniffer_OnClick" IsCheckable="True"/>
+                <MenuItem Header="Connect _Receiver" Name="connectReceiver" Click="ConnectReceiver_OnClick" IsCheckable="True"/>
+                <MenuItem Header="Connect S_niffer" Name="connectSniffer" Click="ConnectSniffer_OnClick" IsCheckable="True"/>
                 <Separator/>
-                <MenuItem Header="_Audyssey" Name="connectAudyssey" Click="ConnectAudyssey_OnClick" IsCheckable="True"/>
+                <MenuItem Header="Get Receiver _Info" Name="getReceiverInfo" Click="getReceiverInfo_Click" />
+                <MenuItem Header="Get Receiver _Status" Name="getReceiverStatus" Click="getReceiverStatus_Click" />
+                <MenuItem Header="Enter _Audyssey" Name="connectAudyssey" Click="ConnectAudyssey_OnClick" IsCheckable="True"/>
             </MenuItem>
             <MenuItem Header="_About">
                 <MenuItem Header="About Ratbuddyssey" x:Name="about" Click="About_OnClick"/>
@@ -157,11 +159,11 @@
                                 <Label Grid.Row="4" Grid.Column="2" Content="System Delay" VerticalContentAlignment="Center"/>
                                 <TextBox Grid.Row="4" Grid.Column="3" Text="{Binding SystemDelay}" VerticalAlignment="Center"/>
                                 <Label Grid.Row="2" Grid.Column="4"  Content="Amp Assign Type" VerticalContentAlignment="Center" />
-                                <ComboBox Grid.Row="2" Grid.Column="5" ItemsSource="{Binding EnAmpAssignTypeList}" SelectedIndex="{Binding EnAmpAssignType, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="2" Grid.Column="5" ItemsSource="{Binding AmpAssignTypeList}" SelectedIndex="{Binding EnAmpAssignType, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
                                 <Label Grid.Row="3" Grid.Column="4" Content="MultEQ Type" VerticalContentAlignment="Center"/>
-                                <ComboBox Grid.Row="3" Grid.Column="5" ItemsSource="{Binding EnMultEQTypeList}" SelectedIndex="{Binding EnMultEQType}" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="3" Grid.Column="5" ItemsSource="{Binding MultEQTypeList}" SelectedIndex="{Binding EnMultEQType}" VerticalAlignment="Center"/>
                                 <Label Grid.Row="4" Grid.Column="4" Content="Target Curve Type" VerticalContentAlignment="Center"/>
-                                <ComboBox Grid.Row="4" Grid.Column="5" x:Name = "TargetCurveType" SelectedIndex="{Binding EnTargetCurveType}" ItemsSource="{Binding EnTargetCurveTypeList}" VerticalAlignment="Center" SelectionChanged="TargetCurveTypeSelectionChanged"/>
+                                <ComboBox Grid.Row="4" Grid.Column="5" x:Name = "TargetCurveType" SelectedIndex="{Binding EnTargetCurveType}" ItemsSource="{Binding TargetCurveTypeList}" VerticalAlignment="Center" SelectionChanged="TargetCurveTypeSelectionChanged"/>
                                 <CheckBox Content="Dynamic Eq" IsChecked="{Binding DynamicEq}" Grid.Row="0" Grid.Column="8" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                 <CheckBox Content="Dynamic Volume" IsChecked="{Binding DynamicVolume}" Grid.Row="1" Grid.Column="8" Margin="5" VerticalAlignment="Center"/>
                                 <CheckBox Content="Auro" IsChecked="{Binding Auro}" Grid.Row="2" Grid.Column="8"  Margin="5" VerticalAlignment="Center"/>
@@ -221,9 +223,9 @@
                                                 <Label Grid.Row="1" Grid.Column="2" Content="Custom Distance" VerticalContentAlignment="Center" />
                                                 <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding CustomDistance}" VerticalAlignment="Center"/>
                                                 <Label Grid.Row="2" Grid.Column="2" Content="Custom Crossover" VerticalContentAlignment="Center"/>
-                                                <ComboBox Grid.Row="2" Grid.Column="3" SelectedIndex="{Binding CustomCrossoverIndex}" ItemsSource="{Binding CustomCrossoverList}" VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Row="2" Grid.Column="3" SelectedIndex="{Binding CustomCrossoverIndex}" ItemsSource="{Binding CrossoverList}" VerticalAlignment="Center"/>
                                                 <Label Grid.Row="3" Grid.Column="2" Content="Custom Speaker Type" VerticalContentAlignment="Center"/>
-                                                <ComboBox Grid.Row="3" Grid.Column="3" SelectedIndex="{Binding CustomSpeakerTypeIndex}" ItemsSource="{Binding CustomSpeakerTypeList}" VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Row="3" Grid.Column="3" SelectedIndex="{Binding CustomSpeakerTypeIndex}" ItemsSource="{Binding SpeakerTypeList}" VerticalAlignment="Center"/>
                                                 <CheckBox Grid.Row="5" Grid.Column="0" Content="Skipped Measurement" IsChecked="{Binding IsSkipMeasurement}" VerticalAlignment="Center" Margin="5,0,0,0"/>
                                                 <CheckBox Grid.Row="5" Grid.Column="2" Content="Midrange Compensation" IsChecked="{Binding MidrangeCompensation}" VerticalAlignment="Center" Margin="5,0,0,0"/>
                                             </Grid>
@@ -327,7 +329,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
                             <GroupBox Grid.Row="0" Header="Channels">
-                                <ListView x:Name="ChannelSetupView" ItemsSource="{Binding Status.ChSetup}" SelectionChanged="ChannelSetupView_SelectionChanged">
+                                <ListView x:Name="ChannelSetupView" ItemsSource="{Binding ChSetup}" SelectionChanged="ChannelSetupView_SelectionChanged">
                                     <ListView.View>
                                         <GridView>
                                             <GridViewColumn Header="Channel" Width="auto" DisplayMemberBinding="{Binding Key}" />
@@ -356,40 +358,40 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Label Grid.Row="0" Grid.Column="0" Content="Ifver"></Label>
-                                    <Label Grid.Row="0" Grid.Column="1" Content="{Binding Info.Ifver}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="0" Grid.Column="1" Content="{Binding Ifver}" VerticalAlignment="Center"></Label>
                                     <Label Grid.Row="1" Grid.Column="0" Content="DType"></Label>
-                                    <Label Grid.Row="1" Grid.Column="1" Content="{Binding Info.DType}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="1" Grid.Column="1" Content="{Binding DType}" VerticalAlignment="Center"></Label>
                                     <Label Grid.Row="2" Grid.Column="0" Content="Upgrade"></Label>
-                                    <Label Grid.Row="2" Grid.Column="1" Content="{Binding Info.Upgrade}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="2" Grid.Column="1" Content="{Binding Upgrade}" VerticalAlignment="Center"></Label>
                                     <Label Grid.Row="3" Grid.Column="0" Content="EQType"></Label>
-                                    <Label Grid.Row="3" Grid.Column="1" Content="{Binding Info.EQType}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="3" Grid.Column="1" Content="{Binding EQType}" VerticalAlignment="Center"></Label>
                                     <Label Grid.Row="4" Grid.Column="0" Content="AdC"></Label>
-                                    <Label Grid.Row="4" Grid.Column="1" Content="{Binding Info.ADC}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="4" Grid.Column="1" Content="{Binding ADC}" VerticalAlignment="Center"></Label>
                                     <Label Grid.Row="5" Grid.Column="0" Content="SysDelay"></Label>
-                                    <Label Grid.Row="5" Grid.Column="1" Content="{Binding Info.SysDelay}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="5" Grid.Column="1" Content="{Binding SysDelay}" VerticalAlignment="Center"></Label>
                                     <Label Grid.Row="6" Grid.Column="0" Content="CoefWaitTimeInit"></Label>
-                                    <Label Grid.Row="6" Grid.Column="1" Content="{Binding Info.CoefWaitTime.Init}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="6" Grid.Column="1" Content="{Binding CoefWaitTime.Init}" VerticalAlignment="Center"></Label>
                                     <Label Grid.Row="7" Grid.Column="0" Content="CoefWaitTimeFinal"></Label>
-                                    <Label Grid.Row="7" Grid.Column="1" Content="{Binding Info.CoefWaitTime.Final}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="7" Grid.Column="1" Content="{Binding CoefWaitTime.Final}" VerticalAlignment="Center"></Label>
                                     <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
-                                        <CheckBox Content="SWLvMatch" IsChecked="{Binding Info.SWLvMatch}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
-                                        <CheckBox Content="LFC" IsChecked="{Binding Info.LFC}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
-                                        <CheckBox Content="Auro" IsChecked="{Binding Info.Auro}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                        <CheckBox Content="SWLvMatch" IsChecked="{Binding SWLvMatch}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                        <CheckBox Content="LFC" IsChecked="{Binding LFC}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                        <CheckBox Content="Auro" IsChecked="{Binding Auro}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
                             <GridSplitter Grid.Row="3" HorizontalAlignment="Stretch" Height="5" />
                             <GroupBox Grid.Row="4" Header="Equalizer Display">
                                 <StackPanel Orientation="Horizontal" Height="150" VerticalAlignment="Top" >
-                                    <Slider Value="{Binding CurrentDisFil.DispData[0]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                    <Slider Value="{Binding CurrentDisFil.DispData[1]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                    <Slider Value="{Binding CurrentDisFil.DispData[2]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                    <Slider Value="{Binding CurrentDisFil.DispData[3]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                    <Slider Value="{Binding CurrentDisFil.DispData[4]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                    <Slider Value="{Binding CurrentDisFil.DispData[5]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                    <Slider Value="{Binding CurrentDisFil.DispData[6]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                    <Slider Value="{Binding CurrentDisFil.DispData[7]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                    <Slider Value="{Binding CurrentDisFil.DispData[8]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                    <Slider Value="{Binding SelectedDisFil.DispData[0]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                    <Slider Value="{Binding SelectedDisFil.DispData[1]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                    <Slider Value="{Binding SelectedDisFil.DispData[2]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                    <Slider Value="{Binding SelectedDisFil.DispData[3]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                    <Slider Value="{Binding SelectedDisFil.DispData[4]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                    <Slider Value="{Binding SelectedDisFil.DispData[5]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                    <Slider Value="{Binding SelectedDisFil.DispData[6]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                    <Slider Value="{Binding SelectedDisFil.DispData[7]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                    <Slider Value="{Binding SelectedDisFil.DispData[8]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
                                 </StackPanel>
                             </GroupBox>
                         </Grid>
@@ -415,17 +417,18 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="auto"/>
                                             <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition Width="auto"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Label Grid.Row="0" Grid.Column="0" Content="AssignBin" ></Label>
-                                        <Label Grid.Row="0" Grid.Column="1" Content="{Binding Status.AssignBin}" Grid.ColumnSpan="2" VerticalAlignment="Center"></Label>
+                                        <Label Grid.Row="0" Grid.Column="1" Content="{Binding AssignBin}" Grid.ColumnSpan="2" VerticalAlignment="Center"></Label>
                                         <Label Grid.Row="1" Grid.Column="0" Content="AmpAssign"></Label>
-                                        <Label Grid.Row="1" Grid.Column="1" Content="{Binding Status.AmpAssign}" VerticalAlignment="Center"></Label>
-                                        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" >
-                                            <CheckBox Content="HPPlug" IsChecked="{Binding Status.HPPlug}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
-                                            <CheckBox Content="Mic" IsChecked="{Binding Status.Mic}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
-                                            <CheckBox Content="BTTXStatus" IsChecked="{Binding Status.BTTXStatus}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
-                                            <CheckBox Content="SpPreset" IsChecked="{Binding Status.SpPreset}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AmpAssign}" VerticalAlignment="Center"></TextBlock>
+                                        <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="3" Orientation="Horizontal" >
+                                            <CheckBox Content="HPPlug" IsChecked="{Binding HPPlug}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                            <CheckBox Content="Mic" IsChecked="{Binding Mic}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                            <CheckBox Content="BTTXStatus" IsChecked="{Binding BTTXStatus}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                            <CheckBox Content="SpPreset" IsChecked="{Binding SpPreset}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
                                         </StackPanel>
                                     </Grid>
                                 </GroupBox>
@@ -464,34 +467,31 @@
                                                     <ColumnDefinition Width="auto"/>
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
-                                                <Label Grid.Row="0" Grid.Column="0" Content="AssignBin" ></Label>
-                                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Data.AssignBin}" Grid.ColumnSpan="7" VerticalAlignment="Center"></TextBox>
-                                                <Label Grid.Row="1" Grid.Column="0" Content="AmpAssign"></Label>
-                                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Data.AmpAssign}" VerticalAlignment="Center"></TextBox>
-                                                <Label Grid.Row="1" Grid.Column="2" Content="AudyFinFlg"></Label>
-                                                <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Data.AudyFinFlg}" VerticalAlignment="Center"></TextBox>
-                                                <Label Grid.Row="2" Grid.Column="0" Content="Speaker Config"></Label>
-                                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Data.SelectedSpConfig}" VerticalAlignment="Center"></TextBox>
-                                                <Label Grid.Row="2" Grid.Column="2" Content="Speaker Distance"></Label>
-                                                <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Data.SelectedDistance}" VerticalAlignment="Center"></TextBox>
-                                                <Label Grid.Row="2" Grid.Column="4" Content="Channel Level"></Label>
-                                                <TextBox Grid.Row="2" Grid.Column="5" Text="{Binding Data.SelectedChLevel}" VerticalAlignment="Center"></TextBox>
-                                                <Label Grid.Row="2" Grid.Column="6" Content="Channel Crossover"></Label>
-                                                <TextBox Grid.Row="2" Grid.Column="7" Text="{Binding Data.SelectedCrossover}" VerticalAlignment="Center"></TextBox>
+                                                
+                                                <Label Grid.Row="0" Grid.Column="0" Content="Speaker Config"></Label>
+                                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SelectedSpConfig}" VerticalAlignment="Center"></TextBox>
+                                                <Label Grid.Row="0" Grid.Column="2" Content="Speaker Distance"></Label>
+                                                <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding SelectedDistance}" VerticalAlignment="Center"></TextBox>
+                                                <Label Grid.Row="0" Grid.Column="4" Content="Channel Level"></Label>
+                                                <TextBox Grid.Row="0" Grid.Column="5" Text="{Binding SelectedChLevel}" VerticalAlignment="Center"></TextBox>
+                                                <Label Grid.Row="0" Grid.Column="6" Content="Channel Crossover"></Label>
+                                                <TextBox Grid.Row="0" Grid.Column="7" Text="{Binding SelectedCrossover}" VerticalAlignment="Center"></TextBox>
 
-                                                <Label Grid.Row="3" Grid.Column="0" Content="AudyDynSet"></Label>
-                                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Data.AudyDynSet}" VerticalAlignment="Center"></TextBox>
-                                                <Label Grid.Row="3" Grid.Column="2" Content="AudyEqSet"></Label>
-                                                <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Data.AudyEqSet}" VerticalAlignment="Center"></TextBox>
-                                                <Label Grid.Row="3" Grid.Column="4" Content="AudyLfcLev"></Label>
-                                                <TextBox Grid.Row="3" Grid.Column="5" Text="{Binding Data.AudyLfcLev}" VerticalAlignment="Center"></TextBox>
+                                                <Label Grid.Row="1" Grid.Column="0" Content="AudyDynSet"></Label>
+                                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AudyDynSet}" VerticalAlignment="Center"></TextBox>
+                                                <Label Grid.Row="1" Grid.Column="2" Content="AudyEqSet"></Label>
+                                                <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding AudyEqSet}" VerticalAlignment="Center"></TextBox>
+                                                <Label Grid.Row="1" Grid.Column="4" Content="AudyLfcLev"></Label>
+                                                <TextBox Grid.Row="1" Grid.Column="5" Text="{Binding AudyLfcLev}" VerticalAlignment="Center"></TextBox>
+                                                <Label Grid.Row="1" Grid.Column="6" Content="AudyFinFlg"></Label>
+                                                <TextBox Grid.Row="1" Grid.Column="7" Text="{Binding AudyFinFlg}" VerticalAlignment="Center"></TextBox>
 
-                                                <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="8" Orientation="Horizontal">
-                                                    <CheckBox Content="AudyDynEq" IsChecked="{Binding Data.AudyDynEq}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                    <CheckBox Content="AudyEqRef" IsChecked="{Binding Data.AudyEqRef}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                    <CheckBox Content="AudyDynVol" IsChecked="{Binding Data.AudyDynVol}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                    <CheckBox Content="AudyMultEq" IsChecked="{Binding Data.AudyMultEq}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                    <CheckBox Content="AudyLfc" IsChecked="{Binding Data.AudyLfc}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="8" Orientation="Horizontal">
+                                                    <CheckBox Content="AudyDynEq" IsChecked="{Binding AudyDynEq}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                    <CheckBox Content="AudyEqRef" IsChecked="{Binding AudyEqRef}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                    <CheckBox Content="AudyDynVol" IsChecked="{Binding AudyDynVol}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                    <CheckBox Content="AudyMultEq" IsChecked="{Binding AudyMultEq}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                    <CheckBox Content="AudyLfc" IsChecked="{Binding AudyLfc}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                             </Grid>
                                         </GroupBox>
@@ -510,77 +510,70 @@
                                             <ColumnDefinition Width="auto"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel Orientation="Vertical">
-                                            <StackPanel Orientation="Horizontal" Height="auto" VerticalAlignment="Top" CanHorizontallyScroll="True" CanVerticallyScroll="True">
-                                                <Slider Height="150" Value="{Binding CurrentDisFil.FilData[00]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[01]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[02]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[03]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[04]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[05]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[06]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[07]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[08]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[09]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[10]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[11]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[12]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[13]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[14]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[15]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[16]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[17]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[18]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[19]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[20]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[21]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[22]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[23]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[24]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[25]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[26]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[27]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[28]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[29]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[30]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[31]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[32]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Top" CanHorizontallyScroll="True" CanVerticallyScroll="True">
-                                                <Slider Height="150" Value="{Binding CurrentDisFil.FilData[33]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[34]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[35]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[36]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[37]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[38]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[39]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[40]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[41]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[42]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[43]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[44]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[45]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[46]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[47]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[48]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[49]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[50]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[51]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[52]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[53]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[54]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[55]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[56]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[57]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[58]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[59]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[60]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[61]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[62]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[63]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Value="{Binding CurrentDisFil.FilData[64]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                            </StackPanel>
-                                        </StackPanel>
+                                            <WrapPanel Orientation="Horizontal" Height="auto" VerticalAlignment="Top" Grid.ColumnSpan="2">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[00]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[01]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[02]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[03]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[04]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[05]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[06]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[07]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[08]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[09]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[10]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[11]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[12]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[13]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[14]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[15]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[16]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[17]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[18]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[19]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[20]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[21]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[22]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[23]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[24]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[25]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[26]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[27]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[28]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[29]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[30]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[31]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[32]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[33]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[34]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[35]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[36]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[37]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[38]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[39]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[40]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[41]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[42]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[43]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[44]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[45]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[46]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[47]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[48]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[49]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[49]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[50]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[51]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[52]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[53]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[54]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[55]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[56]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[57]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[58]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[59]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[60]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                            </WrapPanel>
                                     </Grid>
                                 </GroupBox>
                             </Grid>

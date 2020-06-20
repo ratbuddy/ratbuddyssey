@@ -6,7 +6,7 @@ namespace Audyssey
 {
     namespace MultEQAvr
     {
-        interface Status
+        interface IStatus
         {
             #region Properties
             public bool? HPPlug { get; set; }
@@ -19,7 +19,7 @@ namespace Audyssey
             #endregion
         }
 
-        public class AvrStatus : Status, INotifyPropertyChanged
+        public partial class AudysseyMultEQAvr : IStatus, INotifyPropertyChanged
         {
             private bool? _HPPlug = null;
             private bool? _Mic = null;
@@ -112,20 +112,6 @@ namespace Audyssey
                 {
                     _SpPreset = value;
                     RaisePropertyChanged("SpPreset");
-                }
-            }
-            #endregion
-
-            #region INotifyPropertyChanged implementation
-            public event PropertyChangedEventHandler PropertyChanged = delegate { };
-            #endregion
-
-            #region methods
-            private void RaisePropertyChanged(string propertyName)
-            {
-                if (PropertyChanged != null)
-                {
-                    PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
                 }
             }
             #endregion

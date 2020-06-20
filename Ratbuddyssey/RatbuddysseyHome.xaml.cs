@@ -21,6 +21,7 @@ namespace Ratbuddyssey
         private AudysseyMultEQReferenceCurveFilter audysseyMultEQReferenceCurveFilter = new AudysseyMultEQReferenceCurveFilter();
         private AudysseyMultEQApp audysseyMultEQApp = null;
         private AudysseyMultEQAvr audysseyMultEQAvr = null;
+        private AudysseyMultEQAvrTcp audysseyMultEQAvrTcp = null;
         private AudysseyMultEQAvrAdapter audysseyMultEQAvrAdapter = null;
         private AudysseyMultEQTcpSniffer audysseyMultEQTcpSniffer = null;
 
@@ -229,12 +230,14 @@ namespace Ratbuddyssey
                     }
                     else
                     {
-                        // if audysseyMultEQAvr was loaded from a projectfile there is no Tcp client address
-                        if ((audysseyMultEQAvr == null) || (string.IsNullOrEmpty(audysseyMultEQAvr.GetTcpClientAsString())))
+                        // if there is no Tcp client
+                        if (audysseyMultEQAvrTcp == null)
                         {
                             // create receiver instance
-                            audysseyMultEQAvr = new AudysseyMultEQAvr(cmbInterfaceClient.Text);
-                            // adapter to interface MultEQAvr properties as if they were MultEQApp properties 
+                            audysseyMultEQAvr = new AudysseyMultEQAvr();
+                            // create receiver tcp instance
+                            audysseyMultEQAvrTcp = new AudysseyMultEQAvrTcp(audysseyMultEQAvr, cmbInterfaceClient.Text);
+                            // create adapter to interface MultEQAvr properties as if they were MultEQApp properties 
                             audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
                             // data Binding to adapter
                             if ((tabControl.SelectedIndex == 0) && (audysseyMultEQApp == null))
@@ -246,7 +249,7 @@ namespace Ratbuddyssey
                                 this.DataContext = audysseyMultEQAvr;
                             }
                         }
-                        audysseyMultEQAvr.Connect();
+                        audysseyMultEQAvrTcp.Connect();
                         // attach sniffer
                         if (connectSniffer.IsChecked)
                         {
@@ -262,23 +265,16 @@ namespace Ratbuddyssey
                             {
                                 if (audysseyMultEQTcpSniffer == null)
                                 {
-                                    audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr, cmbInterfaceHost.SelectedItem.ToString());
+                                    audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr, cmbInterfaceHost.SelectedItem.ToString(), cmbInterfaceClient.SelectedItem.ToString());
                                 }
                             }
                         }
-                        // query info and status from the receiver
-                        audysseyMultEQAvr.QueryAvr();
-                        // copy some status properties to data properties
-                        audysseyMultEQAvr.CopyAvrStatusToAvrData();
-                        // from here it is possible to enable the audyssey remote app mode on the receiver
-                        connectAudyssey.IsEnabled = true;
                     }
                 }
                 else
                 {
-                    connectAudyssey.IsChecked = false;
-                    connectAudyssey.IsEnabled = false;
                     audysseyMultEQAvrAdapter = null;
+                    audysseyMultEQAvrTcp = null;
                     audysseyMultEQAvr = null;
                     // immediately clean up the object
                     GC.Collect();
@@ -298,7 +294,7 @@ namespace Ratbuddyssey
                     if (audysseyMultEQAvr == null)
                     {
                         // create receiver instance
-                        audysseyMultEQAvr = new AudysseyMultEQAvr(cmbInterfaceClient.Text);
+                        audysseyMultEQAvr = new AudysseyMultEQAvr();
                         // create adapter to interface MultEQAvr properties as if they were MultEQApp properties 
                         audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
                         // data Binding to adapter
@@ -325,7 +321,7 @@ namespace Ratbuddyssey
                         if (audysseyMultEQTcpSniffer == null)
                         {
                             // create sniffer attached to receiver
-                            audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr, cmbInterfaceHost.SelectedItem.ToString());
+                            audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr, cmbInterfaceHost.SelectedItem.ToString(), cmbInterfaceClient.SelectedItem.ToString());
                         }
                     }
                 }
@@ -357,14 +353,22 @@ namespace Ratbuddyssey
                 {
                     if (audysseyMultEQAvr != null)
                     {
-                        audysseyMultEQAvr.EnterAudysseyMode();
+                        audysseyMultEQAvrTcp.EnterAudysseyMode();
+                    }
+                    else
+                    {
+                        connectAudyssey.IsChecked = false;
                     }
                 }
                 else
                 {
                     if (audysseyMultEQAvr != null)
                     {
-                        audysseyMultEQAvr.ExitAudysseyMode();
+                        audysseyMultEQAvrTcp.ExitAudysseyMode();
+                    }
+                    else
+                    {
+                        // if we end up here we have a problem
                     }
                 }
             }

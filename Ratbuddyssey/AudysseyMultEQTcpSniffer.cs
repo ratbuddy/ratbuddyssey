@@ -73,7 +73,6 @@ namespace Audyssey
             static readonly object _locker = new object();
 
             private string AudysseySnifferFileName = "AudysseySniffer.json";
-            private string TcpHostFileName = "TcpHost.json";
 
             private TcpIP TcpHost = null;
             private TcpIP TcpClient = null;
@@ -87,12 +86,12 @@ namespace Audyssey
             private AudysseyMultEQTcpIp audysseyMultEQTcpIp = new AudysseyMultEQTcpIp();
             private AudysseyMultEQAvr _audysseyMultEQAvr = null;
 
-            public AudysseyMultEQTcpSniffer(AudysseyMultEQAvr audysseyMultEQAvr, string HostAddress)
+            public AudysseyMultEQTcpSniffer(AudysseyMultEQAvr audysseyMultEQAvr, string HostAddress, string ClientAddress)
             {
                 _audysseyMultEQAvr = audysseyMultEQAvr;
 
                 TcpHost = new TcpIP(HostAddress, 0, 0);
-                TcpClient = _audysseyMultEQAvr.GetTcpClient();
+                TcpClient = new TcpIP(ClientAddress, 1256, 0);
 
                 //For sniffing the socket to capture the packets has to be a raw socket, with the
                 //address family being of type internetwork, and protocol being IP
@@ -316,11 +315,24 @@ namespace Audyssey
                 {
                     case "GET_AVRINF":
                         if (TransmitReceive == 'R')
-                            _audysseyMultEQAvr.Info = JsonConvert.DeserializeObject<AvrInfo>(AvrString, new JsonSerializerSettings { });
+                        {
+                            JsonConvert.PopulateObject(AvrString, _audysseyMultEQAvr, new JsonSerializerSettings
+                            {
+                                ContractResolver = new InterfaceContractResolver(typeof(IInfo)),
+                                FloatParseHandling = FloatParseHandling.Decimal,
+                            });
+                        }
                         break;
                     case "GET_AVRSTS":
                         if (TransmitReceive == 'R')
-                            _audysseyMultEQAvr.Status = JsonConvert.DeserializeObject<AvrStatus>(AvrString, new JsonSerializerSettings { });
+                        {
+                            JsonConvert.PopulateObject(AvrString, _audysseyMultEQAvr, new JsonSerializerSettings
+                            {
+                                ContractResolver = new InterfaceContractResolver(typeof(IStatus)),
+                                FloatParseHandling = FloatParseHandling.Decimal,
+                            });
+
+                        }
                         break;
                     case "ENTER_AUDY":
                         break;
@@ -328,7 +340,18 @@ namespace Audyssey
                         break;
                     case "SET_SETDAT":
                         if (TransmitReceive == 'T')
-                            _audysseyMultEQAvr.Data = JsonConvert.DeserializeObject<AvrData>(AvrString, new JsonSerializerSettings { });
+                        {
+                            JsonConvert.PopulateObject(AvrString, _audysseyMultEQAvr, new JsonSerializerSettings
+                            {
+                                ContractResolver = new InterfaceContractResolver(typeof(IAmp)),
+                                FloatParseHandling = FloatParseHandling.Decimal,
+                            });
+                            JsonConvert.PopulateObject(AvrString, _audysseyMultEQAvr, new JsonSerializerSettings
+                            {
+                                ContractResolver = new InterfaceContractResolver(typeof(IAudy)),
+                                FloatParseHandling = FloatParseHandling.Decimal,
+                            });
+                        }
                         break;
                     case "SET_DISFIL":
                         if (TransmitReceive == 'T')

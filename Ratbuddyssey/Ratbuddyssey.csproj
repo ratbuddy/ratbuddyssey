@@ -134,6 +134,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AudysseyMultEQ.cs" />
     <Compile Include="AudysseyMultEQApp.cs" />
     <Compile Include="AudysseyMultEQAppChannelReport.cs" />
     <Compile Include="AudysseyMultEQAppDetectedChannel.cs" />
@@ -143,6 +144,7 @@
     <Compile Include="AudysseyMultEQAvrDisFil.cs" />
     <Compile Include="AudysseyMultEQAvrInfo.cs" />
     <Compile Include="AudysseyMultEQAvrStatus.cs" />
+    <Compile Include="AudysseyMultEQAvrTcp.cs" />
     <Compile Include="AudysseyMultEQReferenceCurveFilter.cs" />
     <Compile Include="ClassInterfaceContractResolver.cs" />
     <Compile Include="IPHeader.cs" />

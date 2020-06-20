@@ -51,7 +51,23 @@ namespace Audyssey
             #endregion
         }
 
-        public class AvrInfo : INotifyPropertyChanged
+        interface IInfo
+        {
+            #region Properties
+            public string Ifver { get; set; }
+            public string DType { get; set; }
+            public CoefWaitTime CoefWaitTime { get; set; }
+            public decimal? ADC { get; set; }
+            public int? SysDelay { get; set; }
+            public string EQType { get; set; }
+            public bool? SWLvMatch { get; set; }
+            public bool? LFC { get; set; }
+            public bool? Auro { get; set; }
+            public string Upgrade { get; set; }
+            #endregion
+        }
+
+        public partial class AudysseyMultEQAvr : IInfo, INotifyPropertyChanged
         {
             private string _Ifver = null;
             private string _DType = null;
@@ -183,20 +199,6 @@ namespace Audyssey
                 {
                     _Upgrade = value;
                     RaisePropertyChanged("Upgrade");
-                }
-            }
-            #endregion
-
-            #region INotifyPropertyChanged members
-            public event PropertyChangedEventHandler PropertyChanged;
-            #endregion
-
-            #region methods
-            protected void RaisePropertyChanged(string propertyName)
-            {
-                if (this.PropertyChanged != null)
-                {
-                    this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
                 }
             }
             #endregion

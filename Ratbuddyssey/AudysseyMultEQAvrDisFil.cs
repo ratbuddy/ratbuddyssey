@@ -116,7 +116,7 @@ namespace Audyssey
                 }
             }
             [JsonIgnore]
-            public AvrDisFil CurrentDisFil
+            public AvrDisFil SelectedDisFil
             {
                 get
                 {
@@ -127,8 +127,6 @@ namespace Audyssey
                             if ((avrDisFil.ChData.Equals(_SelectedChannel)) &&
                                 (avrDisFil.EqType.Equals(_SeletedEqType)))
                             {
-                                CurrentCoefData = CoefData[_AvrDisFil.IndexOf(avrDisFil)];
-                                RaisePropertyChanged("CurrentCoefData");
                                 return avrDisFil;
                             }
                         }
@@ -152,11 +150,22 @@ namespace Audyssey
                 }
             }
             [JsonIgnore]
-            public Int32[] CurrentCoefData //TODO add to the GUI
+            public Int32[] SelectedCoefData
             {
                 get
                 {
-                    return _AvrCoefData.ElementAt(_SelectedChannelIndex);
+                    if (_SelectedChannel != null)
+                    {
+                        foreach (var avrDisFil in _AvrDisFil)
+                        {
+                            if ((avrDisFil.ChData.Equals(_SelectedChannel)) &&
+                                (avrDisFil.EqType.Equals(_SeletedEqType)))
+                            {
+                                return CoefData[_AvrDisFil.IndexOf(avrDisFil)];
+                            }
+                        }
+                    }
+                    return null;
                 }
                 set
                 {

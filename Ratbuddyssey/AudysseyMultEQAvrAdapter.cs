@@ -2,6 +2,7 @@
 using System.Linq;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
+using Audyssey.MultEQ;
 using Audyssey.MultEQApp;
 using Audyssey.MultEQAvr;
 
@@ -12,19 +13,9 @@ namespace Audyssey
         // Adapter class needed as long as ethernet traffic uses the file GUI
         // TODO: design GUI TAB dedicated to ethernet traffic which makes this
         // adapter redundant -> directly access avr class and sniffer class!
-        class AudysseyMultEQAvrAdapter : INotifyPropertyChanged
+        class AudysseyMultEQAvrAdapter : MultEQList, INotifyPropertyChanged
         {
             private AudysseyMultEQAvr _audysseyMultEQAvr;
-
-            private ObservableCollection<string> _enMultEQTypeList = new ObservableCollection<string>()
-            { "MultEQ", "MultEQXT", "MultEQXT32" };
-
-            private ObservableCollection<string> _enAmpAssignTypeList = new ObservableCollection<string>()
-            { "FrontA", "FrontB", "Type3", "Type4",
-              "Type5", "Type6", "Type7", "Type8",
-              "Type9", "Type10", "Type11", "Type12",
-              "Type13", "Type14", "Type15", "Type16",
-              "Type17", "Type18", "Type19", "Type20"};
 
             private ObservableCollection<DetectedChannel> _detectedChannels = new ObservableCollection<DetectedChannel>();
 
@@ -34,11 +25,11 @@ namespace Audyssey
             {
                 get
                 {
-                    return _audysseyMultEQAvr.Info.Ifver;
+                    return _audysseyMultEQAvr.Ifver;
                 }
                 set
                 {
-                    _audysseyMultEQAvr.Info.Ifver = value;
+                    _audysseyMultEQAvr.Ifver = value;
                     RaisePropertyChanged("InterfaceVersion");
                 }
             }
@@ -47,11 +38,11 @@ namespace Audyssey
             {
                 get
                 {
-                    return _audysseyMultEQAvr.Info.ADC;
+                    return _audysseyMultEQAvr.ADC;
                 }
                 set
                 {
-                    _audysseyMultEQAvr.Info.ADC = value;
+                    _audysseyMultEQAvr.ADC = value;
                     RaisePropertyChanged("AdcLineup");
                 }
             }
@@ -60,24 +51,12 @@ namespace Audyssey
             {
                 get
                 {
-                    return _audysseyMultEQAvr.Info.SysDelay;
+                    return _audysseyMultEQAvr.SysDelay;
                 }
                 set
                 {
-                    _audysseyMultEQAvr.Info.SysDelay = value;
+                    _audysseyMultEQAvr.SysDelay = value;
                     RaisePropertyChanged("SystemDelay");
-                }
-            }
-            // local var for backwards compatibility with enum in file
-            public ObservableCollection<string> EnMultEQTypeList
-            {
-                get
-                {
-                    return _enMultEQTypeList;
-                }
-                set
-                {
-                    RaisePropertyChanged("EnMultEQTypeList");
                 }
             }
             // different: enum in file but string in eth
@@ -85,11 +64,11 @@ namespace Audyssey
             {
                 get
                 {
-                    return _enMultEQTypeList.IndexOf(_audysseyMultEQAvr.Info.EQType);
+                    return MultEQTypeList.IndexOf(_audysseyMultEQAvr.EQType);
                 }
                 set
                 {
-                    _audysseyMultEQAvr.Info.EQType = _enMultEQTypeList.ElementAt(value);
+                    _audysseyMultEQAvr.EQType = MultEQTypeList.ElementAt(value);
                     RaisePropertyChanged("EnMultEQType");
                 }
             }
@@ -98,11 +77,11 @@ namespace Audyssey
             {
                 get
                 {
-                    return _audysseyMultEQAvr.Info.LFC;
+                    return _audysseyMultEQAvr.LFC;
                 }
                 set
                 {
-                    _audysseyMultEQAvr.Info.LFC = value;
+                    _audysseyMultEQAvr.LFC = value;
                     RaisePropertyChanged("Lfc");
                 }
             }
@@ -111,11 +90,11 @@ namespace Audyssey
             {
                 get
                 {
-                    return _audysseyMultEQAvr.Info.Auro;
+                    return _audysseyMultEQAvr.Auro;
                 }
                 set
                 {
-                    _audysseyMultEQAvr.Info.Auro = value;
+                    _audysseyMultEQAvr.Auro = value;
                     RaisePropertyChanged("Auro");
                 }
             }
@@ -124,24 +103,12 @@ namespace Audyssey
             {
                 get
                 {
-                    return _audysseyMultEQAvr.Info.Upgrade;
+                    return _audysseyMultEQAvr.Upgrade;
                 }
                 set
                 {
-                    _audysseyMultEQAvr.Info.Upgrade = value;
+                    _audysseyMultEQAvr.Upgrade = value;
                     RaisePropertyChanged("UpgradeInfo");
-                }
-            }
-            // local var for backwards compatibility with enum in file
-            public ObservableCollection<string> EnAmpAssignTypeList
-            {
-                get
-                {
-                    return _enAmpAssignTypeList;
-                }
-                set
-                {
-                    RaisePropertyChanged("EnAmpAssignTypeList");
                 }
             }
             // different: type in file but string in eth
@@ -149,11 +116,11 @@ namespace Audyssey
             {
                 get
                 {
-                    return _enAmpAssignTypeList.IndexOf(_audysseyMultEQAvr.Status.AmpAssign);
+                    return AmpAssignTypeList.IndexOf(_audysseyMultEQAvr.AmpAssign);
                 }
                 set
                 {
-                    _audysseyMultEQAvr.Status.AmpAssign = _enAmpAssignTypeList.ElementAt(value);
+                    _audysseyMultEQAvr.AmpAssign = AmpAssignTypeList.ElementAt(value);
                     RaisePropertyChanged("EnAmpAssignType");
                 }
             }
@@ -162,11 +129,11 @@ namespace Audyssey
             {
                 get
                 {
-                    return _audysseyMultEQAvr.Status.AssignBin;
+                    return _audysseyMultEQAvr.AssignBin;
                 }
                 set
                 {
-                    _audysseyMultEQAvr.Status.AssignBin = value;
+                    _audysseyMultEQAvr.AssignBin = value;
                     RaisePropertyChanged("AmpAssignInfo");
                 }
             }
@@ -175,10 +142,10 @@ namespace Audyssey
             {
                 get
                 {
-                    if (_audysseyMultEQAvr.Status.ChSetup != null)
+                    if (_audysseyMultEQAvr.ChSetup != null)
                     {
                         _detectedChannels = new ObservableCollection<DetectedChannel>();
-                        foreach (var chsetup in _audysseyMultEQAvr.Status.ChSetup)
+                        foreach (var chsetup in _audysseyMultEQAvr.ChSetup)
                         {
                             foreach (var ch in chsetup)
                             {
