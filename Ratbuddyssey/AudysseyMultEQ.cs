@@ -1,5 +1,3 @@
-using System.Text;
-using System.ComponentModel;
 using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 
@@ -17,29 +15,23 @@ namespace Audyssey
               "Type17", "Type18", "Type19", "Type20"};
 
             private ObservableCollection<string> _TargetCurveTypeList = new ObservableCollection<string>()
-            { "Undefined", "High Frequency Roll Off 1", "High Frequency Roll Off 2"};
+            { " ", "High Frequency Roll Off 1", "High Frequency Roll Off 2"};
 
             private ObservableCollection<string> _MultEQTypeList = new ObservableCollection<string>()
             { "MultEQ", "MultEQXT", "MultEQXT32" };
 
             private ObservableCollection<string> _CrossoverList = new ObservableCollection<string>()
-            { "U", "40", "60", "80", "90", "100", "110", "120", "150", "180", "200", "250" };
-            
-            private ObservableCollection<string> _SpeakerTypeList = new ObservableCollection<string>()
-            { "U", "S", "M", "L" };
+            { " ", "40", "60", "80", "90", "100", "110", "120", "150", "180", "200", "250", "F" };
 
-            [JsonIgnore]
-            public ObservableCollection<string> TargetCurveTypeList
-            {
-                get
-                {
-                    return _TargetCurveTypeList;
-                }
-                set
-                {
-                    _TargetCurveTypeList = value;
-                }
-            }
+            private ObservableCollection<string> _SpeakerTypeList = new ObservableCollection<string>()
+            { " ", "S", "L" };
+
+            private ObservableCollection<string> _ChannelSetupList = new ObservableCollection<string>()
+            { "N", "S", "E" };
+
+            private ObservableCollection<string> _AudyFinFlgList = new ObservableCollection<string>()
+            { "Fin", "NotFin" };
+
             [JsonIgnore]
             public ObservableCollection<string> AmpAssignTypeList
             {
@@ -47,9 +39,13 @@ namespace Audyssey
                 {
                     return _AmpAssignTypeList;
                 }
-                set
+            }
+            [JsonIgnore]
+            public ObservableCollection<string> TargetCurveTypeList
+            {
+                get
                 {
-                    _AmpAssignTypeList = value;
+                    return _TargetCurveTypeList;
                 }
             }
             [JsonIgnore]
@@ -59,9 +55,13 @@ namespace Audyssey
                 {
                     return _MultEQTypeList;
                 }
-                set
+            }
+            [JsonIgnore]
+            public ObservableCollection<string> CrossoverList
+            {
+                get
                 {
-                    _MultEQTypeList = value;
+                    return _CrossoverList;
                 }
             }
             [JsonIgnore]
@@ -71,21 +71,21 @@ namespace Audyssey
                 {
                     return _SpeakerTypeList;
                 }
-                set
-                {
-                    _SpeakerTypeList = value;
-                }
             }
             [JsonIgnore]
-            public ObservableCollection<string> CrossoverList
+            public ObservableCollection<string> ChannelSetupList
             {
                 get
                 {
-                    return _CrossoverList;
+                    return _ChannelSetupList;
                 }
-                set
+            }
+            [JsonIgnore]
+            public ObservableCollection<string> AudyFinFlgList
+            {
+                get
                 {
-                    _CrossoverList = value;
+                    return _AudyFinFlgList;
                 }
             }
         }

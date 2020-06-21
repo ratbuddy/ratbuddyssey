@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using Newtonsoft.Json;
+using Audyssey.MultEQ;
+using System;
 
 namespace Audyssey
 {
@@ -34,7 +36,7 @@ namespace Audyssey
             #endregion
         }
 
-        public partial class AudysseyMultEQAvr : IAmp, IAudy, INotifyPropertyChanged
+        public partial class AudysseyMultEQAvr : MultEQList, IAmp, IAudy, INotifyPropertyChanged
         {
             // IAmp
             private ObservableCollection<Dictionary<string, string>> _SpConfig = null;
@@ -78,9 +80,7 @@ namespace Audyssey
                         {
                             if (spConfig.ContainsKey(_SelectedChannel))
                             {
-                                string _SelectedSpConfig;
-                                spConfig.TryGetValue(_SelectedChannel, out _SelectedSpConfig);
-                                return _SelectedSpConfig;
+                                return spConfig[_SelectedChannel];
                             }
                         }
                     }
@@ -88,6 +88,17 @@ namespace Audyssey
                 }
                 set
                 {
+                    if ((_SelectedChannel != null) && (_SpConfig != null))
+                    {
+                        foreach (var spConfig in _SpConfig)
+                        {
+                            if (spConfig.ContainsKey(_SelectedChannel))
+                            {
+                                spConfig[_SelectedChannel] = value;
+                                RaisePropertyChanged("SpConfig");
+                            }
+                        }
+                    }
                 }
             }
             public ObservableCollection<Dictionary<string, int>> Distance
@@ -113,9 +124,7 @@ namespace Audyssey
                         {
                             if (_distance.ContainsKey(_SelectedChannel))
                             {
-                                int _SelectedDistance;
-                                _distance.TryGetValue(_SelectedChannel, out _SelectedDistance);
-                                return _SelectedDistance;
+                                return _distance[_SelectedChannel];
                             }
                         }
                     }
@@ -123,6 +132,17 @@ namespace Audyssey
                 }
                 set
                 {
+                    if ((_SelectedChannel != null) && (_Distance != null))
+                    {
+                        foreach (var _distance in _Distance)
+                        {
+                            if (_distance.ContainsKey(_SelectedChannel))
+                            {
+                                _distance[_SelectedChannel] = (int)value;
+                                RaisePropertyChanged("Distance");
+                            }
+                        }
+                    }
                 }
             }
             public ObservableCollection<Dictionary<string, int>> ChLevel
@@ -138,7 +158,7 @@ namespace Audyssey
                 }
             }
             [JsonIgnore]
-            public int? SelectedChLevel
+            public decimal? SelectedChLevel
             {
                 get
                 {
@@ -148,9 +168,7 @@ namespace Audyssey
                         {
                             if (_chLevel.ContainsKey(_SelectedChannel))
                             {
-                                int _SelectedChLevel;
-                                _chLevel.TryGetValue(_SelectedChannel, out _SelectedChLevel);
-                                return _SelectedChLevel;
+                                return (decimal)_chLevel[_SelectedChannel] / 10;
                             }
                         }
                     }
@@ -158,6 +176,17 @@ namespace Audyssey
                 }
                 set
                 {
+                    if ((_SelectedChannel != null) && (_ChLevel != null))
+                    {
+                        foreach (var _chLevel in _ChLevel)
+                        {
+                            if (_chLevel.ContainsKey(_SelectedChannel))
+                            {
+                                _chLevel[_SelectedChannel] = (int)((decimal)value * (decimal)10);
+                                RaisePropertyChanged("ChLevel");
+                            }
+                        }
+                    }
                 }
             }
             public ObservableCollection<Dictionary<string, object>> Crossover
@@ -185,6 +214,10 @@ namespace Audyssey
                             {
                                 object _SelectedCrossover;
                                 _crossover.TryGetValue(_SelectedChannel, out _SelectedCrossover);
+                                if (_SelectedCrossover.GetType() == typeof(long))
+                                {
+                                    return ((long)_SelectedCrossover * (long)10).ToString();
+                                }
                                 return _SelectedCrossover;
                             }
                         }
@@ -193,6 +226,25 @@ namespace Audyssey
                 }
                 set
                 {
+                    if ((_SelectedChannel != null) && (_Crossover != null))
+                    {
+                        foreach (var _crossover in _Crossover)
+                        {
+                            if (_crossover.ContainsKey(_SelectedChannel))
+                            {
+                                object _SelectedCrossover;
+                                _crossover.TryGetValue(_SelectedChannel, out _SelectedCrossover);
+                                if (_SelectedCrossover.GetType() == typeof(long))
+                                {
+                                    if (value.GetType() == typeof(string))
+                                    {
+                                        _crossover[_SelectedChannel] = (long)(Convert.ToInt64(value) / (long)10);
+                                        RaisePropertyChanged("Crossover");
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             public string AudyFinFlg

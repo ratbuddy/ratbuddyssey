@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 
 namespace Audyssey
 {
@@ -25,7 +26,7 @@ namespace Audyssey
             private bool? _Mic = null;
             private string _AmpAssign = null;
             private string _AssignBin = null;
-            private ObservableCollection<Dictionary<string, string>> _ChSetup = new ObservableCollection<Dictionary<string, string>>();
+            private ObservableCollection<Dictionary<string, string>> _ChSetup = null;
             private bool? _BTTXStatus = null;
             private bool? _SpPreset = null;
 
@@ -88,6 +89,39 @@ namespace Audyssey
                 {
                     _ChSetup = value;
                     RaisePropertyChanged("ChSetup");
+                }
+            }
+            public string SelectedChSetup
+            {
+                get
+                {
+                    if ((_SelectedChannel != null) && (_ChSetup != null))
+                    {
+                        string selectedItem = _SelectedItem.Keys.ElementAt(0);
+                        foreach (var _channel in _ChSetup)
+                        {
+                            if (_channel.ContainsKey(selectedItem))
+                            {
+                                return _channel[selectedItem];
+                            }
+                        }
+                    }
+                    return null;
+                }
+                set
+                {
+                    if ((_SelectedChannel != null) && (_Distance != null))
+                    {
+                        string selectedItem = _SelectedItem.Keys.ElementAt(0);
+                        foreach (var _channel in _ChSetup)
+                        {
+                            if (_channel.ContainsKey(selectedItem))
+                            {
+                                _channel[selectedItem] = value;
+                                RaisePropertyChanged("ChSetup");
+                            }
+                        }
+                    }
                 }
             }
             public bool? BTTXStatus

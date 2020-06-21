@@ -1,10 +1,5 @@
-﻿using System;
-using System.IO;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Audyssey
@@ -14,15 +9,25 @@ namespace Audyssey
         public partial class AudysseyMultEQAvr : INotifyPropertyChanged
         {
             /*local reference for selected channel from GUI*/
+            private Dictionary<string, string> _SelectedItem;
             private string _SelectedChannel = null;
             private string _SeletedEqType = "Audy";
 
             #region Properties
+            public Dictionary<string,string> SelectedItem
+            {
+                set
+                {
+                    _SelectedItem = value;
+                    SelectedChannel = _SelectedItem.Keys.ElementAt(0);
+                    RaisePropertyChanged("SelectedChSetup");
+                }
+            }
             public string SelectedChannel
             {
                 set
                 {
-                    _SelectedChannel = value;
+                    _SelectedChannel = value.Replace("MIX", "");
                     RaisePropertyChanged("SelectedDisFil");
                     RaisePropertyChanged("SelectedCoefData");
                     RaisePropertyChanged("SelectedSpConfig");
@@ -31,7 +36,6 @@ namespace Audyssey
                     RaisePropertyChanged("SelectedCrossover");
                 }
             }
-            [JsonIgnore]
             public string SelectedEqType
             {
                 set
@@ -42,7 +46,7 @@ namespace Audyssey
                 }
             }
             #endregion
-        
+
             #region INotifyPropertyChanged implementation
             public event PropertyChangedEventHandler PropertyChanged = delegate { };
             private void RaisePropertyChanged(string propertyName)

@@ -18,7 +18,7 @@ namespace Ratbuddyssey
             {
                 if (ChannelSetupView.SelectedItem != null)
                 {
-                    audysseyMultEQAvr.SelectedChannel = ((Dictionary<string, string>)ChannelSetupView.SelectedItem).Keys.ElementAt(0);
+                    audysseyMultEQAvr.SelectedItem = (Dictionary<string, string>)ChannelSetupView.SelectedItem;
                 }
             }
         }

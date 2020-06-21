@@ -50,39 +50,49 @@ namespace Audyssey
             
             public void AudysseyToAvr()
             {
-                //if (SetAvrSetAmp())
+                if (SetAvrSetAmp())
                 {
 #if DEBUG
-                    string AvrSetDataAmpFile = JsonConvert.SerializeObject(_audysseyMultEQAvr, new JsonSerializerSettings {
+                    string serialized = JsonConvert.SerializeObject(_audysseyMultEQAvr, new JsonSerializerSettings {
                         ContractResolver = new InterfaceContractResolver(typeof(IAmp))
                     });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAmp.json", AvrSetDataAmpFile);
+                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAmp.json", serialized);
 #endif
                 }
 
-                //if (SetAvrSetAudy())
+                if (SetAvrSetAudy())
                 {
 #if DEBUG
-                    string AvrSetDataAudFile = JsonConvert.SerializeObject(_audysseyMultEQAvr, new JsonSerializerSettings {
+                    string serialized = JsonConvert.SerializeObject(_audysseyMultEQAvr, new JsonSerializerSettings {
                         ContractResolver = new InterfaceContractResolver(typeof(IAudy))
                     });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAud.json", AvrSetDataAudFile);
+                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAud.json", serialized);
 #endif
                 }
 
-                //if (SetAvrDisFil())
+                if (SetAvrSetDisFil())
                 {
 #if DEBUG
-                    string AvrDisFilFile = JsonConvert.SerializeObject(_audysseyMultEQAvr.DisFil, new JsonSerializerSettings { });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrDisFil.json", AvrDisFilFile);
+                    string serialized = JsonConvert.SerializeObject(_audysseyMultEQAvr.DisFil, new JsonSerializerSettings { });
+                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrDisFil.json", serialized);
 #endif
                 }
 
-                //if (InitAudysseyCoef())
+                if (SetAvrInitCoefs())
+                {
+                }
 
-                //if (SetAudysseyCoefData())
+                if (SetAvrSetCoefDt())
+                {
+#if DEBUG
+                    string serialized = JsonConvert.SerializeObject(_audysseyMultEQAvr.CoefData, new JsonSerializerSettings { });
+                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrCoefDafa.json", serialized);
+#endif
+                }
 
-                //if (SetAudysseyFinishedFlag())
+                if (SetAudysseyFinishedFlag())
+                {
+                }
 
             }
             
@@ -279,7 +289,7 @@ namespace Audyssey
                 }
             }
             
-            public bool SetDisFil()
+            public bool SetAvrSetDisFil()
             {
                 if (audysseyMultEQAvrTcpClientWithTimeout != null)
                 {
@@ -309,7 +319,7 @@ namespace Audyssey
                 }
             }
             
-            public bool InitAvrCoefs()
+            public bool SetAvrInitCoefs()
             {
                 if (audysseyMultEQAvrTcpClientWithTimeout != null)
                 {
@@ -335,7 +345,7 @@ namespace Audyssey
                 }
             }
             
-            public bool SetAvrCoefDt()
+            public bool SetAvrSetCoefDt()
             {
                 if (audysseyMultEQAvrTcpClientWithTimeout != null)
                 {

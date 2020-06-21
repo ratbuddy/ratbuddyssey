@@ -32,10 +32,7 @@ namespace Audyssey
             private ObservableCollection<MyKeyValuePair> _customTargetCurvePointsDictionary = new ObservableCollection<MyKeyValuePair>();
 
             // local for data binding (not serialised)
-            private int _customCrossoverIndex = 0;
-
-            // local for data binding (not serialised)
-            private int _customSpeakerTypeIndex = 0;
+            private int _customCrossoverIndex = -1;
 
             #region Properties
             [JsonIgnore]
@@ -196,24 +193,6 @@ namespace Audyssey
                 {
                     _customSpeakerType = value;
                     RaisePropertyChanged("CustomSpeakerType");
-                    CustomSpeakerTypeIndex = SpeakerTypeList.IndexOf(value);
-                    if (CustomSpeakerTypeIndex == -1) CustomSpeakerTypeIndex = SpeakerTypeList.IndexOf("U");
-                    RaisePropertyChanged("CustomSpeakerTypeIndex");
-                }
-            }
-            [JsonIgnore]
-            public int CustomSpeakerTypeIndex
-            {
-                get
-                {
-                    return _customSpeakerTypeIndex;
-                }
-                set
-                {
-                    _customSpeakerTypeIndex = value;
-                    RaisePropertyChanged("CustomSpeakerTypeIndex");
-                    _customSpeakerType = SpeakerTypeList[value];
-                    RaisePropertyChanged("CustomSpeakerType");
                 }
             }
             public decimal? CustomDistance
@@ -238,8 +217,7 @@ namespace Audyssey
                 {
                     _customCrossover = value;
                     RaisePropertyChanged("CustomCrossover");
-                    CustomCrossoverIndex = CrossoverList.IndexOf(value + "0");
-                    if (CustomCrossoverIndex == -1) CustomCrossoverIndex = CrossoverList.IndexOf("U");
+                    _customCrossoverIndex = CrossoverList.IndexOf(value + "0");
                     RaisePropertyChanged("CustomCrossoverIndex");
                 }
             }
@@ -254,7 +232,7 @@ namespace Audyssey
                 {
                     _customCrossoverIndex = value;
                     RaisePropertyChanged("CustomCrossoverIndex");
-                    _customCrossover = CrossoverList[value].Remove(CrossoverList[value].Length - 1, 1);
+                    _customCrossover = CrossoverList[value];
                     RaisePropertyChanged("CustomCrossover");
                 }
             }
