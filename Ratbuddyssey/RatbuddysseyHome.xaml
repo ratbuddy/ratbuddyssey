@@ -26,7 +26,9 @@
             <ColumnDefinition Width="*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Row="2" Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Label Content="Receiver IP Address:" VerticalAlignment="Top" ></Label>
             <ComboBox x:Name="cmbInterfaceClient"  VerticalAlignment="Top" Width="120" IsEditable="True"/>
+            <Label Content="Computer IP Address:" VerticalAlignment="Top" ></Label>
             <ComboBox x:Name="cmbInterfaceHost" VerticalAlignment="Top" Width="120"/>
         </StackPanel>
         <Menu Grid.Row="1">
@@ -50,6 +52,12 @@
                 <MenuItem Header="Get Receiver _Info" Name="getReceiverInfo" Click="getReceiverInfo_Click" />
                 <MenuItem Header="Get Receiver _Status" Name="getReceiverStatus" Click="getReceiverStatus_Click" />
                 <MenuItem Header="Enter _Audyssey" Name="connectAudyssey" Click="ConnectAudyssey_OnClick" IsCheckable="True"/>
+                <MenuItem Header="Set Amp" Name="setAvrSetAmp" Click="setAvrSetAmp_Click" />
+                <MenuItem Header="Set Audy" Name="setAvrSetAudy" Click="setAvrSetAudy_Click" />
+                <MenuItem Header="Set DisFil" Name="setAvrSetDisFil" Click="setAvrSetDisFil_Click" />
+                <MenuItem Header="Init Coefs" Name="setAvrInitCoefs" Click="setAvrInitCoefs_Click" />
+                <MenuItem Header="Set CoefDt" Name="setAvrSetCoefDt" Click="setAvrSetCoefDt_Click" />
+                <MenuItem Header="Set AudyFinFlg" Name="setAudysseyFinishedFlag" Click="setAudysseyFinishedFlag_Click" />
             </MenuItem>
             <MenuItem Header="_About">
                 <MenuItem Header="About Ratbuddyssey" x:Name="about" Click="About_OnClick"/>
@@ -496,6 +504,8 @@
                                                     <ColumnDefinition Width="auto"/>
                                                     <ColumnDefinition Width="auto"/>
                                                     <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
 
@@ -504,28 +514,27 @@
                                                 <Label Grid.Row="0" Grid.Column="2" Content="Channel Crossover (Hz)"></Label>
                                                 <ComboBox Grid.Row="0" Grid.Column="3" SelectedValue="{Binding SelectedCrossover}" ItemsSource="{Binding CrossoverList}" VerticalAlignment="Center"/>
                                                 <Label Grid.Row="0" Grid.Column="4" Content="Channel Level (dB)"></Label>
-                                                <TextBox Grid.Row="0" Grid.Column="5" Text="{Binding SelectedChLevel}" VerticalAlignment="Center"></TextBox>
+                                                <ComboBox Grid.Row="0" Grid.Column="5" SelectedValue="{Binding SelectedChLevel}" ItemsSource="{Binding SelectedChLevelList}" VerticalAlignment="Center"/>
                                                 <Label Grid.Row="0" Grid.Column="6" Content="Speaker Config"></Label>
                                                 <ComboBox Grid.Row="0" Grid.Column="7" SelectedValue="{Binding SelectedSpConfig}" ItemsSource="{Binding SpeakerTypeList}" VerticalAlignment="Center"/>
                                                 <Label Grid.Row="0" Grid.Column="8" Content="Speaker Distance (cm)"></Label>
                                                 <TextBox Grid.Row="0" Grid.Column="9" Text="{Binding SelectedDistance}" VerticalAlignment="Center"></TextBox>
 
-                                                <Label Grid.Row="1" Grid.Column="0" Content="AudyDynSet"></Label>
-                                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AudyDynSet}" VerticalAlignment="Center"></TextBox>
-                                                <Label Grid.Row="1" Grid.Column="2" Content="AudyEqSet"></Label>
-                                                <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding AudyEqSet}" VerticalAlignment="Center"></TextBox>
-                                                <Label Grid.Row="1" Grid.Column="4" Content="AudyLfcLev"></Label>
-                                                <TextBox Grid.Row="1" Grid.Column="5" Text="{Binding AudyLfcLev}" VerticalAlignment="Center"></TextBox>
+                                                <CheckBox Grid.Row="1" Grid.Column="0" Content="AudyDynVol" IsChecked="{Binding AudyDynVol}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="1" Grid.Column="2" Content="AudyDynVolSet"></Label>
+                                                <ComboBox Grid.Row="1" Grid.Column="3" SelectedValue="{Binding AudyDynSet}" ItemsSource="{Binding AudyDynSetList}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="1" Grid.Column="4" Content="AudyEqSet"></Label>
+                                                <ComboBox Grid.Row="1" Grid.Column="5" SelectedValue="{Binding AudyEqSet}" ItemsSource="{Binding AudyEqSetList}" VerticalAlignment="Center"/>
                                                 <Label Grid.Row="1" Grid.Column="6" Content="AudyFinFlg"></Label>
                                                 <ComboBox Grid.Row="1" Grid.Column="7" SelectedValue="{Binding AudyFinFlg}" ItemsSource="{Binding AudyFinFlgList}" VerticalAlignment="Center"/>
 
-                                                <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="8" Orientation="Horizontal">
-                                                    <CheckBox Content="AudyDynEq" IsChecked="{Binding AudyDynEq}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                    <CheckBox Content="AudyEqRef" IsChecked="{Binding AudyEqRef}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                    <CheckBox Content="AudyDynVol" IsChecked="{Binding AudyDynVol}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                    <CheckBox Content="AudyMultEq" IsChecked="{Binding AudyMultEq}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                    <CheckBox Content="AudyLfc" IsChecked="{Binding AudyLfc}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                </StackPanel>
+                                                <CheckBox Grid.Row="2" Grid.Column="0" Content="AudyDynEq" IsChecked="{Binding AudyDynEq}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="2" Grid.Column="2" Content="AudyDynEqRef (dB)"></Label>
+                                                <ComboBox Grid.Row="2" Grid.Column="3" SelectedValue="{Binding AudyEqRef}" ItemsSource="{Binding AudyEqRefList}" VerticalAlignment="Center"/>
+                                                <CheckBox Grid.Row="2" Grid.Column="4" Content="AudyMultEq" IsChecked="{Binding AudyMultEq}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <CheckBox Grid.Row="2" Grid.Column="5" Content="AudyLfc" IsChecked="{Binding AudyLfc}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="2" Grid.Column="6" Content="AudyLfcLev"></Label>
+                                                <ComboBox Grid.Row="2" Grid.Column="7" SelectedValue="{Binding AudyLfcLev}" ItemsSource="{Binding AudyLfcLevList}" VerticalAlignment="Center"/>
                                             </Grid>
                                         </GroupBox>
                                     </Grid>

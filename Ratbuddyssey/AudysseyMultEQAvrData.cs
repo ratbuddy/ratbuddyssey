@@ -18,9 +18,9 @@ namespace Audyssey
             public ObservableCollection<Dictionary<string, object>> Crossover { get; set; }
             public ObservableCollection<Dictionary<string, int>> Distance { get; set; }
             public ObservableCollection<Dictionary<string, string>> SpConfig { get; set; }
+            public string AudyFinFlg { get; set; }
             public bool? AudyDynEq { get; set; }
             public int? AudyEqRef { get; set; }
-            public string AudyFinFlg { get; set; }
             #endregion
         }
 
@@ -39,10 +39,10 @@ namespace Audyssey
         public partial class AudysseyMultEQAvr : MultEQList, IAmp, IAudy, INotifyPropertyChanged
         {
             // IAmp
-            private ObservableCollection<Dictionary<string, string>> _SpConfig = null;
-            private ObservableCollection<Dictionary<string, int>> _Distance = null;
             private ObservableCollection<Dictionary<string, int>> _ChLevel = null;
             private ObservableCollection<Dictionary<string, object>> _Crossover = null;
+            private ObservableCollection<Dictionary<string, int>> _Distance = null;
+            private ObservableCollection<Dictionary<string, string>> _SpConfig = null;
             private string _AudyFinFlg = null;
             private bool? _AudyDynEq = null;
             private int? _AudyEqRef = null;
@@ -318,6 +318,8 @@ namespace Audyssey
                 {
                     _AudyEqSet = value;
                     RaisePropertyChanged("AudyEqSet");
+                    RaisePropertyChanged("SelectedDisFil");
+                    RaisePropertyChanged("SelectedCoefData");
                 }
             }
             public bool? AudyLfc

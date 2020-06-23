@@ -125,7 +125,7 @@ namespace Audyssey
                         foreach (var avrDisFil in _AvrDisFil)
                         {
                             if ((avrDisFil.ChData.Equals(_SelectedChannel)) &&
-                                (avrDisFil.EqType.Equals(_SeletedEqType)))
+                                (avrDisFil.EqType.Equals(_AudyEqSet)))
                             {
                                 return avrDisFil;
                             }
@@ -159,7 +159,7 @@ namespace Audyssey
                         foreach (var avrDisFil in _AvrDisFil)
                         {
                             if ((avrDisFil.ChData.Equals(_SelectedChannel)) &&
-                                (avrDisFil.EqType.Equals(_SeletedEqType)))
+                                (avrDisFil.EqType.Equals(_AudyEqSet)))
                             {
                                 return CoefData[_AvrDisFil.IndexOf(avrDisFil)];
                             }

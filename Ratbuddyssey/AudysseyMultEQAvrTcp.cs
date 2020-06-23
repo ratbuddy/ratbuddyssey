@@ -19,13 +19,23 @@ namespace Audyssey
             private AudysseyMultEQAvrTcpClientWithTimeout audysseyMultEQAvrTcpClientWithTimeout = null;
 
             #region Properties
+            public AudysseyMultEQAvr audysseyMultEQAvr
+            {
+                get
+                {
+                    return _audysseyMultEQAvr;
+                }
+                set
+                {
+                    _audysseyMultEQAvr = value;
+                }
+            }
             #endregion
 
             private const string NACK = "{\"Comm\":\"NACK\"}";
             private const string ACK = "{\"Comm\":\"ACK\"}";
             private const string INPROGRESS = "{\"Comm\":\"INPROGRESS\"}";
             private const string AUDYFINFLG = "{\"AudyFinFlg\":\"Fin\"}";
-            private const string AUDYNOTFINFLG = "{\"AudyFinFlg\":\"NotFin\"}";
 
             public string GetTcpClientAsString()
             {
@@ -39,6 +49,7 @@ namespace Audyssey
             
             public AudysseyMultEQAvrTcp(AudysseyMultEQAvr audysseyMultEQAvr, string ClientAddress)
             {
+                
                 _audysseyMultEQAvr = audysseyMultEQAvr;
                 TcpClient = new TcpIP(ClientAddress, 1256, 5000);
             }
@@ -46,54 +57,6 @@ namespace Audyssey
             public void Connect()
             {
                 audysseyMultEQAvrTcpClientWithTimeout = new AudysseyMultEQAvrTcpClientWithTimeout(TcpClient.Address, TcpClient.Port, TcpClient.Timeout);
-            }
-            
-            public void AudysseyToAvr()
-            {
-                if (SetAvrSetAmp())
-                {
-#if DEBUG
-                    string serialized = JsonConvert.SerializeObject(_audysseyMultEQAvr, new JsonSerializerSettings {
-                        ContractResolver = new InterfaceContractResolver(typeof(IAmp))
-                    });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAmp.json", serialized);
-#endif
-                }
-
-                if (SetAvrSetAudy())
-                {
-#if DEBUG
-                    string serialized = JsonConvert.SerializeObject(_audysseyMultEQAvr, new JsonSerializerSettings {
-                        ContractResolver = new InterfaceContractResolver(typeof(IAudy))
-                    });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAud.json", serialized);
-#endif
-                }
-
-                if (SetAvrSetDisFil())
-                {
-#if DEBUG
-                    string serialized = JsonConvert.SerializeObject(_audysseyMultEQAvr.DisFil, new JsonSerializerSettings { });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrDisFil.json", serialized);
-#endif
-                }
-
-                if (SetAvrInitCoefs())
-                {
-                }
-
-                if (SetAvrSetCoefDt())
-                {
-#if DEBUG
-                    string serialized = JsonConvert.SerializeObject(_audysseyMultEQAvr.CoefData, new JsonSerializerSettings { });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrCoefDafa.json", serialized);
-#endif
-                }
-
-                if (SetAudysseyFinishedFlag())
-                {
-                }
-
             }
             
             private string MakeQuery(string Serialized)
@@ -241,7 +204,7 @@ namespace Audyssey
                     string CmdString = "SET_SETDAT";
                     Console.Write(CmdString);
                     // clear finflag
-                    _audysseyMultEQAvr.AudyFinFlg = "NotFin";  //TODO what does this flag do?
+                    //_audysseyMultEQAvr.AudyFinFlg = "NotFin";  //TODO what does this flag do?
                     // build JSON for class Dat on interface Iamp
                     string AvrString = JsonConvert.SerializeObject(_audysseyMultEQAvr, new JsonSerializerSettings
                     {
@@ -309,7 +272,7 @@ namespace Audyssey
                         Console.Write(CmdString);
                         Console.WriteLine(AvrString);
                         // check every transmission
-                        if (!(CmdString.Equals("SET_SETDAT") && AvrString.Equals(ACK) && CheckSumChecked)) return false;
+                        if (!(CmdString.Equals("SET_DISFIL") && AvrString.Equals(ACK) && CheckSumChecked)) return false;
                     }
                     return true;
                 }

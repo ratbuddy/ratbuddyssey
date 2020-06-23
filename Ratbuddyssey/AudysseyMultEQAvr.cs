@@ -11,7 +11,6 @@ namespace Audyssey
             /*local reference for selected channel from GUI*/
             private Dictionary<string, string> _SelectedItem;
             private string _SelectedChannel = null;
-            private string _SeletedEqType = "Audy";
 
             #region Properties
             public Dictionary<string,string> SelectedItem
@@ -34,15 +33,6 @@ namespace Audyssey
                     RaisePropertyChanged("SelectedDistance");
                     RaisePropertyChanged("SelectedChLevel");
                     RaisePropertyChanged("SelectedCrossover");
-                }
-            }
-            public string SelectedEqType
-            {
-                set
-                {
-                    _SeletedEqType = value;
-                    RaisePropertyChanged("SelectedDisFil");
-                    RaisePropertyChanged("SelectedCoefData");
                 }
             }
             #endregion

@@ -8,8 +8,6 @@ using Newtonsoft.Json.Serialization;
 using Audyssey;
 using Audyssey.MultEQApp;
 using Audyssey.MultEQAvr;
-using Audyssey.MultEQAvrAdapter;
-using Audyssey.MultEQTcp;
 
 namespace Ratbuddyssey
 {
@@ -20,10 +18,6 @@ namespace Ratbuddyssey
     {
         private AudysseyMultEQReferenceCurveFilter audysseyMultEQReferenceCurveFilter = new AudysseyMultEQReferenceCurveFilter();
         private AudysseyMultEQApp audysseyMultEQApp = null;
-        private AudysseyMultEQAvr audysseyMultEQAvr = null;
-        private AudysseyMultEQAvrTcp audysseyMultEQAvrTcp = null;
-        private AudysseyMultEQAvrAdapter audysseyMultEQAvrAdapter = null;
-        private AudysseyMultEQTcpSniffer audysseyMultEQTcpSniffer = null;
 
         private string TcpClientFileName = "TcpClient.json";
 
@@ -33,17 +27,17 @@ namespace Ratbuddyssey
             channelsView.SelectionChanged += ChannelsView_SelectionChanged;
             plot.PreviewMouseWheel += Plot_PreviewMouseWheel;
 
-            System.Net.IPHostEntry HosyEntry = System.Net.Dns.GetHostEntry((System.Net.Dns.GetHostName()));
-            if (HosyEntry.AddressList.Length > 0)
+            System.Net.IPHostEntry HostEntry = System.Net.Dns.GetHostEntry((System.Net.Dns.GetHostName()));
+            if (HostEntry.AddressList.Length > 0)
             {
-                foreach (System.Net.IPAddress ip in HosyEntry.AddressList)
+                foreach (System.Net.IPAddress ip in HostEntry.AddressList)
                 {
                     cmbInterfaceHost.Items.Add(ip.ToString());
                 }
                 cmbInterfaceHost.SelectedIndex = cmbInterfaceHost.Items.Count - 1;
             }
 
-            if (File.Exists(Environment.CurrentDirectory + "\\" + TcpClientFileName))
+             if (File.Exists(Environment.CurrentDirectory + "\\" + TcpClientFileName))
             {
                 String ClientTcpIPFile = File.ReadAllText(Environment.CurrentDirectory + "\\" + TcpClientFileName);
                 if (ClientTcpIPFile.Length > 0)
@@ -79,33 +73,6 @@ namespace Ratbuddyssey
                 string Serialized = JsonConvert.SerializeObject(audysseyMultEQApp, new JsonSerializerSettings
                 {
                     ContractResolver = new CamelCasePropertyNamesContractResolver()
-                });
-                if ((Serialized != null) && (!string.IsNullOrEmpty(FileName)))
-                {
-                    File.WriteAllText(FileName, Serialized);
-                }
-            }
-        }
-
-        private void ParseFileToAudysseyMultEQAvr(string FileName)
-        {
-            if (File.Exists(FileName))
-            {
-                string Serialized = File.ReadAllText(FileName);
-                audysseyMultEQAvr = JsonConvert.DeserializeObject<AudysseyMultEQAvr>(Serialized, new JsonSerializerSettings
-                {
-                });
-                audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
-            }
-        }
-
-        private void ParseAudysseyMultEQAvrToFile(string FileName)
-        {
-            if (audysseyMultEQAvr != null)
-            {
-                string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore
                 });
                 if ((Serialized != null) && (!string.IsNullOrEmpty(FileName)))
                 {
@@ -174,205 +141,6 @@ namespace Ratbuddyssey
             }
         }
 
-        private void openProjectFile_Click(object sender, RoutedEventArgs e)
-        {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.FileName = "AudysseySniffer.aud";
-            dlg.DefaultExt = ".aud";
-            dlg.Filter = "Audyssey sniffer (*.aud)|*.aud";
-            Nullable<bool> result = dlg.ShowDialog();
-
-            if (result == true)
-            {
-                ParseFileToAudysseyMultEQAvr(dlg.FileName);
-                if (audysseyMultEQAvr != null)
-                {
-                    if (tabControl.SelectedIndex == 0)
-                    {
-                        this.DataContext = audysseyMultEQAvrAdapter;
-                    }
-                    if (tabControl.SelectedIndex == 1)
-                    {
-                        this.DataContext = audysseyMultEQAvr;
-                    }
-                }
-            }
-        }
-
-        private void saveProjectFile_Click(object sender, RoutedEventArgs e)
-        {
-            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
-
-            // Set filter for file extension and default file extension 
-            dlg.FileName = "AudysseySniffer.aud";
-            dlg.DefaultExt = ".aud";
-            dlg.Filter = "Audyssey sniffer (.aud)|*.aud";
-
-            // Show save file dialog box
-            Nullable<bool> result = dlg.ShowDialog();
-
-            // Process save file dialog box results
-            if (result == true)
-            {
-                ParseAudysseyMultEQAvrToFile(dlg.FileName);
-            }
-        }
-
-        private void ConnectReceiver_OnClick(object sender, RoutedEventArgs e)
-        {
-            if (sender == connectReceiver)
-            {
-                if (connectReceiver.IsChecked)
-                {
-                    if (string.IsNullOrEmpty(cmbInterfaceClient.Text))
-                    {
-                        System.Windows.MessageBox.Show("Please enter receiver IP address.");
-                    }
-                    else
-                    {
-                        // if there is no Tcp client
-                        if (audysseyMultEQAvrTcp == null)
-                        {
-                            // create receiver instance
-                            audysseyMultEQAvr = new AudysseyMultEQAvr();
-                            // create receiver tcp instance
-                            audysseyMultEQAvrTcp = new AudysseyMultEQAvrTcp(audysseyMultEQAvr, cmbInterfaceClient.Text);
-                            // create adapter to interface MultEQAvr properties as if they were MultEQApp properties 
-                            audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
-                            // data Binding to adapter
-                            if ((tabControl.SelectedIndex == 0) && (audysseyMultEQApp == null))
-                            {
-                                this.DataContext = audysseyMultEQAvrAdapter;
-                            }
-                            if (tabControl.SelectedIndex == 1)
-                            {
-                                this.DataContext = audysseyMultEQAvr;
-                            }
-                        }
-                        audysseyMultEQAvrTcp.Connect();
-                        // attach sniffer
-                        if (connectSniffer.IsChecked)
-                        {
-                            // sniffer must be elevated to capture raw packets
-                            if (!IsElevated())
-                            {
-                                // we cannot create the sniffer...
-                                connectSniffer.IsChecked = false;
-                                // but we can ask the user to elevate the program!
-                                RunAsAdmin();
-                            }
-                            else
-                            {
-                                if (audysseyMultEQTcpSniffer == null)
-                                {
-                                    audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr, cmbInterfaceHost.SelectedItem.ToString(), cmbInterfaceClient.SelectedItem.ToString());
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    audysseyMultEQAvrAdapter = null;
-                    audysseyMultEQAvrTcp = null;
-                    audysseyMultEQAvr = null;
-                    // immediately clean up the object
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                    this.DataContext = null;
-                }
-            }
-        }
-
-        private void ConnectSniffer_OnClick(object sender, RoutedEventArgs e)
-        {
-            if (sender == connectSniffer)
-            {
-                if (connectSniffer.IsChecked)
-                {
-                    // can only attach sniffer to receiver if receiver object exists 
-                    if (audysseyMultEQAvr == null)
-                    {
-                        // create receiver instance
-                        audysseyMultEQAvr = new AudysseyMultEQAvr();
-                        // create adapter to interface MultEQAvr properties as if they were MultEQApp properties 
-                        audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
-                        // data Binding to adapter
-                        if ((tabControl.SelectedIndex == 0) && (audysseyMultEQApp == null))
-                        {
-                            this.DataContext = audysseyMultEQAvrAdapter;
-                        }
-                        if (tabControl.SelectedIndex == 1)
-                        {
-                            this.DataContext = audysseyMultEQAvr;
-                        }
-                    }
-                    // sniffer must be elevated to capture raw packets
-                    if (!IsElevated())
-                    {
-                        // we cannot create the sniffer...
-                        connectSniffer.IsChecked = false;
-                        // but we can ask the user to elevate the program!
-                        RunAsAdmin();
-                    }
-                    else
-                    {
-                        // onyl create sniffer if it not already exists
-                        if (audysseyMultEQTcpSniffer == null)
-                        {
-                            // create sniffer attached to receiver
-                            audysseyMultEQTcpSniffer = new AudysseyMultEQTcpSniffer(audysseyMultEQAvr, cmbInterfaceHost.SelectedItem.ToString(), cmbInterfaceClient.SelectedItem.ToString());
-                        }
-                    }
-                }
-                else
-                {
-                    if (audysseyMultEQTcpSniffer != null)
-                    {
-                        audysseyMultEQTcpSniffer = null;
-                        // if not interested in receiver then close connection and delete objects
-                        if (connectReceiver.IsChecked == false)
-                        {
-                            this.DataContext = null;
-                            audysseyMultEQAvrAdapter = null;
-                            audysseyMultEQAvr = null;
-                        }
-                        // immediately clean up the object
-                        GC.Collect();
-                        GC.WaitForPendingFinalizers();
-                    }
-                }
-            }
-        }
-
-        private void ConnectAudyssey_OnClick(object sender, RoutedEventArgs e)
-        {
-            if (sender == connectAudyssey)
-            {
-                if (connectAudyssey.IsChecked)
-                {
-                    if (audysseyMultEQAvr != null)
-                    {
-                        audysseyMultEQAvrTcp.EnterAudysseyMode();
-                    }
-                    else
-                    {
-                        connectAudyssey.IsChecked = false;
-                    }
-                }
-                else
-                {
-                    if (audysseyMultEQAvr != null)
-                    {
-                        audysseyMultEQAvrTcp.ExitAudysseyMode();
-                    }
-                    else
-                    {
-                        // if we end up here we have a problem
-                    }
-                }
-            }
-        }
 
         private void ExitProgram_OnClick(object sender, RoutedEventArgs e)
         {
