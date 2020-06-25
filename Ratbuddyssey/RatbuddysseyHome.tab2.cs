@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Audyssey.MultEQAvrAdapter;
 using Audyssey.MultEQTcp;
+using System.Collections.ObjectModel;
 
 namespace Ratbuddyssey
 {
@@ -23,14 +24,7 @@ namespace Ratbuddyssey
             if (File.Exists(FileName))
             {
                 string Serialized = File.ReadAllText(FileName);
-                if (audysseyMultEQAvr == null)
-                {
-                    audysseyMultEQAvr = JsonConvert.DeserializeObject<AudysseyMultEQAvr>(Serialized, new JsonSerializerSettings { });
-                }
-                else
-                {
-                    JsonConvert.PopulateObject(Serialized, audysseyMultEQAvr, new JsonSerializerSettings { });
-                }
+                audysseyMultEQAvr = JsonConvert.DeserializeObject<AudysseyMultEQAvr>(Serialized, new JsonSerializerSettings { });
                 if (audysseyMultEQAvrAdapter == null)
                 {
                     audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);

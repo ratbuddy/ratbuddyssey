@@ -14,10 +14,10 @@ namespace Audyssey
             #region Properties
             public string AmpAssign { get; set; }
             public string AssignBin { get; set; }
-            public ObservableCollection<Dictionary<string, int>> ChLevel { get; set; }
-            public ObservableCollection<Dictionary<string, object>> Crossover { get; set; }
-            public ObservableCollection<Dictionary<string, int>> Distance { get; set; }
-            public ObservableCollection<Dictionary<string, string>> SpConfig { get; set; }
+            public UniqueObservableCollection<Dictionary<string, int>> ChLevel { get; set; }
+            public UniqueObservableCollection<Dictionary<string, object>> Crossover { get; set; }
+            public UniqueObservableCollection<Dictionary<string, int>> Distance { get; set; }
+            public UniqueObservableCollection<Dictionary<string, string>> SpConfig { get; set; }
             public string AudyFinFlg { get; set; }
             public bool? AudyDynEq { get; set; }
             public int? AudyEqRef { get; set; }
@@ -39,10 +39,10 @@ namespace Audyssey
         public partial class AudysseyMultEQAvr : MultEQList, IAmp, IAudy, INotifyPropertyChanged
         {
             // IAmp
-            private ObservableCollection<Dictionary<string, int>> _ChLevel = null;
-            private ObservableCollection<Dictionary<string, object>> _Crossover = null;
-            private ObservableCollection<Dictionary<string, int>> _Distance = null;
-            private ObservableCollection<Dictionary<string, string>> _SpConfig = null;
+            private UniqueObservableCollection<Dictionary<string, int>> _ChLevel = null;
+            private UniqueObservableCollection<Dictionary<string, object>> _Crossover = null;
+            private UniqueObservableCollection<Dictionary<string, int>> _Distance = null;
+            private UniqueObservableCollection<Dictionary<string, string>> _SpConfig = null;
             private string _AudyFinFlg = null;
             private bool? _AudyDynEq = null;
             private int? _AudyEqRef = null;
@@ -57,7 +57,7 @@ namespace Audyssey
 
             #region Properties
             // IAmp
-            public ObservableCollection<Dictionary<string, string>> SpConfig
+            public UniqueObservableCollection<Dictionary<string, string>> SpConfig
             {
                 get
                 {
@@ -101,7 +101,7 @@ namespace Audyssey
                     }
                 }
             }
-            public ObservableCollection<Dictionary<string, int>> Distance
+            public UniqueObservableCollection<Dictionary<string, int>> Distance
             {
                 get
                 {
@@ -145,7 +145,7 @@ namespace Audyssey
                     }
                 }
             }
-            public ObservableCollection<Dictionary<string, int>> ChLevel
+            public UniqueObservableCollection<Dictionary<string, int>> ChLevel
             {
                 get
                 {
@@ -189,7 +189,7 @@ namespace Audyssey
                     }
                 }
             }
-            public ObservableCollection<Dictionary<string, object>> Crossover
+            public UniqueObservableCollection<Dictionary<string, object>> Crossover
             {
                 get
                 {

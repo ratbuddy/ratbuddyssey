@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows;
 
 namespace Audyssey
 {
@@ -14,7 +16,7 @@ namespace Audyssey
             public bool? Mic { get; set; }
             public string AmpAssign { get; set; }
             public string AssignBin { get; set; }
-            public ObservableCollection<Dictionary<string, string>> ChSetup { get; set; }
+            public UniqueObservableCollection<Dictionary<string, string>> ChSetup { get; set; }
             public bool? BTTXStatus { get; set; }
             public bool? SpPreset { get; set; }
             #endregion
@@ -26,7 +28,7 @@ namespace Audyssey
             private bool? _Mic = null;
             private string _AmpAssign = null;
             private string _AssignBin = null;
-            private ObservableCollection<Dictionary<string, string>> _ChSetup = null;
+            private UniqueObservableCollection<Dictionary<string, string>> _ChSetup = null;
             private bool? _BTTXStatus = null;
             private bool? _SpPreset = null;
 
@@ -79,7 +81,7 @@ namespace Audyssey
                     RaisePropertyChanged("AssignBin");
                 }
             }
-            public ObservableCollection<Dictionary<string, string>> ChSetup
+            public UniqueObservableCollection<Dictionary<string, string>> ChSetup
             {
                 get
                 {
