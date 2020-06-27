@@ -85,11 +85,14 @@ namespace Audyssey
                     Console.Write(CmdString);
                     Console.WriteLine(AvrString);
                     // parse JSON to class member variables
-                    JsonConvert.PopulateObject(AvrString, _audysseyMultEQAvr, new JsonSerializerSettings
+                    if (!string.IsNullOrEmpty(AvrString))
                     {
+                        JsonConvert.PopulateObject(AvrString, _audysseyMultEQAvr, new JsonSerializerSettings
+                        {
                             ContractResolver = new InterfaceContractResolver(typeof(IInfo)),
-                            FloatParseHandling = FloatParseHandling.Decimal 
-                    });
+                            FloatParseHandling = FloatParseHandling.Decimal
+                        });
+                    }
                     return (CmdString.Equals("GET_AVRINF") && !AvrString.Equals(NACK) && CheckSumChecked);
                 }
                 else
@@ -117,11 +120,14 @@ namespace Audyssey
                     Console.Write(CmdString);
                     Console.WriteLine(AvrString);
                     // parse JSON to class member variables
-                    JsonConvert.PopulateObject(AvrString, _audysseyMultEQAvr, new JsonSerializerSettings
+                    if (!string.IsNullOrEmpty(AvrString))
                     {
-                        ContractResolver = new InterfaceContractResolver(typeof(IStatus)),
-                        FloatParseHandling = FloatParseHandling.Decimal,
-                    });
+                        JsonConvert.PopulateObject(AvrString, _audysseyMultEQAvr, new JsonSerializerSettings
+                        {
+                            ContractResolver = new InterfaceContractResolver(typeof(IStatus)),
+                            FloatParseHandling = FloatParseHandling.Decimal,
+                        });
+                    }
                     return (CmdString.Equals("GET_AVRSTS") && !AvrString.Equals(NACK) && CheckSumChecked);
                 }
                 else
@@ -166,14 +172,25 @@ namespace Audyssey
                     audysseyMultEQAvrTcpClientWithTimeout.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
                     Console.Write(CmdString);
                     Console.WriteLine(AvrString);
-                    return (CmdString.Equals("EXIT_AUDMD") && AvrString.Equals(ACK) && CheckSumChecked);
+                    if (!(CmdString.Equals("EXIT_AUDMD") && AvrString.Equals(ACK) && CheckSumChecked)) return false;
+                    // transmit request
+                    byte[] Data = new byte[] { 0x1b };
+                    audysseyMultEQAvrTcpClientWithTimeout.TransmitTcpAvrStream(Data);
+                    // receive rseponse
+                    audysseyMultEQAvrTcpClientWithTimeout.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
+                    Console.Write(CmdString);
+                    Console.WriteLine(AvrString);
+                    if (!(CmdString.Equals("EXIT_AUDMD") && AvrString.Equals(NACK) && CheckSumChecked)) return false;
+                    Data[0] = 0x04;
+                    audysseyMultEQAvrTcpClientWithTimeout.TransmitTcpAvrStream(Data);
+                    return true;
                 }
                 else
                 {
                     return false;
                 }
             }
-            
+
             public bool SetAudysseyFinishedFlag()
             {
                 if (audysseyMultEQAvrTcpClientWithTimeout != null)
@@ -312,25 +329,39 @@ namespace Audyssey
             {
                 if (audysseyMultEQAvrTcpClientWithTimeout != null)
                 {
-                    bool Success = true;
-                    // data for each speaker... this is a very dumb binary data pump
+                    // data for each speaker... this is a very dumb binary data pump... payload must be SECRET!
                     foreach (Int32[] Coef in _audysseyMultEQAvr.CoefData)
                     {
-                        bool CheckSumChecked = false;
-                        string CmdString = "SET_COEFDT";
-                        Console.Write(CmdString);
-                        Console.WriteLine(Coef.ToString());
-                        // transmit request
-                        audysseyMultEQAvrTcpClientWithTimeout.TransmitTcpAvrStream(CmdString, Coef);
-                        string AvrString;
-                        // receive rseponse
-                        audysseyMultEQAvrTcpClientWithTimeout.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
-                        Console.Write(CmdString);
-                        Console.WriteLine(AvrString);
-                        // success if all succeed
-                        Success &= (CmdString.Equals("SET_COEFDT") && AvrString.Equals(ACK) && CheckSumChecked);
+                        // transmit packets in chunks of 512 bytes
+                        int total_byte_packets = (Coef.Length * 4) / 512;
+                        // the last packet may have less than 512 bytes
+                        int last_packet_length = Coef.Length - (total_byte_packets * 128);
+                        // count for all packets
+                        if (last_packet_length > 0) total_byte_packets++;
+                        // transmit all the packets
+                        for (int current_packet = 0; current_packet < total_byte_packets; current_packet++)
+                        {
+                            Int32[] CopyData = current_packet < total_byte_packets - 1 ? new int[128] : new int[last_packet_length];
+                            Array.Copy(Coef, current_packet * 128, CopyData, 0, current_packet < total_byte_packets - 1 ? 128 : last_packet_length);
+                            bool CheckSumChecked = false;
+                            string CmdString = "SET_COEFDT";
+                            Console.Write(CmdString);
+                            Console.WriteLine(Coef.ToString());
+                            // transmit request
+                            audysseyMultEQAvrTcpClientWithTimeout.TransmitTcpAvrStream(CmdString, audysseyMultEQAvrTcpClientWithTimeout.Int32ToByte(CopyData), current_packet, total_byte_packets - 1); ;
+                            string AvrString;
+                            // receive rseponse
+                            audysseyMultEQAvrTcpClientWithTimeout.ReceiveTcpAvrStream(ref CmdString, out AvrString, out CheckSumChecked);
+                            Console.Write(CmdString);
+                            Console.WriteLine(AvrString);
+                            // success if all succeed
+                            if (false == (CmdString.Equals("SET_COEFDT") && AvrString.Equals(ACK) && CheckSumChecked))
+                            {
+                                return false;
+                            }
+                        }
                     }
-                    return Success;
+                    return true;
                 }
                 else
                 {

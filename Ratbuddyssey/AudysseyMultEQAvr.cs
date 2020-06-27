@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -56,8 +57,14 @@ namespace Audyssey
 
         public partial class AudysseyMultEQAvr : INotifyPropertyChanged
         {
+            /*local reference for selected channel from GUI*/
+            private Dictionary<string, string> _SelectedItem;
+            private string _SelectedChannel = null;
+            /*local reference for statusbar on GUI*/
             private string _Serialized;
 
+            #region Properties
+            [JsonIgnore]
             public string Serialized
             {
                 get
@@ -70,12 +77,7 @@ namespace Audyssey
                     RaisePropertyChanged("Serialized");
                 }
             }
-
-            /*local reference for selected channel from GUI*/
-            private Dictionary<string, string> _SelectedItem;
-            private string _SelectedChannel = null;
-
-            #region Properties
+            [JsonIgnore]
             public Dictionary<string,string> SelectedItem
             {
                 set
@@ -85,6 +87,7 @@ namespace Audyssey
                     RaisePropertyChanged("SelectedChSetup");
                 }
             }
+            [JsonIgnore]
             public string SelectedChannel
             {
                 set

@@ -56,7 +56,7 @@ namespace Audyssey
                 }
                 return Int32s;
             }
-            private byte[] Int32ToByte(Int32[] Int32s)
+            public byte[] Int32ToByte(Int32[] Int32s)
             {
                 byte[] Byte = new byte[4 * Int32s.Length];
                 for (int i = 0; i < Int32s.Length; i++)
@@ -68,6 +68,10 @@ namespace Audyssey
             private byte CalculateChecksum(byte[] dataToCalculate)
             {
                 return dataToCalculate.Aggregate((r, n) => r += n);
+            }
+            public void TransmitTcpAvrStream(byte[] Data)
+            {
+                _stream.Write(Data, 0, 1);
             }
             public void TransmitTcpAvrStream(string Cmd, byte[] Data, int current_packet = 0, int total_packets = 0)
             {
@@ -109,20 +113,6 @@ namespace Audyssey
                 binaryWriter.Write(CalculateChecksum(memoryStream.GetBuffer()));
 
                 _stream.Write(memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
-            }
-            public void TransmitTcpAvrStream(string Cmd, Int32[] Data)
-            {
-                // transmit packets in chunks of 256 bytes
-                int total_packets = (128 + Data.Length) / 256;
-                // the last packet has less than 256 bytes
-                int final_packet_length = Data.Length - (total_packets * 256);
-                // transmit all the 
-                for (int current_packet = 0; current_packet < total_packets; current_packet++)
-                {
-                    Int32[] CopyData = null;
-                    Array.Copy(Data, current_packet * 256, CopyData, 0, current_packet < total_packets ? 256 : final_packet_length);
-                    TransmitTcpAvrStream(Cmd, Int32ToByte(CopyData), current_packet, total_packets);
-                }
             }
             public void TransmitTcpAvrStream(string Cmd, string Data)
             {
@@ -201,7 +191,7 @@ namespace Audyssey
             {
                 byte[] DataByte;
                 ReceiveTcpAvrStream(ref Cmd, out DataByte, out ValidCheckSum);
-                Data = Encoding.ASCII.GetString(DataByte);
+                if (DataByte != null) Data = Encoding.ASCII.GetString(DataByte); else Data = string.Empty;
             }
             public AudysseyMultEQAvrTcpClientWithTimeout(string hostname, int port, int timeout_milliseconds)
             {
