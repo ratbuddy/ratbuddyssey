@@ -271,12 +271,12 @@ namespace Ratbuddyssey
                 if (audysseyMultEQAvrTcp.GetAvrInfo())
                 {
 #if DEBUG
-                    string AvrInfoFile = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
+                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
                     {
                         ContractResolver = new InterfaceContractResolver(typeof(IInfo))
                     });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrInfo.json", AvrInfoFile);
-#endif            
+                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrInfo.json", Serialized);
+#endif
                 }
             }
         }
@@ -288,11 +288,11 @@ namespace Ratbuddyssey
                 if (audysseyMultEQAvrTcp.GetAvrStatus())
                 {
 #if DEBUG
-                    string AvrStatusFile = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
+                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
                     {
                         ContractResolver = new InterfaceContractResolver(typeof(IStatus))
                     });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrStatus.json", AvrStatusFile);
+                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrStatus.json", Serialized);
 #endif
                 }
             }
@@ -305,11 +305,11 @@ namespace Ratbuddyssey
                 if (audysseyMultEQAvrTcp.SetAvrSetAmp())
                 {
 #if DEBUG
-                    string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
+                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
                     {
                         ContractResolver = new InterfaceContractResolver(typeof(IAmp))
                     });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAmp.json", serialized);
+                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAmp.json", Serialized);
 #endif
                 }
             }
@@ -322,11 +322,11 @@ namespace Ratbuddyssey
                 if (audysseyMultEQAvrTcp.SetAvrSetAudy())
                 {
 #if DEBUG
-                    string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
+                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
                     {
                         ContractResolver = new InterfaceContractResolver(typeof(IAudy))
                     });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAud.json", serialized);
+                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAud.json", Serialized);
 #endif
                 }
 
@@ -340,8 +340,8 @@ namespace Ratbuddyssey
                 if (audysseyMultEQAvrTcp.SetAvrSetDisFil())
                 {
 #if DEBUG
-                    string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr.DisFil, new JsonSerializerSettings { });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrDisFil.json", serialized);
+                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr.DisFil, new JsonSerializerSettings { });
+                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrDisFil.json", Serialized);
 #endif
                 }
             }
@@ -364,8 +364,8 @@ namespace Ratbuddyssey
                 if (audysseyMultEQAvrTcp.SetAvrSetCoefDt())
                 {
 #if DEBUG
-                    string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr.CoefData, new JsonSerializerSettings { });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrCoefDafa.json", serialized);
+                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr.CoefData, new JsonSerializerSettings { });
+                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrCoefDafa.json", Serialized);
 #endif
                 }
             }

@@ -10,6 +10,7 @@ using System.Security.Principal;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using Audyssey.MultEQAvr;
+using System.Windows.Controls;
 
 namespace Audyssey
 {
@@ -86,9 +87,21 @@ namespace Audyssey
             private AudysseyMultEQTcpIp audysseyMultEQTcpIp = new AudysseyMultEQTcpIp();
             private AudysseyMultEQAvr _audysseyMultEQAvr = null;
 
-            public AudysseyMultEQTcpSniffer(AudysseyMultEQAvr audysseyMultEQAvr, string HostAddress, string ClientAddress)
+            private AudysseyMultEQAvr audysseyMultEQAvr
             {
-                _audysseyMultEQAvr = audysseyMultEQAvr;
+                get
+                {
+                    return _audysseyMultEQAvr;
+                }
+                set
+                {
+                    _audysseyMultEQAvr = value;
+                }
+            }
+
+            public AudysseyMultEQTcpSniffer(AudysseyMultEQAvr AudysseyMultEQAvr, string HostAddress, string ClientAddress)
+            {
+                audysseyMultEQAvr = AudysseyMultEQAvr;
 
                 TcpHost = new TcpIP(HostAddress, 0, 0);
                 TcpClient = new TcpIP(ClientAddress, 1256, 0);
@@ -262,7 +275,7 @@ namespace Audyssey
                         audysseyMultEQTcpIp.CheckSum = binaryReader.ReadByte();
                         if (CheckSum == audysseyMultEQTcpIp.CheckSum)
                         {
-                            string AvrString = JsonConvert.SerializeObject(audysseyMultEQTcpIp, new JsonSerializerSettings
+                            string Serialized = JsonConvert.SerializeObject(audysseyMultEQTcpIp, new JsonSerializerSettings
                             {
                                 NullValueHandling = NullValueHandling.Ignore
                             });
@@ -270,8 +283,9 @@ namespace Audyssey
                             lock (_locker)
                             {
                                 //Dump to file for learning
-                                File.AppendAllText(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName, AvrString + "\n");
+                                File.AppendAllText(Environment.CurrentDirectory + "\\" + AudysseySnifferFileName, Serialized + "\n");
                             }
+                            audysseyMultEQAvr.Serialized += Serialized + "\n";
                             //Parse to parent to display? modify? re-transmit?
                             ParseAvrObject(audysseyMultEQTcpIp.TransmitReceive, audysseyMultEQTcpIp.Command, audysseyMultEQTcpIp.CharData, audysseyMultEQTcpIp.Int32Data);
                         }

@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows.Controls;
 
 namespace Audyssey
 {
@@ -55,6 +56,21 @@ namespace Audyssey
 
         public partial class AudysseyMultEQAvr : INotifyPropertyChanged
         {
+            private string _Serialized;
+
+            public string Serialized
+            {
+                get
+                {
+                    return _Serialized;
+                }
+                set
+                {
+                    _Serialized = value;
+                    RaisePropertyChanged("Serialized");
+                }
+            }
+
             /*local reference for selected channel from GUI*/
             private Dictionary<string, string> _SelectedItem;
             private string _SelectedChannel = null;

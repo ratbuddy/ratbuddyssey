@@ -19,6 +19,8 @@
             <!--titlebar-->
             <RowDefinition Height="Auto"/>
             <!--menu-->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <!--tab-->
         </Grid.RowDefinitions>
@@ -624,5 +626,13 @@
                 </Grid>
             </TabItem>
         </TabControl>
+        <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" />
+        <StatusBar Grid.Row="4">
+            <StatusBarItem>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding Serialized}" TextWrapping="Wrap"/>
+                </ScrollViewer>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Page>
