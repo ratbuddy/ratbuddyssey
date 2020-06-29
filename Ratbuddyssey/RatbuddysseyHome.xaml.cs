@@ -8,6 +8,7 @@ using Newtonsoft.Json.Serialization;
 using Audyssey;
 using Audyssey.MultEQApp;
 using Audyssey.MultEQAvr;
+using System.Globalization;
 
 namespace Ratbuddyssey
 {
@@ -47,6 +48,13 @@ namespace Ratbuddyssey
                     cmbInterfaceClient.Items.Add(TcpClient.Address.ToString());
                     cmbInterfaceClient.SelectedIndex = cmbInterfaceClient.Items.Count - 1;
                 }
+            }
+
+            for(int x=0; x<61; x++)
+            {
+                var fcentre = Math.Pow(10.0, 3.0) * Math.Pow(2.0, ((float)x-34.0)/6.0);
+                Console.Write(x); Console.Write(" ");
+                Console.WriteLine("{0:N1}", fcentre);
             }
         }
 

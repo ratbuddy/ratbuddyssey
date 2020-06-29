@@ -397,39 +397,39 @@
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Top" >
                                     <StackPanel Orientation="Vertical">
                                         <Slider Height="150" Value="{Binding SelectedDisFil.DispData[0]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                        <Label Content="63"></Label>
+                                        <Label Content="63Hz" FontSize="10"></Label>
                                     </StackPanel>
                                     <StackPanel Orientation="Vertical">
                                         <Slider Height="150" Value="{Binding SelectedDisFil.DispData[1]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                        <Label Content="125"></Label>
+                                        <Label Content="125Hz" FontSize="10"></Label>
                                     </StackPanel>
                                     <StackPanel Orientation="Vertical">
                                         <Slider Height="150" Value="{Binding SelectedDisFil.DispData[2]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                        <Label Content="250"></Label>
+                                        <Label Content="250Hz" FontSize="10"></Label>
                                     </StackPanel>
                                     <StackPanel Orientation="Vertical">
                                         <Slider Height="150" Value="{Binding SelectedDisFil.DispData[3]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                        <Label Content="500"></Label>
+                                        <Label Content="500Hz" FontSize="10"></Label>
                                     </StackPanel>
                                     <StackPanel Orientation="Vertical">
                                         <Slider Height="150" Value="{Binding SelectedDisFil.DispData[4]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                        <Label Content="1K"></Label>
+                                        <Label Content="1kHz" FontSize="10"></Label>
                                     </StackPanel>
                                     <StackPanel Orientation="Vertical">
                                         <Slider Height="150" Value="{Binding SelectedDisFil.DispData[5]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                        <Label Content="2K"></Label>
+                                        <Label Content="2kHz" FontSize="10"></Label>
                                     </StackPanel>
                                     <StackPanel Orientation="Vertical">
                                         <Slider Height="150" Value="{Binding SelectedDisFil.DispData[6]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                        <Label Content="4K"></Label>
+                                        <Label Content="4kHz" FontSize="10"></Label>
                                     </StackPanel>
                                     <StackPanel Orientation="Vertical">
                                         <Slider Height="150" Value="{Binding SelectedDisFil.DispData[7]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                        <Label Content="8K"></Label>
+                                        <Label Content="8kHz" FontSize="10"></Label>
                                     </StackPanel>
                                     <StackPanel Orientation="Vertical">
                                         <Slider Height="150" Value="{Binding SelectedDisFil.DispData[8]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                        <Label Content="16K"></Label>
+                                        <Label Content="16kHz" FontSize="10"></Label>
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -555,69 +555,251 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                             <WrapPanel Orientation="Horizontal" Height="auto" VerticalAlignment="Top" Grid.ColumnSpan="2">
+                                                <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[00]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="20Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[01]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="22Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[02]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="25Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[03]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="28Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[04]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="31Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[05]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="35Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[06]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="39Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[07]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="44Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[08]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="50Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[09]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="56Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[10]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="62.5Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[11]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="70Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[12]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="79Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[13]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="88Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[14]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="100Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[15]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="111Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[16]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="125Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[17]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="140Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[18]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="157.5Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[19]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="177Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[20]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="200Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[21]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="223Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[22]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="250" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[23]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="280" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[24]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="315" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[25]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="354" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[26]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="400" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[27]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="445" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[28]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="500" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[29]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="561" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[30]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="630" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[31]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="707"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[32]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="800"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[33]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="890"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[34]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1kHz"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[35]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1.1kHz"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[36]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1.2kHz"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[37]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1.4kHz"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[38]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1.6kHz"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[39]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1.8kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[40]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="2kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[41]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="2.2kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[42]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="2.5kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[43]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="2.8kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[44]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="3.2kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[45]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="3.6kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[46]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="4kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[47]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="4.5kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[48]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="5kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[49]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[49]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="5.6kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[50]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="6.4kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[51]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="7.2kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[52]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="8kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[53]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="9kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[54]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="10kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[55]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="11.2kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[56]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="12.8kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[57]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="14.4kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[58]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="16kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[59]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="18kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[60]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
-                                            </WrapPanel>
+                                                <Label Content="20kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                        </WrapPanel>
                                     </Grid>
                                 </GroupBox>
                             </Grid>
