@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -337,13 +338,39 @@ namespace Ratbuddyssey
         }
         private void ChannelsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (((DetectedChannel)channelsView.SelectedValue != null) && (((DetectedChannel)channelsView.SelectedValue).ResponseData != null))
+            List<CheckBox> checkBoxes = new List<CheckBox> {
+                chbx1, chbx2, chbx3, chbx4, chbx5, chbx6, chbx7, chbx8
+            };
+
+            // Disable all the check boxes
+            foreach (var checkBox in checkBoxes)
             {
-                if (((DetectedChannel)channelsView.SelectedValue).ResponseData.Count > 0)
+                checkBox.IsEnabled = false;
+            }
+
+            var selectedValue = channelsView.SelectedValue as DetectedChannel;
+            if (selectedValue != null && selectedValue.ResponseData != null)
+            {
+                // Enable the check boxes corresponding to those positions for which the measurement is available
+                foreach (var measurementPosition in selectedValue.ResponseData)
+                {
+                    int positionIndex = int.Parse(measurementPosition.Key);
+                    Debug.Assert(positionIndex >= 0 && positionIndex < checkBoxes.Count);
+                    checkBoxes[positionIndex].IsEnabled = true;
+                }
+
+                if (selectedValue.ResponseData.Count > 0)
                 {
                     selectedChannel = (DetectedChannel)channelsView.SelectedValue;
                     DrawChart();
                 }
+            }
+
+            // Un-check all the disabled check boxes
+            foreach (var checkBox in checkBoxes)
+            {
+                if (!checkBox.IsEnabled && checkBox.IsChecked == true)
+                    checkBox.IsChecked = false;
             }
         }
         private void ChannelsView_OnClickSticky(object sender, RoutedEventArgs e)
