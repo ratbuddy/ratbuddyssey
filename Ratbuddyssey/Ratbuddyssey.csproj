@@ -217,7 +217,7 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>copy $(SolutionDir)high_frequency_roll_off_1.json $(TargetDir)high_frequency_roll_off_1.json
-copy $(SolutionDir)high_frequency_roll_off_2.json $(TargetDir)high_frequency_roll_off_2.json</PostBuildEvent>
+    <PostBuildEvent>copy "$(SolutionDir)high_frequency_roll_off_1.json" "$(TargetDir)high_frequency_roll_off_1.json"
+copy "$(SolutionDir)high_frequency_roll_off_2.json" "$(TargetDir)high_frequency_roll_off_2.json"</PostBuildEvent>
   </PropertyGroup>
 </Project>
