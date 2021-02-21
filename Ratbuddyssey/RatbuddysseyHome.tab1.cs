@@ -169,6 +169,9 @@ namespace Ratbuddyssey
                     Collection<DataPoint> points = new Collection<DataPoint>();
 
                     string s = keys[i].ToString();
+                    if (!selectedChannel.ResponseData.ContainsKey(s))
+                        continue;
+
                     string[] values = selectedChannel.ResponseData[s];
                     int count = values.Length;
                     Complex[] cValues = new Complex[count];
@@ -296,7 +299,12 @@ namespace Ratbuddyssey
         {
             CheckBox checkBox = sender as CheckBox;
             int val = int.Parse(checkBox.Content.ToString()) - 1;
-            if (!keys.Contains(val))
+            if (selectedChannel != null && !selectedChannel.ResponseData.ContainsKey(val.ToString()))
+            {
+                // This channel has not been measured in this Audyssey calibration. Don't attempt to plot it, and clear the checkbox.
+                checkBox.IsChecked = false;
+            }
+            else if (!keys.Contains(val))
             {
                 keys.Add(val);
                 colors.Add(val, checkBox.Foreground);
