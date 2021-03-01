@@ -62,6 +62,21 @@ namespace Ratbuddyssey
         {
         }
 
+        private void HandleDroppedFile(object sender, DragEventArgs e)
+        {
+
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                // Note that you can have more than one file.
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+
+                // Assuming you have one file that you care about, pass it off to whatever
+                // handling code you have defined.
+                if (files.Length > 0)
+                    OpenFile(files[0]);
+            }
+        }
+
         private void ParseFileToAudysseyMultEQApp(string FileName)
         {
             if (File.Exists(FileName))
@@ -98,15 +113,7 @@ namespace Ratbuddyssey
 
             if (result == true)
             {
-                if (File.Exists(dlg.FileName))
-                {
-                    currentFile.Content = dlg.FileName;
-                    ParseFileToAudysseyMultEQApp(currentFile.Content.ToString());
-                    if ((audysseyMultEQApp != null) && (tabControl.SelectedIndex == 0))
-                    {
-                        this.DataContext = audysseyMultEQApp;
-                    }
-                }
+                OpenFile(dlg.FileName);
             }
         }
 
@@ -236,6 +243,19 @@ namespace Ratbuddyssey
                         this.DataContext = audysseyMultEQAvr;
                     }
                     break;
+            }
+        }
+
+        private void OpenFile(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                currentFile.Content = filePath;
+                ParseFileToAudysseyMultEQApp(currentFile.Content.ToString());
+                if ((audysseyMultEQApp != null) && (tabControl.SelectedIndex == 0))
+                {
+                    this.DataContext = audysseyMultEQApp;
+                }
             }
         }
     }

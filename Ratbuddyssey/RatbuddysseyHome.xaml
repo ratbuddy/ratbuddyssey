@@ -4,7 +4,8 @@
       xmlns:oxy="http://oxyplot.org/wpf"
       xmlns:local="clr-namespace:Ratbuddyssey.Converters"
       Title="Ratbuddyssey - Home"
-      ShowsNavigationUI="false">
+      ShowsNavigationUI="false"
+      Drop="HandleDroppedFile" AllowDrop="true">
     <Page.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
