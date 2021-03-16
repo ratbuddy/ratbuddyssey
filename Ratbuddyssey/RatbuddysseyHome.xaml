@@ -1,362 +1,821 @@
 ﻿<Page x:Class="Ratbuddyssey.RatbuddysseyHome"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:oxy="http://oxyplot.org/wpf"
-      mc:Ignorable="d" 
-      d:DesignHeight="900" d:DesignWidth="1600"
-      Title="Ratbuddyssey - Home" ShowsNavigationUI="false">
+      xmlns:local="clr-namespace:Ratbuddyssey.Converters"
+      Title="Ratbuddyssey - Home"
+      ShowsNavigationUI="false"
+      Drop="HandleDroppedFile" AllowDrop="true">
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/css/MyStyle.xaml">
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
     <Grid Background="White">
         <Grid.RowDefinitions>
-            <RowDefinition Height="0"/>
-            <RowDefinition/>
-            <RowDefinition Height="0"/>
+            <RowDefinition Height="Auto"/>
+            <!--titlebar-->
+            <RowDefinition Height="Auto"/>
+            <!--menu-->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <!--tab-->
         </Grid.RowDefinitions>
-
-        <Grid Grid.Row="0" Margin="0,0,0,554" Grid.RowSpan="2">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="180" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <Grid Grid.Column="0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Row="2" Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Label Content="Receiver IP Address:" VerticalAlignment="Top" ></Label>
+            <ComboBox x:Name="cmbInterfaceClient"  VerticalAlignment="Top" Width="120" IsEditable="True"/>
+            <Label Content="Computer IP Address:" VerticalAlignment="Top" ></Label>
+            <ComboBox x:Name="cmbInterfaceHost" VerticalAlignment="Top" Width="120"/>
+        </StackPanel>
+        <Menu Grid.Row="1">
+            <!--menu-->
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open Audyssey file" Name="openFile" Click="OpenFile_OnClick"/>
+                <MenuItem Header="_Reload (discard unsaved changes)" Name="reloadFile" Click="ReloadFile_OnClick"/>
+                <Separator/>
+                <MenuItem Header="_Save" Name="saveFile" Click="SaveFile_OnClick"/>
+                <MenuItem Header="Save _As" Name="saveFileAs" Click="SaveFileAs_OnClick"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Name="exitProgram" Click="ExitProgram_OnClick"/>
+            </MenuItem>
+            <MenuItem Header="_Ethernet">
+                <MenuItem Header="_Open Project" Name="openProjectFile" Click="openProjectFile_Click"/>
+                <MenuItem Header="_Save Project" Name="saveProjectFile" Click="saveProjectFile_Click"/>
+                <Separator/>
+                <MenuItem Header="Connect _Receiver" Name="connectReceiver" Click="ConnectReceiver_OnClick" IsCheckable="True"/>
+                <MenuItem Header="Connect S_niffer" Name="connectSniffer" Click="ConnectSniffer_OnClick" IsCheckable="True"/>
+                <Separator/>
+                <MenuItem Header="Get Receiver _Info" Name="getReceiverInfo" Click="getReceiverInfo_Click" />
+                <MenuItem Header="Get Receiver _Status" Name="getReceiverStatus" Click="getReceiverStatus_Click" />
+                <MenuItem Header="Enter _Audyssey" Name="connectAudyssey" Click="ConnectAudyssey_OnClick" IsCheckable="True"/>
+                <MenuItem Header="Set Amp" Name="setAvrSetAmp" Click="setAvrSetAmp_Click" />
+                <MenuItem Header="Set Audy" Name="setAvrSetAudy" Click="setAvrSetAudy_Click" />
+                <MenuItem Header="Set DisFil" Name="setAvrSetDisFil" Click="setAvrSetDisFil_Click" />
+                <MenuItem Header="Init Coefs" Name="setAvrInitCoefs" Click="setAvrInitCoefs_Click" />
+                <MenuItem Header="Set CoefDt" Name="setAvrSetCoefDt" Click="setAvrSetCoefDt_Click" />
+                <MenuItem Header="Set AudyFinFlg" Name="setAudysseyFinishedFlag" Click="setAudysseyFinishedFlag_Click" />
+            </MenuItem>
+            <MenuItem Header="_About">
+                <MenuItem Header="About Ratbuddyssey" x:Name="about" Click="About_OnClick"/>
+            </MenuItem>
+        </Menu>
+        <TabControl x:Name="tabControl" Grid.Row="2" SelectionChanged="tabControl_SelectionChanged">
+            <TabItem x:Name="TabFile" Header="App">
+                <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
-                        <RowDefinition Height="30"/>
                     </Grid.RowDefinitions>
-                </Grid>
-            </Grid>
-        </Grid>
-
-        <Grid Grid.Row="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="30"/>
-                <RowDefinition Height="30"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <DockPanel Grid.Row="0">
-                <Menu>
-                    <MenuItem Header="_File" HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <MenuItem Header="Open Audyssey file" x:Name="openFile" Click="OpenFile_OnClick"/>
-                        <MenuItem Header="Reload (discard unsaved changes)" x:Name="reloadFile" Click="ReloadFile_OnClick"/>
-                        <MenuItem Header="Save" x:Name="saveFile" Click="SaveFile_OnClick"/>
-                        <MenuItem Header="Save As" x:Name="saveFileAs" Click="SaveFileAs_OnClick"/>
-                        <MenuItem Header="Exit" x:Name="exitProgram" Click="ExitProgram_OnClick"/>
-                    </MenuItem>
-                    <MenuItem Header="_About">
-                        <MenuItem Header="About Ratbuddyssey" x:Name="about" Click="About_OnClick"/>
-                    </MenuItem>
-                </Menu>
-            </DockPanel>
-
-            <Grid Grid.Row="1">
-                <StackPanel Orientation="Horizontal">
-                    <Label x:Name="label" Content="Current File:" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                    <Label x:Name="currentFile" Height="25" Content="" Margin="0" HorizontalAlignment="Left"/>
-                </StackPanel>
-            </Grid>
-
-            <Grid Grid.Row="2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="225"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <Grid Grid.Column="0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <GroupBox Header="Channels">
-                        <DockPanel Grid.Row="0">
-                            <ListView x:Name="channelsView" Grid.Row="0" ItemsSource="{Binding DetectedChannels}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <GroupBox Header="Channels">
+                            <ListView x:Name="channelsView" ItemsSource="{Binding DetectedChannels}">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Header="Type" Width="70" DisplayMemberBinding="{Binding EnChannelType}" />
-                                        <GridViewColumn Header="commandId" Width="100" DisplayMemberBinding="{Binding CommandId}" />
+                                        <GridViewColumn Header="Type" Width="auto" DisplayMemberBinding="{Binding EnChannelType}" />
+                                        <GridViewColumn Header="commandId" Width="auto" DisplayMemberBinding="{Binding CommandId}" />
+                                        <GridViewColumn Header="Sticky" Width="auto">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <CheckBox IsChecked="{Binding Path=Sticky}" Checked="ChannelsView_OnClickSticky" Unchecked="ChannelsView_OnClickSticky"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
                                     </GridView>
                                 </ListView.View>
                             </ListView>
-                        </DockPanel>
-                    </GroupBox>
-
-                    <GroupBox Grid.Row="1" Header="Target Curve Points" DataContext="{Binding SelectedValue, ElementName=channelsView}">
-                        <ScrollViewer>
-                            <StackPanel>
-
-                                <DataGrid Name="dataGrid"  ItemsSource="{Binding CustomTargetCurvePointsDictionary}" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True">
-                                    <DataGrid.Columns >
-                                        <DataGridTextColumn Header="Frequency" Binding="{Binding Key}"></DataGridTextColumn>
-                                        <DataGridTextColumn Header="Boost/Cut dB" Binding="{Binding Value}"></DataGridTextColumn>
-                                        <DataGridTemplateColumn>
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Button Click="Button_Click_1">Delete</Button>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-
-                                <StackPanel  Grid.ColumnSpan="2" Orientation="Horizontal">
-                                    <TextBox Name="keyTbx" Width="80"/>
-                                    <TextBox Name="valueTbx" Width="52"/>
-                                    <Button Content="Add" Width="47" Click="Button_Click"/>
+                        </GroupBox>
+                        <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Height="5" />
+                        <GroupBox Header="Target Curve Points" Grid.Row="2" DataContext="{Binding SelectedValue, ElementName=channelsView}">
+                            <ScrollViewer>
+                                <StackPanel>
+                                    <DataGrid x:Name="dataGrid"  ItemsSource="{Binding CustomTargetCurvePointsDictionary}" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True">
+                                        <DataGrid.Columns >
+                                            <DataGridTextColumn Header="Frequency" Binding="{Binding Key}" Width="70"/>
+                                            <DataGridTextColumn Header="Boost/Cut dB" Binding="{Binding Value}" Width="80"/>
+                                            <DataGridTemplateColumn>
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Button Content="Delete" Click="ButtonClickRemoveTargetCurvePoint" Width="auto"/>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <StackPanel  Orientation="Horizontal">
+                                        <TextBox Width="6" Height="auto"/>
+                                        <TextBox x:Name="keyTbx" Width="30"/>
+                                        <TextBox x:Name="valueTbx" Width="30"/>
+                                        <Button Content="Add" Click="ButtonClickAddTargetCurvePoint" Width="60"/>
+                                    </StackPanel>
                                 </StackPanel>
-
-                            </StackPanel>
-                        </ScrollViewer>
-                    </GroupBox>
-                </Grid>
-
-                <Grid Grid.Column="1">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="150"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <Grid Grid.Row="0">
+                            </ScrollViewer>
+                        </GroupBox>
+                    </Grid>
+                    <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
+                    <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="30"/>
-                            <RowDefinition Height="90"/>
-                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition Height="auto"/>
+                            <!--splitter-->
+                            <RowDefinition/>
                         </Grid.RowDefinitions>
-
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="120"/>
-                                <ColumnDefinition Width="200"/>
-                                <ColumnDefinition Width="120"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <Label Content="Title" VerticalContentAlignment="Center" HorizontalAlignment="Left" Width="40" Margin="0,0,60,0"/>
-                            <TextBox Text="{Binding Title}" Margin="35,0,0,0" VerticalAlignment="Center" Grid.ColumnSpan="2"/>
-                            <Label Content="Amp Assign Info" Grid.Row="0" Grid.Column="2" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-                            <TextBox Text="{Binding AmpAssignInfo}" Grid.Column="3" Grid.Row="0" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                        </Grid>
-
-                        <Grid Grid.Row="1">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="30"/>
-                                <RowDefinition Height="30"/>
-                                <RowDefinition Height="30"/>
-                            </Grid.RowDefinitions>
-
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="120"/>
-                                <ColumnDefinition Width="200"/>
-                                <ColumnDefinition Width="120"/>
-                                <ColumnDefinition Width="200"/>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <Label Content="Target Model Name" Grid.Row="0" Grid.Column="0" VerticalContentAlignment="Center" Margin="0,0,0,0.4" HorizontalAlignment="Left" Grid.ColumnSpan="3"/>
-                            <Label Content="Adc Lineup" Grid.Row="0" Grid.Column="2" VerticalContentAlignment="Center" Margin="0.8,0,214.6,0.4" Panel.ZIndex="1" Grid.ColumnSpan="2"/>
-                            <Label Content="Amp Assign Type" Grid.Row="0" Grid.Column="4" VerticalContentAlignment="Center" HorizontalAlignment="Left" Margin="0.4,0,0,0.4"/>
-
-                            <TextBox Text="{Binding TargetModelName}" Grid.Column="1" Grid.Row="0" Margin="0" VerticalAlignment="Center"/>
-                            <TextBox Text="{Binding AdcLineup}" Grid.Column="3" Grid.Row="0" Margin="0" VerticalAlignment="Center"/>
-                            <ComboBox ItemsSource="{Binding EnAmpAssignTypeList}" SelectedIndex="{Binding EnAmpAssignType, UpdateSourceTrigger=PropertyChanged}" Grid.Column="5" Grid.Row="0" Margin="2.2,4,1.4,4.4" VerticalAlignment="Center"/>
-
-                            <Label Content="Interface Version" Grid.Column="0" VerticalContentAlignment="Center" Margin="0,0,0,0" Grid.RowSpan="3" HorizontalAlignment="Left" Grid.ColumnSpan="3"/>
-                            <Label Content="Upgrade Info" Grid.Row="1" Grid.Column="2" VerticalContentAlignment="Center" HorizontalAlignment="Left" Margin="0"/>
-                            <Label Content="System Delay" Grid.Row="1" Grid.Column="4" VerticalContentAlignment="Center" HorizontalAlignment="Left" Margin="0"/>
-
-                            <TextBox Text="{Binding InterfaceVersion}" Grid.Column="1" Grid.Row="1" Margin="0" VerticalAlignment="Center"/>
-                            <TextBox Text="{Binding UpgradeInfo}" Grid.Column="3" Grid.Row="1" Margin="0" VerticalAlignment="Center"/>
-                            <TextBox Text="{Binding SystemDelay}" Grid.Column="5" Grid.Row="1" Margin="0" VerticalAlignment="Center"/>
-
-                            <Label Content="MultEQ Type" Grid.Column="0" VerticalContentAlignment="Center" HorizontalAlignment="Left" Margin="0" Grid.Row="2"/>
-                            <Label Content="Target Curve Type" Grid.Column="2" VerticalContentAlignment="Center" HorizontalAlignment="Left" Margin="0" Grid.Row="2"/>
-
-                            <ComboBox Grid.Column="1" Grid.Row="2" Margin="0" SelectedIndex="{Binding EnMultEQType}" ItemsSource="{Binding EnMultEQTypeList}" VerticalAlignment="Center"/>
-                            <ComboBox Grid.Column="3" Grid.Row="2" Margin="0" Name = "TargetCurveType" SelectedIndex="{Binding EnTargetCurveType}" ItemsSource="{Binding EnTargetCurveTypeList}" VerticalAlignment="Center" SelectionChanged="TargetCurveTypeSelectionChanged"/>
-                        </Grid>
-
+                        <GroupBox Header="Status">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                    <RowDefinition Height="auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label x:Name="label" Content="Current File:" Grid.Row="0" Grid.Column="0"/>
+                                <Label x:Name="currentFile" Content="" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="5" Margin="-7,0,0,0"/>
+                                <Label Grid.Row="1" Grid.Column="0" Content="Amp Assign Info" VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AmpAssignInfo}" VerticalAlignment="Center" Grid.ColumnSpan="5"/>
+                                <Label Grid.Row="2" Grid.Column="0" Content="Title" VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Title}" VerticalAlignment="Center"/>
+                                <Label Grid.Row="3" Grid.Column="0" Content="Target Model Name" VerticalContentAlignment="Center"/>
+                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding TargetModelName}" Margin="0" VerticalAlignment="Center"/>
+                                <Label Content="Interface Version" Grid.Row="4" Grid.Column="0" VerticalContentAlignment="Center"/>
+                                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding InterfaceVersion}" Margin="0" VerticalAlignment="Center"/>
+                                <Label Grid.Row="2" Grid.Column="2" Content="Upgrade Info" VerticalContentAlignment="Center"/>
+                                <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding UpgradeInfo}" Margin="0" VerticalAlignment="Center"/>
+                                <Label Grid.Row="3" Grid.Column="2" Content="Adc Lineup" VerticalContentAlignment="Center"/>
+                                <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding AdcLineup}" Margin="0" VerticalAlignment="Center"/>
+                                <Label Grid.Row="4" Grid.Column="2" Content="System Delay" VerticalContentAlignment="Center"/>
+                                <TextBox Grid.Row="4" Grid.Column="3" Text="{Binding SystemDelay}" VerticalAlignment="Center"/>
+                                <Label Grid.Row="2" Grid.Column="4"  Content="Amp Assign Type" VerticalContentAlignment="Center" />
+                                <ComboBox Grid.Row="2" Grid.Column="5" ItemsSource="{Binding AmpAssignTypeList}" SelectedIndex="{Binding EnAmpAssignType, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center"/>
+                                <Label Grid.Row="3" Grid.Column="4" Content="MultEQ Type" VerticalContentAlignment="Center"/>
+                                <ComboBox Grid.Row="3" Grid.Column="5" ItemsSource="{Binding MultEQTypeList}" SelectedIndex="{Binding EnMultEQType}" VerticalAlignment="Center"/>
+                                <Label Grid.Row="4" Grid.Column="4" Content="Target Curve Type" VerticalContentAlignment="Center"/>
+                                <ComboBox Grid.Row="4" Grid.Column="5" x:Name = "TargetCurveType" SelectedIndex="{Binding EnTargetCurveType}" ItemsSource="{Binding TargetCurveTypeList}" VerticalAlignment="Center" SelectionChanged="TargetCurveTypeSelectionChanged"/>
+                                <CheckBox Content="Dynamic Eq" IsChecked="{Binding DynamicEq}" Grid.Row="0" Grid.Column="8" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <CheckBox Content="Dynamic Volume" IsChecked="{Binding DynamicVolume}" Grid.Row="1" Grid.Column="8" Margin="5" VerticalAlignment="Center"/>
+                                <CheckBox Content="Auro" IsChecked="{Binding Auro}" Grid.Row="2" Grid.Column="8"  Margin="5" VerticalAlignment="Center"/>
+                                <CheckBox Content="Lfc Support" IsChecked="{Binding LfcSupport}" Grid.Row="3" Grid.Column="8" Margin="5" VerticalAlignment="Center"/>
+                                <CheckBox Content ="Lfc"  IsChecked="{Binding Lfc}" Grid.Row="4" Grid.Column="8"  Margin="5" VerticalAlignment="Center"/>
+                            </Grid>
+                        </GroupBox>
+                        <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
                         <Grid Grid.Row="2">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="72"/>
-                                <ColumnDefinition Width="15"/>
-                                <ColumnDefinition Width="110"/>
-                                <ColumnDefinition Width="15"/>
-                                <ColumnDefinition Width="40"/>
-                                <ColumnDefinition Width="15"/>
-                                <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="15"/>
-                                <ColumnDefinition Width="40"/>
-                                <ColumnDefinition Width="15"/>
+                                <ColumnDefinition Width="auto"/>
+                                <!--channel info|report-->
+                                <ColumnDefinition Width="auto"/>
+                                <!--splitter-->
                                 <ColumnDefinition Width="*"/>
+                                <!--graph-->
                             </Grid.ColumnDefinitions>
-
-                            <Label Content="Dynamic Eq" Grid.Row="0" Grid.Column="0" VerticalContentAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                            <Label Content="Dynamic Volume" Grid.Row="0" Grid.Column="2" VerticalContentAlignment="Center" HorizontalAlignment="Right" Margin="0" VerticalAlignment="Center"/>
-                            <Label Content="Auro" Grid.Row="0" Grid.Column="4" VerticalContentAlignment="Center" HorizontalAlignment="Right" Margin="0" VerticalAlignment="Center"/>
-                            <Label Content="Lfc Support" Grid.Row="0" Grid.Column="6" VerticalContentAlignment="Center" HorizontalAlignment="Right" Margin="0" VerticalAlignment="Center"/>
-                            <Label Content="Lfc" Grid.Row="0" Grid.Column="8" VerticalContentAlignment="Center" HorizontalAlignment="Right" Margin="0" VerticalAlignment="Center"/>
-
-                            <CheckBox IsChecked="{Binding DynamicEq}" Grid.Column="1" Grid.Row="0" Margin="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                            <CheckBox IsChecked="{Binding DynamicVolume}" Grid.Column="3" Grid.Row="0" VerticalAlignment="Center" Margin="0" HorizontalAlignment="Left"/>
-                            <CheckBox IsChecked="{Binding Auro}" Grid.Column="5" Grid.Row="0" VerticalAlignment="Center" Margin="0" HorizontalAlignment="Left"/>
-                            <CheckBox IsChecked="{Binding LfcSupport}" Grid.Column="7" Grid.Row="0" VerticalAlignment="Center" Margin="0" HorizontalAlignment="Left"/>
-                            <CheckBox IsChecked="{Binding Lfc}" Grid.Column="9" Grid.Row="0" VerticalAlignment="Center" Margin="0" HorizontalAlignment="Left"/>
+                            <Grid Grid.Column="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <!--channel info-->
+                                    <RowDefinition Height="auto"/>
+                                    <!--splitter-->
+                                    <RowDefinition Height="*"/>
+                                    <!--channel report-->
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0">
+                                    <GroupBox Header="Channel Info" DataContext="{Binding SelectedValue, ElementName=channelsView}">
+                                        <Grid>
+                                            <Grid Grid.ColumnSpan="2">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Label Grid.Row="0" Grid.Column="0" Content="Trim Adjustment" VerticalContentAlignment="Center"/>
+                                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TrimAdjustment}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="1" Grid.Column="0" Content="Delay Adjustment" VerticalContentAlignment="Center"/>
+                                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding DelayAdjustment}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="2" Grid.Column="0" Content="Frequency Range Rolloff" VerticalContentAlignment="Center"/>
+                                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding FrequencyRangeRolloff}" VerticalContentAlignment="Center"/>
+                                                <Label Grid.Row="3" Grid.Column="0" Content="Channel Type" VerticalContentAlignment="Center"/>
+                                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding EnChannelType}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="4" Grid.Column="0" Content="Command Id" VerticalContentAlignment="Center"/>
+                                                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding CommandId}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="0" Grid.Column="2" Content="Custom Level" VerticalContentAlignment="Center"/>
+                                                <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding CustomLevel}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="1" Grid.Column="2" Content="Custom Distance" VerticalContentAlignment="Center" />
+                                                <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding CustomDistance}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="2" Grid.Column="2" Content="Custom Crossover" VerticalContentAlignment="Center"/>
+                                                <ComboBox Grid.Row="2" Grid.Column="3" SelectedIndex="{Binding CustomCrossoverIndex}" ItemsSource="{Binding CrossoverList}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="3" Grid.Column="2" Content="Custom Speaker Type" VerticalContentAlignment="Center"/>
+                                                <ComboBox Grid.Row="3" Grid.Column="3" SelectedValue="{Binding CustomSpeakerType}" ItemsSource="{Binding SpeakerTypeList}" VerticalAlignment="Center"/>
+                                                <CheckBox Grid.Row="5" Grid.Column="0" Content="Skipped Measurement" IsChecked="{Binding IsSkipMeasurement}" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                                <CheckBox Grid.Row="5" Grid.Column="2" Content="Midrange Compensation" IsChecked="{Binding MidrangeCompensation}" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                            </Grid>
+                                        </Grid>
+                                    </GroupBox>
+                                </Grid>
+                                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"/>
+                                <Grid Grid.Row="2" DataContext="{Binding SelectedValue, ElementName=channelsView}">
+                                    <GroupBox Header="Channel Report" DataContext="{Binding ChannelReport}">
+                                        <Grid>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Label Grid.Row="0" Grid.Column="0" Content="EnSpeakerConnect" VerticalContentAlignment="Center"/>
+                                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EnSpeakerConnect}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="1" Grid.Column="0" Content="CustomEnSpeakerConnect" VerticalContentAlignment="Center"/>
+                                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding CustomEnSpeakerConnect}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="2" Grid.Column="0" Content="Distance" VerticalContentAlignment="Center"/>
+                                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Distance}" VerticalAlignment="Center"/>
+                                                <CheckBox Grid.Row="3" Grid.Column="0" Content="Reverse Polarity" IsChecked="{Binding IsReversePolarity}" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                            </Grid>
+                                        </Grid>
+                                    </GroupBox>
+                                </Grid>
+                            </Grid>
+                            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
+                            <Grid Grid.Column="2">
+                                <GroupBox Header="Graph View">
+                                    <Grid DataContext="{Binding SelectedValue, ElementName=channelsView}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                        </Grid.RowDefinitions>
+                                        <StackPanel Grid.Row="0" Orientation="Horizontal">
+                                            <Label Content="Measurement position:" VerticalAlignment="Center"/>
+                                            <CheckBox Content="1" x:Name="chbx1" Foreground="Black" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0" IsChecked="True"/>
+                                            <CheckBox Content="2" x:Name="chbx2" Foreground="Blue" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="3" x:Name="chbx3" Foreground="Violet" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="4" x:Name="chbx4" Foreground="Green" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="5" x:Name="chbx5" Foreground="Orange" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="6" x:Name="chbx6" Foreground="Red" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="7" x:Name="chbx7" Foreground="Cyan" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="8" x:Name="chbx8" Foreground="DeepPink" Checked="CheckBoxMeasurementPositionChecked" Unchecked="CheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                            <CheckBox Content="Select/Unselect all" x:Name="allChbx" Foreground="Black" Checked="AllCheckBoxMeasurementPositionChecked" Unchecked="AllCheckBoxMeasurementPositionUnchecked" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                        </StackPanel>
+                                        <oxy:PlotView Grid.Row="1" x:Name="plot" DataContext="{Binding SelectedValue, ElementName=channelsView}"/>
+                                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <RadioButton Content="No Smoothing" x:Name="radioButtonSmoothingFactorNone" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0" IsChecked="True"/>
+                                            <RadioButton Content="1/2" x:Name="radioButtonSmoothingFactor2" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="1/3" x:Name="radioButtonSmoothingFactor3" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="1/6" x:Name="radioButtonSmoothingFactor6" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="1/12" x:Name="radioButtonSmoothingFactor12" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="1/24" x:Name="radioButtonSmoothingFactor24" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                            <RadioButton Content="1/48" x:Name="radioButtonSmoothingFactor48" Checked="RadioButtonSmoothingFactorChecked" Margin="0,0,10,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <RadioButton x:Name="rbtnXRangeChirp" Content="0-350ms" Checked="rbtnXRange_Checked" Margin="0,0,10,0"/>
+                                            <RadioButton x:Name="rbtnXRangeSubwoofer" Content="10-1000Hz" Checked="rbtnXRange_Checked" Margin="0,0,10,0"/>
+                                            <RadioButton x:Name="rbtnXRangeFull" Content="10Hz-24kHz" Checked="rbtnXRange_Checked" Margin="0,0,10,0" IsChecked="True"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <CheckBox Content="Logarithmic Axis" x:Name="chbxLogarithmicAxis" IsChecked="true"  HorizontalAlignment="Left" Checked="chbxLogarithmicAxis_Checked" Unchecked="chbxLogarithmicAxis_Unchecked" />
+                                        </StackPanel>
+                                    </Grid>
+                                </GroupBox>
+                            </Grid>
                         </Grid>
                     </Grid>
-
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="450"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <Grid Grid.Column="0">
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="TabEthernet" Header="Ethernet">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0">
+                        <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="210"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-
-                            <Grid Grid.Row="0">
-                                <GroupBox Header="Channel Info" DataContext="{Binding SelectedValue, ElementName=channelsView}">
-                                    <Grid>
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="30"/>
-                                                <RowDefinition Height="30"/>
-                                                <RowDefinition Height="30"/>
-                                                <RowDefinition Height="30"/>
-                                                <RowDefinition Height="30"/>
-                                                <RowDefinition Height="30"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="0"/>
-                                                <ColumnDefinition Width="138"/>
-                                                <ColumnDefinition Width="13*"/>
-                                                <ColumnDefinition Width="139"/>
-                                                <ColumnDefinition Width="19*"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <Label Content="Channel Type" VerticalContentAlignment="Center" HorizontalAlignment="Left" Width="128" Grid.Column="1"/>
-                                            <TextBox Text="{Binding EnChannelType}" Grid.Column="2" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                                            <Label Content="Skipped Measurement" Grid.Row="1" VerticalContentAlignment="Center" HorizontalAlignment="Left" Grid.ColumnSpan="2" Margin="0,0,0,0" Grid.Column="1"/>
-                                            <CheckBox IsChecked="{Binding IsSkipMeasurement}" Grid.Column="2" Grid.Row="1" VerticalAlignment="Center" Margin="2,2,2,2" Height="15"/>
-                                            <Label Content="Delay Adjustment" Grid.Row="2" VerticalContentAlignment="Center" HorizontalAlignment="Left" Grid.Column="1"/>
-                                            <TextBox Text="{Binding DelayAdjustment}" Grid.Column="2" Grid.Row="2" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                                            <Label Content="Command Id" Grid.Row="3" VerticalContentAlignment="Center" HorizontalAlignment="Left" Width="91" Grid.Column="1" Margin="0,0,0,0"/>
-                                            <TextBox Text="{Binding CommandId}" Grid.Column="2" Grid.Row="3" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                                            <Label Content="Custom Crossover" Grid.Row="4" VerticalContentAlignment="Center" HorizontalAlignment="Left" Grid.Column="1" Margin="0,0,0,0"/>
-                                            <!--<TextBox Text="{Binding CustomCrossover}" Grid.Column="2" Grid.Row="4" Margin="2,2,2,0" Height="27" VerticalAlignment="Top"/>-->
-                                            <ComboBox Grid.Column="2" Grid.Row="4" Margin="0" SelectedIndex="{Binding CustomCrossoverIndex}" ItemsSource="{Binding CustomCrossoverList}" VerticalAlignment="Center"/>
-                                            <Label Content="Custom Speaker Type" Grid.Row="5" VerticalContentAlignment="Center" HorizontalAlignment="Left"  Grid.Column="1" Margin="0,0,0,0"/>
-                                            <!--<TextBox Text="{Binding CustomSpeakerType}" Grid.Column="2" Grid.Row="5" Margin="10,2,99,2" Grid.ColumnSpan="2"/>-->
-                                            <StackPanel Orientation="Horizontal" Grid.Column="2" Grid.Row="5" Grid.ColumnSpan="3" VerticalAlignment="Center">
-                                                <RadioButton Content="Small" IsChecked="{Binding CustomSpeakerTypeSmall}" Margin="2, 2, 2, 2"/>
-                                                <RadioButton Content="Large" IsChecked="{Binding CustomSpeakerTypeLarge}" Margin="2, 2, 2, 2"/>
-                                                <RadioButton Content="Subwoofer" IsChecked="{Binding CustomSpeakerTypeSubwoofer}" Margin="2, 2, 2, 2"/>
-                                            </StackPanel>
-
-
-                                            <Label Content="Trim Adjustment" VerticalContentAlignment="Center" HorizontalAlignment="Left" Grid.Column="3" Grid.Row="0" />
-                                            <TextBox Text="{Binding TrimAdjustment}" Grid.Column="4" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                                            <Label Content="Midrange Compensation" Grid.Row="1" Grid.Column="3" VerticalContentAlignment="Center" HorizontalAlignment="Left"  Grid.ColumnSpan="2" Margin="0,0,85,0" />
-                                            <CheckBox IsChecked="{Binding MidrangeCompensation}" Grid.Column="4" Grid.Row="1" VerticalAlignment="Center" Margin="2,2,2,2" Height="15"/>
-                                            <Label Content="Frequency Range Rolloff" Grid.Row="2" Grid.Column="3" VerticalContentAlignment="Center" HorizontalAlignment="Left" />
-                                            <TextBox Text="{Binding FrequencyRangeRolloff}" Grid.Column="4" Grid.Row="2" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                                            <Label Content="Custom Level" Grid.Row="3" Grid.Column="3" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-                                            <TextBox Text="{Binding CustomLevel}" Grid.Column="4" Grid.Row="3" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                                            <Label Content="Custom Distance" Grid.Row="4" Grid.Column="3" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-                                            <TextBox Text="{Binding CustomDistance}" Grid.Column="4" Grid.Row="4" Margin="2,2,2,2" VerticalAlignment="Center"/>
-
-                                        </Grid>
-                                    </Grid>
-                                </GroupBox>
-                            </Grid>
-
-                            <Grid Grid.Row="1" DataContext="{Binding SelectedValue, ElementName=channelsView}">
-                                <GroupBox Header="Channel Report" DataContext="{Binding ChannelReport}">
-                                    <Grid>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="155"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="30"/>
-                                                <RowDefinition Height="30"/>
-                                                <RowDefinition Height="30"/>
-                                                <RowDefinition Height="30"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Label Content="EnSpeakerConnect" VerticalContentAlignment="Center" HorizontalAlignment="Right"/>
-                                            <TextBox Text="{Binding EnSpeakerConnect}" Grid.Column="1" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                                            <Label Content="CustomEnSpeakerConnect" Grid.Row="1" VerticalContentAlignment="Center" HorizontalAlignment="Right"/>
-                                            <TextBox Text="{Binding CustomEnSpeakerConnect}" Grid.Column="1" Grid.Row="1" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                                            <Label Content="Reverse Polarity" Grid.Row="2" VerticalContentAlignment="Center" HorizontalAlignment="Right"/>
-                                            <CheckBox IsChecked="{Binding IsReversePolarity}" Grid.Column="1" Grid.Row="2" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                                            <Label Content="Distance" Grid.Row="3" VerticalContentAlignment="Center" HorizontalAlignment="Right"/>
-                                            <TextBox Text="{Binding Distance}" Grid.Column="1" Grid.Row="3" Margin="2,2,2,2" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </Grid>
-                                </GroupBox>
-                            </Grid>
-                        </Grid>
-
-                        <Grid Grid.Column="1">
-                            <GroupBox Header="Graph View">
-                                <Grid DataContext="{Binding SelectedValue, ElementName=channelsView}">
+                            <GroupBox Grid.Row="0" Header="Channels">
+                                <ListView Name="ChannelSetupView" ItemsSource="{Binding ChSetup, Mode=TwoWay}" SelectionChanged="ChannelSetupView_SelectionChanged" SelectionMode="Single">
+                                    <ListView.View>
+                                        <GridView>
+                                            <GridViewColumn Header="Channel" Width="auto" DisplayMemberBinding="{Binding Key}" />
+                                            <!--
+                                            <GridViewColumn Header="Setup" Width="auto" DisplayMemberBinding="{Binding Value}" />
+                                            -->
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </GroupBox>
+                            <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Height="5" />
+                            <GroupBox Grid.Row="2" Header="Info">
+                                <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="20"/>
-                                        <RowDefinition DataContext="{Binding SelectedValue, ElementName=channelsView}"/>
-                                        <RowDefinition Height="20"/>
-                                        <RowDefinition Height="20"/>
-                                        <RowDefinition Height="20"/>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="auto"/>
+                                        <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Label Content="Measurement position:" Margin="0, -3, 0, 0"/>
-                                        <CheckBox Content="1" Name="chbx1" IsChecked="True" Margin="3" Foreground="Black" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
-                                        <CheckBox Content="2" Name="chbx2" Margin="3" Foreground="Blue" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
-                                        <CheckBox Content="3" Name="chbx3" Margin="3" Foreground="Violet" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
-                                        <CheckBox Content="4" Name="chbx4" Margin="3" Foreground="Green" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
-                                        <CheckBox Content="5" Name="chbx5" Margin="3" Foreground="Orange" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
-                                        <CheckBox Content="6" Name="chbx6" Margin="3" Foreground="Red" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
-                                        <CheckBox Content="7" Name="chbx7" Margin="3" Foreground="Cyan" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
-                                        <CheckBox Content="8" Name="chbx8" Margin="3" Foreground="DeepPink" Checked="Chbx_Checked" Unchecked="Chbx_Unchecked"/>
-                                        <CheckBox Content="Select/Unselect all" Name="allChbx" Foreground="Black" Margin="30, 3, 3, 3" Checked="allChbx_Checked" Unchecked="allChbx_Unchecked"/>
-                                    </StackPanel>
-                                    <oxy:PlotView Grid.Row="1" Name="plot"/>
-                                    <StackPanel Orientation="Horizontal" Grid.Row="2" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                        <RadioButton Content="No Smoothing" Name="rbtnNo" Margin="0,0,10,0" Checked="rbtn_Checked" IsChecked="True"/>
-                                        <RadioButton Content="1/2" Name="rbtn2" Margin="0,0,10,0" Checked="rbtn_Checked"/>
-                                        <RadioButton Content="1/3" Name="rbtn3" Margin="0,0,10,0" Checked="rbtn_Checked"/>
-                                        <RadioButton Content="1/6" Name="rbtn6" Margin="0,0,10,0" Checked="rbtn_Checked"/>
-                                        <RadioButton Content="1/12" Name="rbtn12" Margin="0,0,10,0" Checked="rbtn_Checked"/>
-                                        <RadioButton Content="1/24" Name="rbtn24" Margin="0,0,10,0" Checked="rbtn_Checked"/>
-                                        <RadioButton Content="1/48" Name="rbtn48" Margin="0,0,10,0" Checked="rbtn_Checked"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Grid.Row="3" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                        <RadioButton Name="rbtnXRangeChirp" Content="0-350ms" Checked="rbtnXRange_Checked" Margin="0,0,10,0"/>
-                                        <RadioButton Name="rbtnXRangeSubwoofer" Content="10-1000Hz" Checked="rbtnXRange_Checked" Margin="0,0,10,0"/>
-                                        <RadioButton Name="rbtnXRangeFull" Content="10Hz-24kHz" IsChecked="True" Checked="rbtnXRange_Checked" Margin="0,0,10,0"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Grid.Row="4" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                        <CheckBox Content="Logarithmic Axis" Name="chbxLogarithmicAxis" IsChecked="true"  HorizontalAlignment="Left" Checked="chbxLogarithmicAxis_Checked" Unchecked="chbxLogarithmicAxis_Unchecked" />
-                                        <CheckBox Content="Stick Subwoofer" Name="chbxStickSubwoofer" IsChecked="false" HorizontalAlignment="Left" Margin="10,0,0,0" Checked="chbxStickSubwoofer_Checked" Unchecked="chbxStickSubwoofer_Unchecked" />
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0" Grid.Column="0" Content="Ifver"></Label>
+                                    <Label Grid.Row="0" Grid.Column="1" Content="{Binding Ifver}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="1" Grid.Column="0" Content="DType"></Label>
+                                    <Label Grid.Row="1" Grid.Column="1" Content="{Binding DType}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="2" Grid.Column="0" Content="Upgrade"></Label>
+                                    <Label Grid.Row="2" Grid.Column="1" Content="{Binding Upgrade}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="3" Grid.Column="0" Content="EQType"></Label>
+                                    <Label Grid.Row="3" Grid.Column="1" Content="{Binding EQType}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="4" Grid.Column="0" Content="AdC"></Label>
+                                    <Label Grid.Row="4" Grid.Column="1" Content="{Binding ADC}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="5" Grid.Column="0" Content="SysDelay"></Label>
+                                    <Label Grid.Row="5" Grid.Column="1" Content="{Binding SysDelay}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="6" Grid.Column="0" Content="CoefWaitTimeInit"></Label>
+                                    <Label Grid.Row="6" Grid.Column="1" Content="{Binding CoefWaitTime.Init}" VerticalAlignment="Center"></Label>
+                                    <Label Grid.Row="7" Grid.Column="0" Content="CoefWaitTimeFinal"></Label>
+                                    <Label Grid.Row="7" Grid.Column="1" Content="{Binding CoefWaitTime.Final}" VerticalAlignment="Center"></Label>
+                                    <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
+                                        <CheckBox Content="SWLvMatch" IsChecked="{Binding SWLvMatch}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                        <CheckBox Content="LFC" IsChecked="{Binding LFC}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                        <CheckBox Content="Auro" IsChecked="{Binding Auro}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
                                     </StackPanel>
                                 </Grid>
-
+                            </GroupBox>
+                            <GridSplitter Grid.Row="3" HorizontalAlignment="Stretch" Height="5" />
+                            <GroupBox Grid.Row="4" Header="Equalizer Display">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Top" >
+                                    <StackPanel Orientation="Vertical">
+                                        <Slider Height="150" Value="{Binding SelectedDisFil.DispData[0]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                        <Label Content="63Hz" FontSize="10"></Label>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Vertical">
+                                        <Slider Height="150" Value="{Binding SelectedDisFil.DispData[1]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                        <Label Content="125Hz" FontSize="10"></Label>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Vertical">
+                                        <Slider Height="150" Value="{Binding SelectedDisFil.DispData[2]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                        <Label Content="250Hz" FontSize="10"></Label>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Vertical">
+                                        <Slider Height="150" Value="{Binding SelectedDisFil.DispData[3]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                        <Label Content="500Hz" FontSize="10"></Label>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Vertical">
+                                        <Slider Height="150" Value="{Binding SelectedDisFil.DispData[4]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                        <Label Content="1kHz" FontSize="10"></Label>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Vertical">
+                                        <Slider Height="150" Value="{Binding SelectedDisFil.DispData[5]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                        <Label Content="2kHz" FontSize="10"></Label>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Vertical">
+                                        <Slider Height="150" Value="{Binding SelectedDisFil.DispData[6]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                        <Label Content="4kHz" FontSize="10"></Label>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Vertical">
+                                        <Slider Height="150" Value="{Binding SelectedDisFil.DispData[7]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                        <Label Content="8kHz" FontSize="10"></Label>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Vertical">
+                                        <Slider Height="150" Value="{Binding SelectedDisFil.DispData[8]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                        <Label Content="16kHz" FontSize="10"></Label>
+                                    </StackPanel>
+                                </StackPanel>
                             </GroupBox>
                         </Grid>
                     </Grid>
-                </Grid>
-            </Grid>
-        </Grid>
+                    <Grid Grid.Column="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0">
+                                <GroupBox Header="Status">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Grid.Row="0" Grid.Column="0" Content="AssignBin" ></Label>
+                                        <Label Grid.Row="0" Grid.Column="1" Content="{Binding AssignBin}" Grid.ColumnSpan="2" VerticalAlignment="Center"></Label>
+                                        <Label Grid.Row="1" Grid.Column="0" Content="AmpAssign"></Label>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AmpAssign}" VerticalAlignment="Center"></TextBlock>
+                                        <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="3" Orientation="Horizontal" >
+                                            <CheckBox Content="HPPlug" IsChecked="{Binding HPPlug}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                            <CheckBox Content="Mic" IsChecked="{Binding Mic}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                            <CheckBox Content="BTTXStatus" IsChecked="{Binding BTTXStatus}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                            <CheckBox Content="SpPreset" IsChecked="{Binding SpPreset}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center" IsEnabled="False"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </GroupBox>
+                            </Grid>
+                            <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Height="5" />
+                            <Grid Grid.Row="2">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="auto"/>
+                                        <ColumnDefinition Width="auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid Grid.Column="0">
+                                    </Grid>
+                                    <Grid Grid.Column="2">
+                                        <GroupBox Header="Data">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="auto"/>
+                                                    <RowDefinition Height="*"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
 
-        <Grid Grid.Row="2"/>
+                                                <Label Grid.Row="0" Grid.Column="0" Content="Channel Setup"></Label>
+                                                <ComboBox Grid.Row="0" Grid.Column="1" SelectedValue="{Binding SelectedChSetup}" ItemsSource="{Binding ChannelSetupList}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="0" Grid.Column="2" Content="Channel Crossover (Hz)"></Label>
+                                                <ComboBox Grid.Row="0" Grid.Column="3" SelectedValue="{Binding SelectedCrossover}" ItemsSource="{Binding CrossoverList}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="0" Grid.Column="4" Content="Channel Level (dB)"></Label>
+                                                <ComboBox Grid.Row="0" Grid.Column="5" SelectedValue="{Binding SelectedChLevel}" ItemsSource="{Binding SelectedChLevelList}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="0" Grid.Column="6" Content="Speaker Config"></Label>
+                                                <ComboBox Grid.Row="0" Grid.Column="7" SelectedValue="{Binding SelectedSpConfig}" ItemsSource="{Binding SpeakerTypeList}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="0" Grid.Column="8" Content="Speaker Distance (cm)"></Label>
+                                                <TextBox Grid.Row="0" Grid.Column="9" Text="{Binding SelectedDistance}" VerticalAlignment="Center"></TextBox>
+
+                                                <CheckBox Grid.Row="1" Grid.Column="0" Content="AudyDynVol" IsChecked="{Binding AudyDynVol}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="1" Grid.Column="2" Content="AudyDynVolSet"></Label>
+                                                <ComboBox Grid.Row="1" Grid.Column="3" SelectedValue="{Binding AudyDynSet}" ItemsSource="{Binding AudyDynSetList}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="1" Grid.Column="4" Content="AudyEqSet"></Label>
+                                                <ComboBox Grid.Row="1" Grid.Column="5" SelectedValue="{Binding AudyEqSet}" ItemsSource="{Binding AudyEqSetList}" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="1" Grid.Column="6" Content="AudyFinFlg"></Label>
+                                                <ComboBox Grid.Row="1" Grid.Column="7" SelectedValue="{Binding AudyFinFlg}" ItemsSource="{Binding AudyFinFlgList}" VerticalAlignment="Center"/>
+
+                                                <CheckBox Grid.Row="2" Grid.Column="0" Content="AudyDynEq" IsChecked="{Binding AudyDynEq}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="2" Grid.Column="2" Content="AudyDynEqRef (dB)"></Label>
+                                                <ComboBox Grid.Row="2" Grid.Column="3" SelectedValue="{Binding AudyEqRef}" ItemsSource="{Binding AudyEqRefList}" VerticalAlignment="Center"/>
+                                                <CheckBox Grid.Row="2" Grid.Column="4" Content="AudyMultEq" IsChecked="{Binding AudyMultEq}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <CheckBox Grid.Row="2" Grid.Column="5" Content="AudyLfc" IsChecked="{Binding AudyLfc}" Margin="5" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <Label Grid.Row="2" Grid.Column="6" Content="AudyLfcLev"></Label>
+                                                <ComboBox Grid.Row="2" Grid.Column="7" SelectedValue="{Binding AudyLfcLev}" ItemsSource="{Binding AudyLfcLevList}" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </GroupBox>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                            <GridSplitter Grid.Row="3" HorizontalAlignment="Stretch" Height="5" />
+                            <Grid Grid.Row="4">
+                                <GroupBox Header="Equalizer Filter">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                            <WrapPanel Orientation="Horizontal" Height="auto" VerticalAlignment="Top" Grid.ColumnSpan="2">
+                                                <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[00]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="20Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[01]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="22Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[02]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="25Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[03]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="28Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[04]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="31Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[05]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="35Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[06]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="39Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[07]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="44Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[08]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="50Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[09]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="56Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[10]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="62.5Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[11]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="70Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[12]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="79Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[13]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="88Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[14]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="100Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[15]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="111Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[16]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="125Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[17]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="140Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[18]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="157.5Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[19]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="177Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[20]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="200Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[21]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="223Hz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[22]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="250" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[23]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="280" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[24]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="315" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[25]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="354" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[26]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="400" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[27]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="445" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[28]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="500" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[29]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="561" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[30]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="630" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[31]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="707"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[32]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="800"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[33]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="890"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[34]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1kHz"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[35]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1.1kHz"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[36]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1.2kHz"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[37]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1.4kHz"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[38]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1.6kHz"  FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[39]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="1.8kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[40]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="2kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[41]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="2.2kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[42]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="2.5kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[43]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="2.8kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[44]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="3.2kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[45]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="3.6kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[46]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="4kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[47]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="4.5kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[48]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="5kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[49]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="5.6kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[50]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="6.4kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[51]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="7.2kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[52]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="8kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[53]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="9kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[54]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="10kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[55]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="11.2kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[56]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="12.8kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[57]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="14.4kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[58]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="16kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[59]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="18kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Vertical">
+                                                <Slider Height="150" Value="{Binding SelectedDisFil.FilData[60]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
+                                                <Label Content="20kHz" FontSize="10"></Label>
+                                            </StackPanel>
+                                        </WrapPanel>
+                                    </Grid>
+                                </GroupBox>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" />
+        <StatusBar Grid.Row="4">
+            <StatusBarItem>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding Serialized}" TextWrapping="Wrap"/>
+                </ScrollViewer>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Page>

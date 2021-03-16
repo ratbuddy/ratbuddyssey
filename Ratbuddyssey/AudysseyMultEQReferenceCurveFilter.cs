@@ -10,9 +10,9 @@ using MathNet.Numerics.Interpolation;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Ratbuddyssey
+namespace Audyssey
 {
-    public class ReferenceCurveFilter
+    public class AudysseyMultEQReferenceCurveFilter
     {
         readonly string high_frequency_roll_off_1_points_filename = "high_frequency_roll_off_1";
         readonly string high_frequency_roll_off_2_points_filename = "high_frequency_roll_off_2";
@@ -20,7 +20,7 @@ namespace Ratbuddyssey
         Collection<DataPoint> high_frequency_roll_off_1_points = null;
         Collection<DataPoint> high_frequency_roll_off_2_points = null;
 
-        public ReferenceCurveFilter()
+        public AudysseyMultEQReferenceCurveFilter()
         {
             high_frequency_roll_off_1_points_filename = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), high_frequency_roll_off_1_points_filename), "json");
             high_frequency_roll_off_1_points = ReadPointsFromJsonFile(high_frequency_roll_off_1_points_filename);
