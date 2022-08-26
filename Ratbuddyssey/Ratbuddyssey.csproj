@@ -147,6 +147,7 @@
     <Compile Include="AudysseyMultEQAvrTcp.cs" />
     <Compile Include="AudysseyMultEQReferenceCurveFilter.cs" />
     <Compile Include="ClassInterfaceContractResolver.cs" />
+    <Compile Include="DefinedCurves.cs" />
     <Compile Include="IPHeader.cs" />
     <Compile Include="RatbuddysseyHome.tab1.cs" />
     <Compile Include="RatbuddysseyHome.tab2.cs" />
