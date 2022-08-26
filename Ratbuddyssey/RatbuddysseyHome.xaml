@@ -234,7 +234,7 @@
                                                 <Label Grid.Row="1" Grid.Column="2" Content="Custom Distance" VerticalContentAlignment="Center" />
                                                 <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding CustomDistance}" VerticalAlignment="Center"/>
                                                 <Label Grid.Row="2" Grid.Column="2" Content="Custom Crossover" VerticalContentAlignment="Center"/>
-                                                <ComboBox Grid.Row="2" Grid.Column="3" SelectedIndex="{Binding CustomCrossoverIndex}" ItemsSource="{Binding CrossoverList}" VerticalAlignment="Center"/>
+                                                <ComboBox Name="CustomCrossoverComboBox" Grid.Row="2" Grid.Column="3" SelectedIndex="{Binding CustomCrossoverIndex}" ItemsSource="{Binding CrossoverList}" VerticalAlignment="Center"/>
                                                 <Label Grid.Row="3" Grid.Column="2" Content="Custom Speaker Type" VerticalContentAlignment="Center"/>
                                                 <ComboBox Grid.Row="3" Grid.Column="3" SelectedValue="{Binding CustomSpeakerType}" ItemsSource="{Binding SpeakerTypeList}" VerticalAlignment="Center"/>
                                                 <CheckBox Grid.Row="5" Grid.Column="0" Content="Skipped Measurement" IsChecked="{Binding IsSkipMeasurement}" VerticalAlignment="Center" Margin="5,0,0,0"/>
