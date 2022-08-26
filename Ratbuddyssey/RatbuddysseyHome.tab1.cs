@@ -347,7 +347,7 @@ namespace Ratbuddyssey
             {
                 checkBox.IsEnabled = false;
             }
-
+            SetTooleBassButton.IsEnabled = false;
             var selectedValue = channelsView.SelectedValue as DetectedChannel;
             if (selectedValue != null && selectedValue.ResponseData != null)
             {
@@ -364,7 +364,9 @@ namespace Ratbuddyssey
                     selectedChannel = (DetectedChannel)channelsView.SelectedValue;
                     DrawChart();
                 }
+                SetTooleBassButton.IsEnabled = true;
             }
+            
 
             // Un-check all the disabled check boxes
             foreach (var checkBox in checkBoxes)
