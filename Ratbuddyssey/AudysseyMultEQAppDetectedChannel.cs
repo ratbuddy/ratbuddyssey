@@ -271,7 +271,7 @@ namespace Audyssey
                 return (CustomCrossover != null);
             }
 
-            private ObservableCollection<MyKeyValuePair> ConvertStringArrayToDictionary(string[] array)
+            public static ObservableCollection<MyKeyValuePair> ConvertStringArrayToDictionary(string[] array)
             {
                 ObservableCollection<MyKeyValuePair> result = new ObservableCollection<MyKeyValuePair>();
                 foreach (string s in array)

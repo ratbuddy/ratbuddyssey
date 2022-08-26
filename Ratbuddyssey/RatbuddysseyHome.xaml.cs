@@ -28,6 +28,7 @@ namespace Ratbuddyssey
             channelsView.SelectionChanged += ChannelsView_SelectionChanged;
             plot.PreviewMouseWheel += Plot_PreviewMouseWheel;
 
+            this.SerializedTextBlock.Text = String.Empty;
             System.Net.IPHostEntry HostEntry = System.Net.Dns.GetHostEntry((System.Net.Dns.GetHostName()));
             if (HostEntry.AddressList.Length > 0)
             {
@@ -56,6 +57,8 @@ namespace Ratbuddyssey
                 Console.Write(x); Console.Write(" ");
                 Console.WriteLine("{0:N1}", fcentre);
             }
+            SetAllTooleBassButton.IsEnabled = false;
+            SetTooleBassButton.IsEnabled = false;
         }
 
         ~RatbuddysseyHome()
@@ -255,7 +258,31 @@ namespace Ratbuddyssey
                 if ((audysseyMultEQApp != null) && (tabControl.SelectedIndex == 0))
                 {
                     this.DataContext = audysseyMultEQApp;
+                    SetAllTooleBassButton.IsEnabled = true;
                 }
+            }
+        }
+
+        private void SetAllTooleBassButton_Click(object sender, RoutedEventArgs e)
+        {
+            foreach(var channel in audysseyMultEQApp.DetectedChannels)
+            {
+                var curveCollection = channel.CustomTargetCurvePointsDictionary;
+                curveCollection.Clear();
+                foreach (var element in DefinedCurves.TooleBassValues)
+                {
+                    curveCollection.Add(element);
+                }
+            }
+        }
+
+        private void SetTooleBassButton_Click(object sender, RoutedEventArgs e)
+        {
+            var curveCollection = ((DetectedChannel)channelsView.SelectedValue).CustomTargetCurvePointsDictionary;
+            curveCollection.Clear();
+            foreach (var element in DefinedCurves.TooleBassValues)
+            {
+                curveCollection.Add(element);
             }
         }
     }

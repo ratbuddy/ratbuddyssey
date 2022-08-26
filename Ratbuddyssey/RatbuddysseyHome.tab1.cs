@@ -347,7 +347,10 @@ namespace Ratbuddyssey
             {
                 checkBox.IsEnabled = false;
             }
+
             CustomCrossoverComboBox.IsEnabled = false;
+            SetTooleBassButton.IsEnabled = false;
+
             var selectedValue = channelsView.SelectedValue as DetectedChannel;
             if (selectedValue != null && selectedValue.ResponseData != null)
             {
@@ -379,7 +382,10 @@ namespace Ratbuddyssey
                 {
                     CustomCrossoverComboBox.IsEnabled = true;
                 }
+
+                SetTooleBassButton.IsEnabled = true;
             }
+            
 
             // Un-check all the disabled check boxes
             foreach (var checkBox in checkBoxes)
