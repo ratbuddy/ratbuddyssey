@@ -217,8 +217,6 @@ namespace Audyssey
                 {
                     _customCrossover = value;
                     RaisePropertyChanged("CustomCrossover");
-                    _customCrossoverIndex = CrossoverList.IndexOf(value + "0");
-                    RaisePropertyChanged("CustomCrossoverIndex");
                 }
             }
             [JsonIgnore]
@@ -232,8 +230,8 @@ namespace Audyssey
                 {
                     _customCrossoverIndex = value;
                     RaisePropertyChanged("CustomCrossoverIndex");
-                    _customCrossover = CrossoverList[value];
-                    RaisePropertyChanged("CustomCrossover");
+                    //Update the property to indicate the currently selected crossover
+                    CustomCrossover = CrossoverList[value];
                 }
             }
             #endregion
