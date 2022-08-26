@@ -101,7 +101,7 @@
                             </ListView>
                         </GroupBox>
                         <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Height="5" />
-                        <GroupBox Header="Target Curve Points" Grid.Row="2" DataContext="{Binding SelectedValue, ElementName=channelsView}">
+                        <GroupBox Header="Target Curve Points" Grid.Row="2" DataContext="{Binding SelectedValue, ElementName=channelsView}" Margin="0,50,0,0">
                             <ScrollViewer>
                                 <StackPanel>
                                     <DataGrid x:Name="dataGrid"  ItemsSource="{Binding CustomTargetCurvePointsDictionary}" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True">
@@ -126,6 +126,8 @@
                                 </StackPanel>
                             </ScrollViewer>
                         </GroupBox>
+                        <Button Name="SetAllTooleBassButton"  Content="Set All Toole+Bass" HorizontalAlignment="Left" Margin="10,5,0,0" Grid.Row="2" VerticalAlignment="Top" Width="109" Click="SetAllTooleBassButton_Click"/>
+                        <Button x:Name="SetTooleBassButton" Content="Set Toole+Bass" HorizontalAlignment="Left" Margin="10,30,0,0" Grid.Row="2" VerticalAlignment="Top" Width="91" Click="SetTooleBassButton_Click"/>
                     </Grid>
                     <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
                     <Grid Grid.Column="2">
@@ -234,7 +236,7 @@
                                                 <Label Grid.Row="1" Grid.Column="2" Content="Custom Distance" VerticalContentAlignment="Center" />
                                                 <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding CustomDistance}" VerticalAlignment="Center"/>
                                                 <Label Grid.Row="2" Grid.Column="2" Content="Custom Crossover" VerticalContentAlignment="Center"/>
-                                                <ComboBox Grid.Row="2" Grid.Column="3" SelectedIndex="{Binding CustomCrossoverIndex}" ItemsSource="{Binding CrossoverList}" VerticalAlignment="Center"/>
+                                                <ComboBox Name="CustomCrossoverComboBox" Grid.Row="2" Grid.Column="3" SelectedIndex="{Binding CustomCrossoverIndex}" ItemsSource="{Binding CrossoverList}" VerticalAlignment="Center"/>
                                                 <Label Grid.Row="3" Grid.Column="2" Content="Custom Speaker Type" VerticalContentAlignment="Center"/>
                                                 <ComboBox Grid.Row="3" Grid.Column="3" SelectedValue="{Binding CustomSpeakerType}" ItemsSource="{Binding SpeakerTypeList}" VerticalAlignment="Center"/>
                                                 <CheckBox Grid.Row="5" Grid.Column="0" Content="Skipped Measurement" IsChecked="{Binding IsSkipMeasurement}" VerticalAlignment="Center" Margin="5,0,0,0"/>
@@ -555,8 +557,8 @@
                                             <ColumnDefinition Width="auto"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                            <WrapPanel Orientation="Horizontal" Height="auto" VerticalAlignment="Top" Grid.ColumnSpan="2">
-                                                <StackPanel Orientation="Vertical">
+                                        <WrapPanel Orientation="Horizontal" Height="auto" VerticalAlignment="Top" Grid.ColumnSpan="2">
+                                            <StackPanel Orientation="Vertical">
                                                 <Slider Height="150" Value="{Binding SelectedDisFil.FilData[00]}" Minimum="-20" Maximum="10" Orientation="Vertical" TickPlacement="Both" LargeChange="5" SmallChange="1" AutoToolTipPlacement="BottomRight"/>
                                                 <Label Content="20Hz" FontSize="10"></Label>
                                             </StackPanel>
@@ -813,7 +815,7 @@
         <StatusBar Grid.Row="4">
             <StatusBarItem>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <TextBlock Text="{Binding Serialized}" TextWrapping="Wrap"/>
+                    <TextBlock Name ="SerializedTextBlock" Text="{Binding Serialized}" TextWrapping="Wrap"/>
                 </ScrollViewer>
             </StatusBarItem>
         </StatusBar>

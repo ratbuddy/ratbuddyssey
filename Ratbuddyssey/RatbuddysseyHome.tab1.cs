@@ -348,6 +348,9 @@ namespace Ratbuddyssey
                 checkBox.IsEnabled = false;
             }
 
+            CustomCrossoverComboBox.IsEnabled = false;
+            SetTooleBassButton.IsEnabled = false;
+
             var selectedValue = channelsView.SelectedValue as DetectedChannel;
             if (selectedValue != null && selectedValue.ResponseData != null)
             {
@@ -359,12 +362,30 @@ namespace Ratbuddyssey
                     checkBoxes[positionIndex].IsEnabled = true;
                 }
 
+                
+
                 if (selectedValue.ResponseData.Count > 0)
                 {
                     selectedChannel = (DetectedChannel)channelsView.SelectedValue;
+                    //Set the display of the crossover setting for this channel
+                    var selectedCrossover = selectedChannel.CrossoverList.IndexOf(selectedChannel.CustomCrossover);
+                    if (selectedCrossover >= 0)
+                        selectedChannel.CustomCrossoverIndex = selectedCrossover;
+                    else
+                        selectedChannel.CustomCrossoverIndex = 0;
+
                     DrawChart();
                 }
+
+                //Check if this is a SUB type
+                if (selectedChannel.EnChannelType != 54 && selectedChannel.EnChannelType != 42)
+                {
+                    CustomCrossoverComboBox.IsEnabled = true;
+                }
+
+                SetTooleBassButton.IsEnabled = true;
             }
+            
 
             // Un-check all the disabled check boxes
             foreach (var checkBox in checkBoxes)
