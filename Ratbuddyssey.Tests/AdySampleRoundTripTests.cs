@@ -25,7 +25,7 @@ public class AdySampleRoundTripTests
         MaxDepth = 64,
     };
 
-    [Fact]
+    [FactRequiresSample]
     public void Sample_RoundTrip_PreservesEveryFieldAndValue()
     {
         Assert.True(File.Exists(SamplePath), $"Sample file missing at {SamplePath}");
@@ -46,7 +46,7 @@ public class AdySampleRoundTripTests
         Assert.True(diff is null, diff);
     }
 
-    [Fact]
+    [FactRequiresSample]
     public void Sample_PreservesReferenceCurveFilterPerChannel()
     {
         string original = File.ReadAllText(SamplePath);
@@ -61,7 +61,7 @@ public class AdySampleRoundTripTests
         }
     }
 
-    [Fact]
+    [FactRequiresSample]
     public void NumericLevelsAcceptedAsNumberOnRead()
     {
         // AudysseyOne writes customLevel/trimAdjustment/delayAdjustment as JSON

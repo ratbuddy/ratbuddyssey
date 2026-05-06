@@ -12,6 +12,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 
 namespace Ratbuddyssey;
 
@@ -25,6 +26,11 @@ public partial class RatbuddysseyHome : Window, IDialogService
     private static readonly FilePickerFileType[] AdySaveFileTypes =
     {
         new("Audyssey calibration") { Patterns = new[] { "*.ady" } },
+    };
+
+    private static readonly FilePickerFileType[] RewTxtFileTypes =
+    {
+        new("REW text export") { Patterns = new[] { "*.txt" } },
     };
 
     private readonly MainViewModel _viewModel;
@@ -126,48 +132,47 @@ public partial class RatbuddysseyHome : Window, IDialogService
             + "Continue?");
         if (!ok) return;
 
+        // Snapshot before any destructive transform so the user can diff/restore.
+        _viewModel.CreateSnapshotBeforeChange("Before AudysseyOne post-process");
         AudysseyOnePostProcess.Apply(app);
         _viewModel.IsDirty = true;
         DrawChart();
     }
 
-    private async void OnApplyHouseCurveToSelectedClicked(object sender, RoutedEventArgs e)
+    private async void OnApplyParametricCurveSelectedClicked(object sender, RoutedEventArgs e)
     {
-        var curve = _viewModel.SelectedHouseCurve;
         var ch = SelectedDetectedChannel();
-        if (curve == null) return;
         if (ch == null)
         {
-            await MessageBoxHelper.ShowAsync(this, "Apply house curve",
-                "Select a channel in the list above first.");
+            await MessageBoxHelper.ShowAsync(this, "Apply parametric curve",
+                "Select a channel in the list first.");
             return;
         }
-        HouseCurves.ApplyTo(ch, curve);
-        _viewModel.IsDirty = true;
-        DrawChart();
+        if (_viewModel.ApplyParametricCurveToSelected(ch))
+        {
+            DrawChart();
+        }
     }
 
-    private async void OnApplyHouseCurveToAllClicked(object sender, RoutedEventArgs e)
+    private async void OnApplyParametricCurveAllClicked(object sender, RoutedEventArgs e)
     {
-        var curve = _viewModel.SelectedHouseCurve;
         var app = _viewModel.AudysseyMultEQApp;
-        if (curve == null) return;
         if (app?.DetectedChannels == null || app.DetectedChannels.Count == 0)
         {
-            await MessageBoxHelper.ShowAsync(this, "Apply house curve",
+            await MessageBoxHelper.ShowAsync(this, "Apply parametric curve",
                 "Open an .ady file first.");
             return;
         }
         bool ok = await MessageBoxHelper.ShowYesNoAsync(this,
-            "Apply house curve to all channels?",
-            $"This will overwrite the existing target curve points on every "
-            + $"channel with the '{curve.Name}' preset. Subwoofers receive only "
-            + $"the bass-shelf portion (trimmed at 200 Hz). Continue?");
+            "Apply parametric curve to all channels?",
+            "This will overwrite the existing target curve points on every channel "
+            + "with the parametric curve (preset blended with strength / bass / treble). "
+            + "A snapshot is taken first. Continue?");
         if (!ok) return;
-        int n = HouseCurves.ApplyToAll(app.DetectedChannels, curve);
-        _viewModel.IsDirty = true;
-        DrawChart();
-        Trace.TraceInformation("Applied house curve '{0}' to {1} channel(s).", curve.Name, n);
+        if (_viewModel.ApplyParametricCurveToAll())
+        {
+            DrawChart();
+        }
     }
 
     private void SetTheme(string name)
@@ -195,17 +200,22 @@ public partial class RatbuddysseyHome : Window, IDialogService
             var item = new MenuItem { Header = $"_{i + 1}  {path}" };
             item.Click += (_, __) =>
             {
-                if (System.IO.File.Exists(path))
+                // Rebuild + load happen on the next dispatcher tick so the menu's
+                // own "close on click" logic finishes first; otherwise clearing
+                // menu.Items mid-click leaves the popup open.
+                Dispatcher.UIThread.Post(() =>
                 {
-                    _viewModel.LoadFile(path);
-                    _settings.AddRecentFile(path);
+                    if (System.IO.File.Exists(path))
+                    {
+                        _viewModel.LoadFile(path);
+                        _settings.AddRecentFile(path);
+                    }
+                    else
+                    {
+                        _settings.RemoveRecentFile(path);
+                    }
                     RebuildRecentFilesMenu();
-                }
-                else
-                {
-                    _settings.RemoveRecentFile(path);
-                    RebuildRecentFilesMenu();
-                }
+                });
             };
             menu.Items.Add(item);
         }
@@ -213,9 +223,12 @@ public partial class RatbuddysseyHome : Window, IDialogService
         var clear = new MenuItem { Header = "_Clear recent files" };
         clear.Click += (_, __) =>
         {
-            _settings.Current.RecentFiles?.Clear();
-            _settings.Save();
-            RebuildRecentFilesMenu();
+            Dispatcher.UIThread.Post(() =>
+            {
+                _settings.Current.RecentFiles?.Clear();
+                _settings.Save();
+                RebuildRecentFilesMenu();
+            });
         };
         menu.Items.Add(clear);
     }
@@ -270,6 +283,12 @@ public partial class RatbuddysseyHome : Window, IDialogService
         {
             // Re-render the chart when a new .ady is loaded.
             DrawChart();
+            // Auto-select the top channel so the user gets immediate visual
+            // feedback that the load succeeded (chart populates, detail tabs
+            // bind, etc.). Deferred so the DataGrid has time to materialize
+            // its rows from the just-rebuilt FilteredChannelRows collection.
+            Avalonia.Threading.Dispatcher.UIThread.Post(SelectFirstChannelIfNeeded,
+                Avalonia.Threading.DispatcherPriority.Background);
         }
         else if (e.PropertyName == nameof(MainViewModel.CurrentFilePath))
         {
@@ -280,6 +299,24 @@ public partial class RatbuddysseyHome : Window, IDialogService
                 RebuildRecentFilesMenu();
             }
         }
+        else if (e.PropertyName == nameof(MainViewModel.ShowAveragedResponse)
+              || e.PropertyName == nameof(MainViewModel.ShowRewOverlay)
+              || e.PropertyName == nameof(MainViewModel.RewMeasurement)
+              || e.PropertyName == nameof(MainViewModel.PreviewCurvePoints))
+        {
+            // Any overlay-affecting toggle should rebuild the chart so the user
+            // sees the change immediately without a manual redraw.
+            DrawChart();
+        }
+    }
+
+    private void SelectFirstChannelIfNeeded()
+    {
+        var grid = this.FindControl<DataGrid>("channelsView");
+        if (grid == null) return;
+        if (grid.SelectedItem != null) return;
+        if (_viewModel.FilteredChannelRows.Count == 0) return;
+        grid.SelectedIndex = 0;
     }
 
     private void HandleDroppedFile(object sender, DragEventArgs e)
@@ -327,6 +364,17 @@ public partial class RatbuddysseyHome : Window, IDialogService
             FileTypeChoices = AdySaveFileTypes,
         });
         return file?.TryGetLocalPath();
+    }
+
+    async Task<string> IDialogService.OpenRewTxtFileAsync()
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Import REW measurement (.txt)",
+            AllowMultiple = false,
+            FileTypeFilter = RewTxtFileTypes,
+        });
+        return files != null && files.Count > 0 ? files[0].TryGetLocalPath() : null;
     }
 
     Task<bool> IDialogService.ConfirmReloadAsync() => MessageBoxHelper.ShowYesNoAsync(this,

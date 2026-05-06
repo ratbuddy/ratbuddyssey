@@ -27,6 +27,12 @@ public interface IDialogService
     /// <summary>Show a non-fatal error message to the user.</summary>
     Task ShowErrorAsync(string title, string message);
 
+    /// <summary>
+    /// Show the REW <c>.txt</c> import file picker. Default implementation returns null
+    /// so existing test fakes don't have to opt in.
+    /// </summary>
+    Task<string> OpenRewTxtFileAsync() => Task.FromResult<string>(null);
+
     /// <summary>Request that the desktop application shut down.</summary>
     void RequestExit();
 }

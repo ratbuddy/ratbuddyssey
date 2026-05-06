@@ -11,6 +11,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ScottPlot;
 
@@ -32,6 +33,12 @@ namespace Ratbuddyssey
 
         private DetectedChannel selectedChannel;
         private readonly List<DetectedChannel> stickyChannel = new();
+
+        // Hover crosshair: a vertical line that follows the mouse and shows
+        // the frequency under the pointer, REW-style. Re-added on every
+        // DrawChart() because the underlying Plot.Clear() wipes plottables.
+        private ScottPlot.Plottables.VerticalLine _crosshair;
+        private bool _crosshairWired;
 
         private XRange selectedXRange = XRange.Full;
         private static readonly Dictionary<XRange, AxisLimit> AxisLimits = new()
@@ -196,7 +203,19 @@ namespace Ratbuddyssey
                 }
             }
             OverlayTargetCurve();
+            OverlayAveragedResponse();
+            OverlayRewMeasurement();
+            OverlayParametricPreview();
             ApplyAxes();
+            // Sub channels and the projected target both pile content into
+            // the bass region, which is where the legend lives by default.
+            // Move it up top while viewing a sub so it doesn't sit on top of
+            // the LP rolloff and the data trace.
+            plot.Plot.Legend.Alignment = selectedChannel != null
+                && Audyssey.AudysseyHardwareQuirks.IsSubwoofer(selectedChannel)
+                ? ScottPlot.Alignment.UpperRight
+                : ScottPlot.Alignment.LowerRight;
+            AddCrosshair();
             plot.Refresh();
             Trace.TraceInformation("DrawChart: lines={0}, selectedChannel={1}, sticky={2}, measurementKeys=[{3}], xRange={4}, logX={5}",
                 linesAdded,
@@ -239,21 +258,43 @@ namespace Ratbuddyssey
         {
             if (chbxShowTargetCurve?.IsChecked != true) return;
             if (selectedXRange == XRange.Chirp) return; // target curves are frequency-domain only
-            if (selectedChannel?.CustomTargetCurvePointsDictionary == null) return;
-
-            var pts = selectedChannel.CustomTargetCurvePointsDictionary;
-            if (pts.Count == 0) return;
+            if (selectedChannel == null) return;
 
             bool logX = chbxLogarithmicAxis?.IsChecked == true;
-            var ordered = new List<(double Hz, double Db)>(pts.Count);
-            foreach (var p in pts)
+            var pts = selectedChannel.CustomTargetCurvePointsDictionary;
+
+            var ordered = new List<(double Hz, double Db)>();
+            if (pts != null)
             {
-                if (!double.TryParse(p.Key, NumberStyles.Float, CultureInfo.InvariantCulture, out double hz)) continue;
-                if (!double.TryParse(p.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double db)) continue;
-                ordered.Add((hz, db));
+                foreach (var p in pts)
+                {
+                    if (!double.TryParse(p.Key, NumberStyles.Float, CultureInfo.InvariantCulture, out double hz)) continue;
+                    if (!double.TryParse(p.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double db)) continue;
+                    ordered.Add((hz, db));
+                }
+                ordered.Sort((a, b) => a.Hz.CompareTo(b.Hz));
             }
-            if (ordered.Count == 0) return;
-            ordered.Sort((a, b) => a.Hz.CompareTo(b.Hz));
+
+            bool hasUserPoints = ordered.Count >= 1;
+            if (ordered.Count == 1)
+            {
+                // A single user point is ambiguous on its own; extend it to the
+                // chart edges as a horizontal target so the projected dip has
+                // a curve to ride on and the line is actually visible.
+                var only = ordered[0];
+                var limits1 = AxisLimits[selectedXRange];
+                ordered.Insert(0, (Math.Min(limits1.XMin, only.Hz), only.Db));
+                ordered.Add((Math.Max(limits1.XMax, only.Hz), only.Db));
+            }
+            else if (ordered.Count == 0)
+            {
+                // No user points: stand in a flat 0 dB target so the user
+                // always sees a target line (and so midrange-comp / rolloff
+                // overlays have a baseline to modulate).
+                var limits0 = AxisLimits[selectedXRange];
+                ordered.Add((limits0.XMin, 0.0));
+                ordered.Add((limits0.XMax, 0.0));
+            }
 
             var xs = new double[ordered.Count];
             var ys = new double[ordered.Count];
@@ -269,9 +310,11 @@ namespace Ratbuddyssey
             var line = plot.Plot.Add.Scatter(xs, ys);
             line.Color = TargetCurveColor;
             line.LineWidth = 2.5f;
-            line.MarkerSize = 7;
+            // Hide markers on the synthetic flat baseline — they'd imply
+            // editable points the user didn't actually create.
+            line.MarkerSize = hasUserPoints ? 7 : 0;
             line.MarkerShape = ScottPlot.MarkerShape.FilledCircle;
-            line.LegendText = "Target curve";
+            line.LegendText = hasUserPoints ? "Target curve" : "Target curve (flat)";
 
             OverlayProjectedTargetCurve(ordered, logX);
         }
@@ -297,7 +340,16 @@ namespace Ratbuddyssey
             // effectively "no cutoff" — don't bother with the projected line
             // unless midrange comp is on or the rolloff is set lower.
             bool hasRolloff = rolloff.HasValue && rolloff.Value > 0m && (double)rolloff.Value < 19500.0;
-            if (!midrangeComp && !hasRolloff) return;
+
+            // Bass management: speakers marked "Small" with a numeric crossover
+            // get a high-pass at fc; subs get a low-pass at the highest fc among
+            // the bass-managed speakers (so the visible target rolloff matches
+            // what the AVR is actually summing into the LFE bus).
+            bool isSub = Audyssey.AudysseyHardwareQuirks.IsSubwoofer(selectedChannel);
+            double crossoverHz = ResolveCrossoverHz(selectedChannel, isSub);
+            bool hasCrossover = crossoverHz > 0;
+
+            if (!midrangeComp && !hasRolloff && !hasCrossover) return;
 
             var limits = AxisLimits[selectedXRange];
             double sampleLoHz = Math.Max(limits.XMin, userPoints[0].Hz);
@@ -322,6 +374,10 @@ namespace Ratbuddyssey
                     double z = (Math.Log10(hz) - Math.Log10(MidrangeCompCenterHz)) / MidrangeCompLogSigma;
                     baseDb -= MidrangeCompDepthDb * Math.Exp(-0.5 * z * z);
                 }
+                if (hasCrossover)
+                {
+                    baseDb += CrossoverFilterDb(hz, crossoverHz, isSub);
+                }
                 xs[i] = logX ? Math.Log10(hz) : hz;
                 ys[i] = baseDb + NormalizeToReferenceDb;
             }
@@ -331,7 +387,7 @@ namespace Ratbuddyssey
             projected.LineWidth = 2.0f;
             projected.LinePattern = ScottPlot.LinePattern.Dashed;
             projected.MarkerSize = 0;
-            projected.LegendText = BuildProjectedLegend(midrangeComp, hasRolloff, rolloff);
+            projected.LegendText = BuildProjectedLegend(midrangeComp, hasRolloff, rolloff, hasCrossover, crossoverHz, isSub);
 
             // Vertical marker at the rolloff so the user can see where MultEQ
             // stops correcting. Drawn after the projected line so it sits on top.
@@ -347,16 +403,85 @@ namespace Ratbuddyssey
                     vline.LinePattern = ScottPlot.LinePattern.Dotted;
                     vline.Text = $"correction stops at {rolloffHz:N0} Hz";
                     vline.LabelOppositeAxis = false;
+                    // The label anchors at the line and grows outward; flip the
+                    // alignment so it stays on-screen when the marker sits near
+                    // an edge of the visible X-range.
+                    double xLo = logX ? Math.Log10(limits.XMin) : limits.XMin;
+                    double xHi = logX ? Math.Log10(limits.XMax) : limits.XMax;
+                    double frac = (xMark - xLo) / (xHi - xLo);
+                    vline.LabelAlignment = frac > 0.7
+                        ? ScottPlot.Alignment.MiddleRight
+                        : ScottPlot.Alignment.MiddleLeft;
                 }
             }
         }
 
-        private static string BuildProjectedLegend(bool midrangeComp, bool hasRolloff, decimal? rolloff)
+        /// <summary>
+        /// Returns the crossover frequency (Hz) that should be reflected in
+        /// the projected target curve, or 0 when bass-management isn't being
+        /// applied. Non-sub channels use their own <c>CustomCrossover</c> when
+        /// set to "Small". Sub channels use the highest crossover among any
+        /// bass-managed speaker (they receive the summed low-pass content).
+        /// </summary>
+        private double ResolveCrossoverHz(DetectedChannel channel, bool isSub)
         {
-            if (midrangeComp && hasRolloff)
-                return $"Projected (mid-comp + rolloff @ {rolloff:N0} Hz)";
-            if (midrangeComp) return "Projected (with midrange comp)";
-            return $"Projected (rolloff @ {rolloff:N0} Hz)";
+            if (!isSub)
+            {
+                // Only Small ("S") channels are high-passed. Large ("L") plays
+                // full-range, " " is unconfigured, "E" is a non-bass-managed
+                // variant we don't want to roll off.
+                if (!string.Equals(channel.CustomSpeakerType, "S", StringComparison.OrdinalIgnoreCase))
+                    return 0;
+                return TryParseHz(channel.CustomCrossover);
+            }
+
+            // Sub: walk every other channel and pick the highest crossover
+            // that's actually being routed to the LFE bus.
+            var app = _viewModel?.AudysseyMultEQApp;
+            if (app?.DetectedChannels == null) return 0;
+            double highest = 0;
+            foreach (var ch in app.DetectedChannels)
+            {
+                if (ch == null || Audyssey.AudysseyHardwareQuirks.IsSubwoofer(ch)) continue;
+                if (!string.Equals(ch.CustomSpeakerType, "S", StringComparison.OrdinalIgnoreCase)) continue;
+                double xo = TryParseHz(ch.CustomCrossover);
+                if (xo > highest) highest = xo;
+            }
+            return highest;
+        }
+
+        private static double TryParseHz(string s) =>
+            decimal.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal d) && d > 0
+                ? (double)d
+                : 0;
+
+        /// <summary>
+        /// 4th-order Linkwitz-Riley filter response at frequency <paramref name="hz"/>
+        /// for crossover <paramref name="fc"/>. LR4 = two cascaded 2nd-order
+        /// Butterworth sections, so |H|² for the high-pass at f is
+        /// (f/fc)^8 / (1 + (f/fc)^8); the dB form simplifies to
+        /// −10·log10(1 + (fc/f)^8). The low-pass is the same with f and fc
+        /// swapped. Both pass-through 0 dB at the crossover (sum = 0 dB).
+        /// </summary>
+        private static double CrossoverFilterDb(double hz, double fc, bool lowPass)
+        {
+            if (hz <= 0 || fc <= 0) return 0;
+            double ratio = lowPass ? hz / fc : fc / hz;
+            double r8 = Math.Pow(ratio, 8);
+            return -10.0 * Math.Log10(1.0 + r8);
+        }
+
+        private static string BuildProjectedLegend(bool midrangeComp, bool hasRolloff, decimal? rolloff,
+                                                   bool hasCrossover, double crossoverHz, bool isSub)
+        {
+            var parts = new List<string>(3);
+            if (hasCrossover)
+                parts.Add($"{(isSub ? "LP" : "HP")} @ {crossoverHz:N0} Hz");
+            if (midrangeComp) parts.Add("mid-comp");
+            if (hasRolloff) parts.Add($"rolloff @ {rolloff:N0} Hz");
+            return parts.Count == 0
+                ? "Projected"
+                : "Projected (" + string.Join(" + ", parts) + ")";
         }
 
         /// <summary>
@@ -383,12 +508,268 @@ namespace Ratbuddyssey
 
         private void ShowTargetCurve_Changed(object sender, RoutedEventArgs e) => DrawChart();
 
-        // Re-renders the chart when the user toggles MidrangeCompensation or
-        // edits FrequencyRangeRolloff so the dashed "projected" line updates
-        // live. Wired to both the checkbox's IsCheckedChanged and the textbox's
-        // LostFocus so we don't redraw on every keystroke (which would also
-        // trigger before the binding has committed the value).
-        private void OnTargetProjectionInputChanged(object sender, RoutedEventArgs e) => DrawChart();
+        // -- Modernization overlays ------------------------------------------
+
+        // Olive-green: distinct from Wong palette and the violet target curve.
+        private static readonly ScottPlot.Color AveragedResponseColor = new(33, 150, 83);
+
+        // Burnt orange: pre-imported REW exports usually live alongside the
+        // Audyssey traces, so we want a hue that's clearly "not Audyssey".
+        private static readonly ScottPlot.Color RewOverlayColor = new(255, 112, 67);
+
+        // Slightly darker violet than the editable target so a parametric
+        // preview reads as "candidate target" without being confused for the
+        // user-curve overlay above it.
+        private static readonly ScottPlot.Color ParametricPreviewColor = new(123, 31, 162);
+
+        /// <summary>
+        /// When the user has the "Show averaged response" option enabled, render
+        /// an extra spectrum trace that is the *incoherent* (magnitude-domain)
+        /// average of every checked mic position for the selected channel.
+        ///
+        /// We deliberately average the per-position magnitude spectra rather
+        /// than calling <c>ResponseAveraging.GetAveragedChannelResponse</c>
+        /// (time-domain coherent average): coherent averaging across mic
+        /// positions causes phase cancellation that depresses the midband,
+        /// which our 75 dB midband normalization then over-corrects, putting
+        /// the average visibly above the per-position traces. Magnitude
+        /// averaging is the standard "spatial average" curve and lines up
+        /// with the individual traces the way users expect.
+        /// </summary>
+        private void OverlayAveragedResponse()
+        {
+            if (_viewModel?.ShowAveragedResponse != true) return;
+            if (selectedChannel == null) return;
+            if (selectedXRange == XRange.Chirp) return; // only meaningful in frequency domain
+
+            // Use whatever the user currently has checked; fall back to every
+            // available position when nothing is selected so the overlay still
+            // renders something sensible.
+            var keys = measurementKeys.Count > 0
+                ? new List<int>(measurementKeys)
+                : new List<int>();
+            if (keys.Count == 0 && selectedChannel.ResponseData != null)
+            {
+                foreach (var k in selectedChannel.ResponseData.Keys)
+                {
+                    if (int.TryParse(k, NumberStyles.Integer, CultureInfo.InvariantCulture, out int idx))
+                        keys.Add(idx);
+                }
+            }
+            if (keys.Count == 0) return;
+
+            int half = 0;
+            double[] sumMag = null;
+            double[] freqs = null;
+            int contributions = 0;
+
+            foreach (int k in keys)
+            {
+                string key = k.ToString(CultureInfo.InvariantCulture);
+                if (selectedChannel.ResponseData == null
+                    || !selectedChannel.ResponseData.TryGetValue(key, out var values)
+                    || values == null || values.Length == 0)
+                {
+                    continue;
+                }
+
+                var (cValues, fxs) = ChartDataPrep.BuildSpectrumInput(values);
+                MathNet.Numerics.IntegralTransforms.Fourier.Forward(cValues);
+
+                if (sumMag == null)
+                {
+                    half = cValues.Length / 2;
+                    if (half == 0) return;
+                    sumMag = new double[half];
+                    freqs = fxs;
+                }
+                int n = Math.Min(half, cValues.Length / 2);
+                for (int i = 0; i < n; i++) sumMag[i] += cValues[i].Magnitude;
+                contributions++;
+            }
+            if (sumMag == null || contributions == 0) return;
+
+            double inv = 1.0 / contributions;
+            for (int i = 0; i < half; i++) sumMag[i] *= inv;
+
+            if (smoothingFactor != 0)
+            {
+                LinSpacedFracOctaveSmooth(smoothingFactor, ref sumMag, 1, 1d / 48);
+            }
+
+            double offset = ComputeMidbandOffsetDb(sumMag, freqs, selectedChannel);
+            bool logX = chbxLogarithmicAxis?.IsChecked == true;
+            var limits = AxisLimits[selectedXRange];
+
+            var xs = new double[half];
+            var ys = new double[half];
+            for (int i = 0; i < half; i++)
+            {
+                double f = freqs[i];
+                xs[i] = logX ? Math.Log10(Math.Max(1e-9, f)) : f;
+                ys[i] = limits.YShift + 20 * Math.Log10(Math.Max(1e-30, sumMag[i])) + offset;
+            }
+
+            var line = plot.Plot.Add.Scatter(xs, ys);
+            line.Color = AveragedResponseColor;
+            line.LineWidth = 2.5f;
+            line.MarkerSize = 0;
+            line.LegendText = $"Averaged response ({contributions} pos.)";
+        }
+
+        /// <summary>
+        /// Renders the imported REW measurement as an SPL overlay. We treat REW
+        /// values as already calibrated dB SPL: no normalization to the 75 dB
+        /// reference, since the whole point of the import is to compare against
+        /// a known measurement.
+        /// </summary>
+        private void OverlayRewMeasurement()
+        {
+            if (_viewModel?.ShowRewOverlay != true) return;
+            if (selectedXRange == XRange.Chirp) return;
+            var meas = _viewModel.RewMeasurement;
+            if (meas?.Points == null || meas.Points.Count == 0) return;
+
+            bool logX = chbxLogarithmicAxis?.IsChecked == true;
+            var (rxs, rys) = ChartDataPrep.BuildRewOverlaySeries(meas);
+            if (logX)
+            {
+                for (int i = 0; i < rxs.Length; i++) rxs[i] = Math.Log10(Math.Max(1e-9, rxs[i]));
+            }
+
+            var line = plot.Plot.Add.Scatter(rxs, rys);
+            line.Color = RewOverlayColor;
+            line.LineWidth = 2.0f;
+            line.MarkerSize = 0;
+            line.LinePattern = ScottPlot.LinePattern.Dashed;
+            line.LegendText = string.IsNullOrEmpty(meas.Name) ? "REW overlay" : $"REW: {meas.Name}";
+        }
+
+        /// <summary>
+        /// Overlays a parametric-curve preview as a dashed series. Anchored to the
+        /// same 75 dB midband reference as the user target so the preview lines up
+        /// with the measurement traces.
+        /// </summary>
+        private void OverlayParametricPreview()
+        {
+            var preview = _viewModel?.PreviewCurvePoints;
+            if (preview == null || preview.Count == 0) return;
+            if (selectedXRange == XRange.Chirp) return;
+
+            bool logX = chbxLogarithmicAxis?.IsChecked == true;
+            var xs = new double[preview.Count];
+            var ys = new double[preview.Count];
+            for (int i = 0; i < preview.Count; i++)
+            {
+                double hz = preview[i].FrequencyHz;
+                xs[i] = logX ? Math.Log10(Math.Max(1e-9, hz)) : hz;
+                ys[i] = preview[i].GainDb + NormalizeToReferenceDb;
+            }
+
+            var line = plot.Plot.Add.Scatter(xs, ys);
+            line.Color = ParametricPreviewColor;
+            line.LineWidth = 2.0f;
+            line.LinePattern = ScottPlot.LinePattern.Dotted;
+            line.MarkerSize = 5;
+            line.MarkerShape = ScottPlot.MarkerShape.OpenCircle;
+            line.LegendText = "Parametric preview";
+        }
+
+        // -- end overlays ----------------------------------------------------
+
+        // Re-renders the chart when the user toggles MidrangeCompensation,
+        // changes the crossover/speaker-type combos, or edits FrequencyRangeRolloff
+        // so the dashed "projected" line updates live. Deferred via Dispatcher
+        // because Avalonia raises IsCheckedChanged / SelectionChanged before the
+        // two-way binding has finished writing the new value back into the model;
+        // calling DrawChart synchronously would render with the *previous* state
+        // and require a second toggle to catch up.
+        private void OnTargetProjectionInputChanged(object sender, RoutedEventArgs e) =>
+            Dispatcher.UIThread.Post(DrawChart, DispatcherPriority.Background);
+
+        /// <summary>
+        /// Adds a hidden vertical-line plottable that the pointer-move handler
+        /// will reposition + reveal as the user mouses over the graph. Called
+        /// at the tail of DrawChart because Plot.Clear wipes everything; the
+        /// pointer handlers are wired exactly once on first draw.
+        /// </summary>
+        private void AddCrosshair()
+        {
+            if (plot == null) return;
+            _crosshair = plot.Plot.Add.VerticalLine(0);
+            _crosshair.IsVisible = false;
+            _crosshair.Color = new ScottPlot.Color(120, 120, 120, 200);
+            _crosshair.LineWidth = 1f;
+            _crosshair.LinePattern = ScottPlot.LinePattern.Dotted;
+            _crosshair.LabelOppositeAxis = false;
+            _crosshair.LabelAlignment = ScottPlot.Alignment.LowerLeft;
+            _crosshair.ExcludeFromLegend = true;
+
+            if (_crosshairWired) return;
+            _crosshairWired = true;
+            plot.PointerMoved += OnPlotPointerMoved;
+            plot.PointerExited += OnPlotPointerExited;
+        }
+
+        private void OnPlotPointerMoved(object sender, Avalonia.Input.PointerEventArgs e)
+        {
+            if (plot == null || _crosshair == null) return;
+            var pos = e.GetPosition(plot);
+            // Avalonia delivers DIPs; ScottPlot 5 already accounts for DPI in
+            // GetCoordinates so we can pass the raw point through.
+            var px = new ScottPlot.Pixel((float)pos.X, (float)pos.Y);
+            var coord = plot.Plot.GetCoordinates(px);
+
+            bool isChirp = selectedXRange == XRange.Chirp;
+            bool logX = chbxLogarithmicAxis?.IsChecked == true && !isChirp;
+
+            // Convert the X axis position back to Hz for the label. When the
+            // axis is in log10 space the plottable's Position is log10(Hz);
+            // otherwise it's the raw axis unit (Hz, or seconds for chirp).
+            double xAxis = coord.X;
+            double labelHz = logX ? Math.Pow(10, xAxis) : xAxis;
+
+            var limits = AxisLimits[selectedXRange];
+            double xLo = logX ? Math.Log10(limits.XMin) : limits.XMin;
+            double xHi = logX ? Math.Log10(limits.XMax) : limits.XMax;
+            if (xAxis < xLo || xAxis > xHi || coord.Y < limits.YMin || coord.Y > limits.YMax)
+            {
+                if (_crosshair.IsVisible)
+                {
+                    _crosshair.IsVisible = false;
+                    plot.Refresh();
+                }
+                return;
+            }
+
+            _crosshair.Position = xAxis;
+            _crosshair.IsVisible = true;
+            // Use a dedicated kHz/Hz format for the hover label rather than
+            // the compact axis-tick FormatHz ("1k") so the readout is clear.
+            string hzLabel = labelHz >= 1000
+                ? $"{labelHz / 1000.0:0.##} kHz"
+                : $"{labelHz:0.#} Hz";
+            _crosshair.Text = isChirp
+                ? $"{labelHz * 1000.0:N1} ms, {coord.Y:N3}"
+                : $"{hzLabel}, {coord.Y:N1} dB";
+            // Keep the label inside the plot when the cursor is near the right
+            // edge — same trick as the rolloff marker.
+            double frac = (xAxis - xLo) / (xHi - xLo);
+            _crosshair.LabelAlignment = frac > 0.7
+                ? ScottPlot.Alignment.LowerRight
+                : ScottPlot.Alignment.LowerLeft;
+            plot.Refresh();
+        }
+
+        private void OnPlotPointerExited(object sender, Avalonia.Input.PointerEventArgs e)
+        {
+            if (_crosshair == null) return;
+            if (_crosshair.IsVisible)
+            {
+                _crosshair.IsVisible = false;
+                plot.Refresh();
+            }
+        }
 
         private void ApplyAxes()
         {
@@ -407,14 +788,11 @@ namespace Ratbuddyssey
             double xLo, xHi, yLo, yHi;
             if (logX)
             {
-                var minorTickGen = new ScottPlot.TickGenerators.LogMinorTickGenerator();
-                var tickGen = new ScottPlot.TickGenerators.NumericAutomatic
-                {
-                    MinorTickGenerator = minorTickGen,
-                    IntegerTicksOnly = true,
-                    LabelFormatter = v => Math.Pow(10, v).ToString("N0", CultureInfo.InvariantCulture)
-                };
-                plot.Plot.Axes.Bottom.TickGenerator = tickGen;
+                // Hand-rolled ticks so the user gets readable density across
+                // each decade: labeled majors at the decade boundaries (plus
+                // the chart endpoints), unlabeled minors at every 10/100/1000
+                // step within the visible range.
+                plot.Plot.Axes.Bottom.TickGenerator = BuildLogFrequencyTicks(limits.XMin, limits.XMax);
                 xLo = Math.Log10(Math.Max(1, limits.XMin));
                 xHi = Math.Log10(limits.XMax);
                 yLo = limits.YMin + limits.YShift;
@@ -432,6 +810,65 @@ namespace Ratbuddyssey
             Trace.TraceInformation("ApplyAxes: range={0}, logX={1}, limits=[{2:G4}..{3:G4}, {4:G4}..{5:G4}]",
                 selectedXRange, logX, xLo, xHi, yLo, yHi);
         }
+
+        /// <summary>
+        /// Builds a log-frequency tick generator with denser, more readable
+        /// gridlines than ScottPlot's automatic decade-only default. Major
+        /// (labeled) ticks land on each decade plus the chart endpoints;
+        /// minor (unlabeled) ticks land at every 10 Hz step in 10–100, every
+        /// 100 Hz in 100–1000, every 1 kHz in 1k–10k, and every 1 kHz again
+        /// in 10k–20k. All positions are stored in log10 space because
+        /// ApplyAxes runs the axis with logX coordinates.
+        /// </summary>
+        private static ScottPlot.TickGenerators.NumericManual BuildLogFrequencyTicks(double xMinHz, double xMaxHz)
+        {
+            var majors = new List<ScottPlot.Tick>();
+            var minors = new List<ScottPlot.Tick>();
+
+            // Decade-boundary majors (10, 100, 1000, 10000) that fall inside
+            // the visible range.
+            for (double dec = 10; dec <= 100000; dec *= 10)
+            {
+                if (dec >= xMinHz && dec <= xMaxHz)
+                    majors.Add(new ScottPlot.Tick(Math.Log10(dec), FormatHz(dec), isMajor: true));
+            }
+
+            // Endpoint majors (e.g. 20 / 20000) so the user can see exactly
+            // where the chart starts and ends. Skip if they coincide with a
+            // decade we already labeled.
+            void AddEndpoint(double hz)
+            {
+                if (hz <= 0) return;
+                double pos = Math.Log10(hz);
+                if (majors.Any(t => Math.Abs(t.Position - pos) < 1e-6)) return;
+                majors.Add(new ScottPlot.Tick(pos, FormatHz(hz), isMajor: true));
+            }
+            AddEndpoint(xMinHz);
+            AddEndpoint(xMaxHz);
+
+            // Minor ticks within each decade.
+            void AddMinors(double from, double to, double step)
+            {
+                for (double v = from; v <= to + step * 0.5; v += step)
+                {
+                    if (v < xMinHz || v > xMaxHz) continue;
+                    if (majors.Any(t => Math.Abs(t.Position - Math.Log10(v)) < 1e-6)) continue;
+                    minors.Add(new ScottPlot.Tick(Math.Log10(v), string.Empty, isMajor: false));
+                }
+            }
+            AddMinors(10, 100, 10);
+            AddMinors(100, 1000, 100);
+            AddMinors(1000, 10000, 1000);
+            AddMinors(10000, 20000, 1000);
+
+            var all = majors.Concat(minors).OrderBy(t => t.Position).ToArray();
+            return new ScottPlot.TickGenerators.NumericManual(all);
+        }
+
+        private static string FormatHz(double hz) =>
+            hz >= 1000
+                ? (hz / 1000).ToString("0.###", CultureInfo.InvariantCulture) + "k"
+                : hz.ToString("0", CultureInfo.InvariantCulture);
 
         private void PlotLine(DetectedChannel channel, bool secondaryChannel = false)
         {
@@ -687,6 +1124,7 @@ namespace Ratbuddyssey
                         selectedChannel = sel;
                         RefreshStickyChannels();
                         AutoSelectXRangeForChannel(sel);
+                        AutoSelectSmoothingForChannel(sel);
                         DrawChart();
                     }
                     else
@@ -790,6 +1228,24 @@ namespace Ratbuddyssey
             _suppressXRangeRedraw = true;
             try { target.IsChecked = true; } // updates selectedXRange via XRangeChanged
             finally { _suppressXRangeRedraw = false; }
+        }
+
+        /// <summary>
+        /// Subs benefit from heavy fractional-octave smoothing (1/48) so room
+        /// modes don't drown out the broad shape; mains read better at 1/12.
+        /// Mirrors <see cref="AutoSelectXRangeForChannel"/>: switch on channel
+        /// change unless the user is in the impulse-response view.
+        /// </summary>
+        private void AutoSelectSmoothingForChannel(DetectedChannel channel)
+        {
+            if (channel == null) return;
+            if (selectedXRange == XRange.Chirp) return;
+
+            var target = Audyssey.AudysseyHardwareQuirks.IsSubwoofer(channel)
+                ? rbSmoothing48
+                : rbSmoothing12;
+            if (target == null || target.IsChecked == true) return;
+            target.IsChecked = true; // RadioButtonSmoothingFactorChanged updates smoothingFactor
         }
 
         private void chbxLogarithmicAxis_Changed(object sender, RoutedEventArgs e) => DrawChart();

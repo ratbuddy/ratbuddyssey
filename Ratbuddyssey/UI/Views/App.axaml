@@ -19,21 +19,21 @@
                   BorderThickness="1"
                   CornerRadius="6"
                   Padding="0"
-                  Margin="3">
+                  Margin="2">
             <DockPanel>
               <Border DockPanel.Dock="Top"
                       Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                       BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                       BorderThickness="0,0,0,1"
-                      Padding="10,6">
+                      Padding="8,4">
                 <ContentPresenter Content="{TemplateBinding Header}"
                                   FontWeight="SemiBold"
-                                  FontSize="13"
+                                  FontSize="12"
                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
               </Border>
               <ContentPresenter Content="{TemplateBinding Content}"
                                 ContentTemplate="{TemplateBinding ContentTemplate}"
-                                Margin="6" />
+                                Margin="4" />
             </DockPanel>
           </Border>
         </ControlTemplate>
@@ -42,14 +42,14 @@
 
     <!-- Form controls: consistent height + a touch more breathing room. -->
     <Style Selector="TextBox">
-      <Setter Property="MinHeight" Value="30" />
-      <Setter Property="Padding" Value="6,4" />
+      <Setter Property="MinHeight" Value="26" />
+      <Setter Property="Padding" Value="6,3" />
     </Style>
     <Style Selector="ComboBox">
-      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="MinHeight" Value="26" />
     </Style>
     <Style Selector="CheckBox">
-      <Setter Property="Margin" Value="0,2" />
+      <Setter Property="Margin" Value="0,1" />
     </Style>
 
     <!-- TabControl: stronger header strip, clearly clickable pill-style tabs
@@ -59,8 +59,8 @@
     </Style>
     <Style Selector="TabControl > TabItem">
       <Setter Property="FontSize" Value="13" />
-      <Setter Property="Padding" Value="14,8" />
-      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="12,5" />
+      <Setter Property="MinHeight" Value="30" />
       <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
       <Setter Property="Cursor" Value="Hand" />
     </Style>
@@ -75,7 +75,14 @@
 
     <!-- Menu items: a hair more padding so the menu bar doesn't feel cramped. -->
     <Style Selector="Menu > MenuItem">
-      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="Padding" Value="8,4" />
+    </Style>
+
+    <!-- Field card label: small caption above each value. -->
+    <Style Selector="TextBlock.fieldLabel">
+      <Setter Property="Margin" Value="2,0" />
+      <Setter Property="Opacity" Value="0.75" />
+      <Setter Property="FontSize" Value="11" />
     </Style>
 
     <!-- DataGrid: lighter alternating rows + clearer selection highlight. -->

@@ -30,7 +30,12 @@
   <ItemGroup>
     <None Include="..\high_frequency_roll_off_1.json" Link="high_frequency_roll_off_1.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\high_frequency_roll_off_2.json" Link="high_frequency_roll_off_2.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\sample_ady\tv36ipal v1.ady" Link="sample_ady\tv36ipal v1.ady" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The sample .ady is gitignored (real-world calibration data). When absent
+         (CI, fresh clones) the dependent tests skip via [FactRequiresSample]. -->
+    <None Include="..\sample_ady\tv36ipal v1.ady"
+          Link="sample_ady\tv36ipal v1.ady"
+          CopyToOutputDirectory="PreserveNewest"
+          Condition="Exists('..\sample_ady\tv36ipal v1.ady')" />
   </ItemGroup>
 
 </Project>

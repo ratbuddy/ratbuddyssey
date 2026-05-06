@@ -99,6 +99,28 @@ namespace Ratbuddyssey
         };
 
         /// <summary>
+        /// Returns the unmodified base preset points for <paramref name="curve"/>.
+        /// Existing presets are returned by reference and must not be mutated.
+        /// </summary>
+        public static IReadOnlyList<Point> GetPreset(HouseCurve curve)
+        {
+            if (curve == null) return Array.Empty<Point>();
+            return curve.Points;
+        }
+
+        /// <summary>
+        /// Returns a new list of points = preset shaped by <paramref name="settings"/>
+        /// (bass shelf, treble tilt, strength blend). The preset is not mutated.
+        /// </summary>
+        public static IReadOnlyList<Point> GetPresetWithSettings(
+            HouseCurve curve,
+            Audio.Curves.CurveSettings settings)
+        {
+            if (curve == null) return Array.Empty<Point>();
+            return Audio.Curves.CurveModifier.ApplyCurveSettings(curve.Points, settings);
+        }
+
+        /// <summary>
         /// Subwoofer channels are low-passed by Audyssey at or below ~120 Hz,
         /// so any target points above this frequency are meaningless on them.
         /// We trim sub curves at 200 Hz (a comfortable margin above the highest

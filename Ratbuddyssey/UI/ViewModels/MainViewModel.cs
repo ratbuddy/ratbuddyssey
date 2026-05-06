@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Ratbuddyssey.Snapshots;
 
 namespace Ratbuddyssey;
 
@@ -89,15 +90,59 @@ public partial class MainViewModel : ObservableObject
     private decimal _subwooferTrimFloorDb;
 
     /// <summary>Catalogue of "house curve" presets shown in the Target Curve Points section.</summary>
+    /// <remarks>
+    /// Intentionally an instance property so XAML's <c>{Binding HouseCurves}</c> path resolves
+    /// against the data context. Marking it static would silence CA1822 but break the binding.
+    /// </remarks>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static",
+        Justification = "Bound from XAML; must be an instance member for binding resolution.")]
     public IReadOnlyList<Ratbuddyssey.HouseCurves.HouseCurve> HouseCurves => Ratbuddyssey.HouseCurves.All;
 
     /// <summary>Currently-selected preset; defaults to the flat reference so applying it is a safe no-op.</summary>
     [ObservableProperty]
     private Ratbuddyssey.HouseCurves.HouseCurve _selectedHouseCurve = Ratbuddyssey.HouseCurves.All[0];
 
+    /// <summary>
+    /// In-session non-destructive history of the loaded calibration. The view model
+    /// auto-creates a snapshot on every successful file load ("Original") and exposes
+    /// <see cref="CreateSnapshotBeforeChange"/> for callers that are about to mutate
+    /// the model destructively (apply Audyssey post-process, apply house curve, etc.).
+    /// </summary>
+    public CalibrationSnapshotManager Snapshots { get; } = new CalibrationSnapshotManager();
+
     public MainViewModel(IDialogService dialogs)
     {
         _dialogs = dialogs;
+    }
+
+    /// <summary>
+    /// Captures the current model as a snapshot before a destructive edit so the
+    /// user can later diff or restore. No-op when no model is loaded.
+    /// Returns the new snapshot (or null).
+    /// </summary>
+    public CalibrationSnapshot CreateSnapshotBeforeChange(string description)
+    {
+        if (AudysseyMultEQApp == null) return null;
+        var snap = Snapshots.CreateSnapshot(description, AudysseyMultEQApp);
+        RefreshSnapshotItems();
+        Snapshots.SaveSidecar(CurrentFilePath);
+        return snap;
+    }
+
+    /// <summary>
+    /// Reverts the live model to the contents of the given snapshot. Uses a fresh
+    /// deep clone so mutating the restored model later doesn't poison the snapshot.
+    /// Returns true on success.
+    /// </summary>
+    public bool RestoreSnapshot(Guid snapshotId)
+    {
+        var restored = Snapshots.RestoreSnapshot(snapshotId);
+        if (restored == null) return false;
+        NormalizeModel(restored);
+        AudysseyMultEQApp = restored;
+        // Mark dirty: the on-disk file no longer matches the (now reverted) model.
+        IsDirty = true;
+        return true;
     }
 
     partial void OnAudysseyMultEQAppChanged(AudysseyMultEQApp oldValue, AudysseyMultEQApp newValue)
@@ -107,6 +152,9 @@ public partial class MainViewModel : ObservableObject
         RefreshHardwareQuirks();
         RebuildChannelRows();
         UpdateWindowTitle();
+        RunAnalysis();
+        // Clear any stale preview-curve overlay when the model swaps under us.
+        ClearPreviewCurveCommand.Execute(null);
     }
 
     private void RebuildChannelRows()
@@ -388,6 +436,24 @@ public partial class MainViewModel : ObservableObject
         AudysseyMultEQApp = parsed;
         CurrentFilePath = filePath;
         IsDirty = false;
+
+        // Reset snapshot history per file and seed snapshot #1 with the verbatim
+        // on-disk JSON so restoring "Original" is byte-equivalent to a reload.
+        Snapshots.Clear();
+        Snapshots.CreateSnapshot("Original", parsed, serialized);
+        // Re-hydrate any user-created snapshots that were written next to the
+        // .ady on a previous session. "Original" is intentionally regenerated
+        // from disk and not stored in the sidecar (see SaveSidecar).
+        int restored = Snapshots.LoadSidecar(filePath);
+        if (restored > 0)
+        {
+            Trace.TraceInformation("Loaded {0} sidecar snapshot(s) for '{1}'.", restored, filePath);
+        }
+        RefreshSnapshotItems();
+        // Re-run analysis once the model is fully wired (OnAudysseyMultEQAppChanged
+        // already fired RunAnalysis with the just-assigned model; this catches any
+        // late wiring such as channel collection mutations during Normalize).
+        RunAnalysis();
     }
 
     /// <summary>
