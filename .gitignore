@@ -36,3 +36,6 @@ coverage*.info
 *.tmp
 *.pfx
 *.snk
+
+# Local sample files (not for distribution)
+sample_ady/
