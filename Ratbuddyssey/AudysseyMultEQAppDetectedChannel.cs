@@ -107,13 +107,20 @@ public partial class DetectedChannel : MultEQList
     private static ObservableCollection<MyKeyValuePair> ConvertStringArrayToDictionary(string[] array)
     {
         var result = new ObservableCollection<MyKeyValuePair>();
+        if (array == null) return result;
         foreach (string s in array)
         {
+            if (string.IsNullOrEmpty(s) || s.Length < 2) continue;
             string str = s.Substring(1, s.Length - 2);
             string[] arr = str.Split(',');
-            result.Add(new MyKeyValuePair(arr[0], arr[1]));
+            if (arr.Length < 2) continue;
+            var pair = new MyKeyValuePair(arr[0], arr[1]);
+            // MyKeyValuePair silently rejects out-of-range/garbage; skip entries
+            // whose Key never accepted any value so we don't carry around null keys.
+            if (!string.IsNullOrEmpty(pair.Key)) result.Add(pair);
         }
-        return new ObservableCollection<MyKeyValuePair>(result.OrderBy(x => double.Parse(x.Key, CultureInfo.InvariantCulture)));
+        return new ObservableCollection<MyKeyValuePair>(result.OrderBy(x =>
+            double.TryParse(x.Key, NumberStyles.Float, CultureInfo.InvariantCulture, out double d) ? d : 0d));
     }
 
     private static string[] ConvertDictionaryToStringArray(ObservableCollection<MyKeyValuePair> dict)
@@ -145,8 +152,10 @@ public partial class MyKeyValuePair : ObservableObject
         get => _key;
         set
         {
-            double d = double.Parse(value, CultureInfo.InvariantCulture);
-            if (d >= KeyMin && d <= KeyMax)
+            // Bound to a user-typed TextBox; reject non-numeric or out-of-range
+            // input silently rather than throwing FormatException up into the UI.
+            if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double d)
+                && d >= KeyMin && d <= KeyMax)
             {
                 SetProperty(ref _key, value);
             }
@@ -159,8 +168,8 @@ public partial class MyKeyValuePair : ObservableObject
         get => _value;
         set
         {
-            double d = double.Parse(value, CultureInfo.InvariantCulture);
-            if (d >= ValueMin && d <= ValueMax)
+            if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double d)
+                && d >= ValueMin && d <= ValueMax)
             {
                 SetProperty(ref _value, value);
             }
@@ -169,8 +178,8 @@ public partial class MyKeyValuePair : ObservableObject
 
     public MyKeyValuePair(string key, string value)
     {
-        Key = key.Trim();
-        Value = value.Trim();
+        Key = key?.Trim();
+        Value = value?.Trim();
     }
 
     public MyKeyValuePair(decimal key, decimal value)
