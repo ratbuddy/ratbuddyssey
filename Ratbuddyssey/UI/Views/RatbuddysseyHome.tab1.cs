@@ -1250,7 +1250,13 @@ namespace Ratbuddyssey
 
         private void chbxLogarithmicAxis_Changed(object sender, RoutedEventArgs e) => DrawChart();
 
-        private void TargetCurveTypeSelectionChanged(object sender, SelectionChangedEventArgs e) => DrawChart();
+        private void TargetCurveTypeSelectionChanged(object sender, SelectionChangedEventArgs e) =>
+            // Defer for the same reason as OnTargetProjectionInputChanged:
+            // SelectionChanged fires before Avalonia's two-way binding has
+            // written the new SelectedIndex back into AudysseyMultEQApp.
+            // Without the post, DrawChart reads the previous value and the
+            // user has to nudge the combo a second time to see the change.
+            Dispatcher.UIThread.Post(DrawChart, DispatcherPriority.Background);
     }
 
     internal sealed class AxisLimit
