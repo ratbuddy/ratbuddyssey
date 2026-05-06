@@ -55,19 +55,26 @@ namespace Ratbuddyssey
 
         private void HandleDroppedFile(object sender, DragEventArgs e)
         {
-            if (e.Data.Contains(DataFormats.Files))
+            try
             {
-                var files = e.Data.GetFiles();
-                if (files == null) return;
-                foreach (var f in files)
+                if (e.Data.Contains(DataFormats.Files))
                 {
-                    var path = f.TryGetLocalPath();
-                    if (string.IsNullOrEmpty(path)) continue;
-                    if (!string.Equals(Path.GetExtension(path), ".ady", StringComparison.OrdinalIgnoreCase))
-                        continue;
-                    OpenFile(path);
-                    break;
+                    var files = e.Data.GetFiles();
+                    if (files == null) return;
+                    foreach (var f in files)
+                    {
+                        var path = f.TryGetLocalPath();
+                        if (string.IsNullOrEmpty(path)) continue;
+                        if (!string.Equals(Path.GetExtension(path), ".ady", StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        OpenFile(path);
+                        break;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("HandleDroppedFile failed: {0}", ex);
             }
         }
 
@@ -108,36 +115,50 @@ namespace Ratbuddyssey
 
         private async void OpenFile_OnClick(object sender, RoutedEventArgs e)
         {
-            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            try
             {
-                Title = "Open Audyssey file",
-                AllowMultiple = false,
-                FileTypeFilter = new[]
+                var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
                 {
-                    new FilePickerFileType("Audyssey files") { Patterns = new[] { "*.ady" } }
+                    Title = "Open Audyssey file",
+                    AllowMultiple = false,
+                    FileTypeFilter = new[]
+                    {
+                        new FilePickerFileType("Audyssey files") { Patterns = new[] { "*.ady" } }
+                    }
+                });
+                if (files != null && files.Count > 0)
+                {
+                    var path = files[0].TryGetLocalPath();
+                    if (!string.IsNullOrEmpty(path)) OpenFile(path);
                 }
-            });
-            if (files != null && files.Count > 0)
+            }
+            catch (Exception ex)
             {
-                var path = files[0].TryGetLocalPath();
-                if (!string.IsNullOrEmpty(path)) OpenFile(path);
+                Trace.TraceError("OpenFile_OnClick failed: {0}", ex);
             }
         }
 
         private async void ReloadFile_OnClick(object sender, RoutedEventArgs e)
         {
-            bool yes = await MessageBoxHelper.ShowYesNoAsync(this,
-                "Are you sure?",
-                "This will reload the .ady file and discard all changes since last save");
-            if (!yes) return;
-            string path = currentFile.Text;
-            if (File.Exists(path))
+            try
             {
-                ParseFileToAudysseyMultEQApp(path);
-                if (audysseyMultEQApp != null)
+                bool yes = await MessageBoxHelper.ShowYesNoAsync(this,
+                    "Are you sure?",
+                    "This will reload the .ady file and discard all changes since last save");
+                if (!yes) return;
+                string path = currentFile.Text;
+                if (File.Exists(path))
                 {
-                    DataContext = audysseyMultEQApp;
+                    ParseFileToAudysseyMultEQApp(path);
+                    if (audysseyMultEQApp != null)
+                    {
+                        DataContext = audysseyMultEQApp;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("ReloadFile_OnClick failed: {0}", ex);
             }
         }
 
@@ -156,24 +177,31 @@ namespace Ratbuddyssey
 
         private async void SaveFileAs_OnClick(object sender, RoutedEventArgs e)
         {
-            var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            try
             {
-                Title = "Save As",
-                SuggestedFileName = currentFile.Text,
-                DefaultExtension = "ady",
-                FileTypeChoices = new[]
+                var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
                 {
-                    new FilePickerFileType("Audyssey calibration") { Patterns = new[] { "*.ady" } }
+                    Title = "Save As",
+                    SuggestedFileName = currentFile.Text,
+                    DefaultExtension = "ady",
+                    FileTypeChoices = new[]
+                    {
+                        new FilePickerFileType("Audyssey calibration") { Patterns = new[] { "*.ady" } }
+                    }
+                });
+                if (file != null)
+                {
+                    var path = file.TryGetLocalPath();
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        currentFile.Text = path;
+                        ParseAudysseyMultEQAppToFile(path);
+                    }
                 }
-            });
-            if (file != null)
+            }
+            catch (Exception ex)
             {
-                var path = file.TryGetLocalPath();
-                if (!string.IsNullOrEmpty(path))
-                {
-                    currentFile.Text = path;
-                    ParseAudysseyMultEQAppToFile(path);
-                }
+                Trace.TraceError("SaveFileAs_OnClick failed: {0}", ex);
             }
         }
 
@@ -191,8 +219,15 @@ namespace Ratbuddyssey
 
         private async void About_OnClick(object sender, RoutedEventArgs e)
         {
-            await MessageBoxHelper.ShowAsync(this, "About Ratbuddyssey",
-                "Shout out to AVS Forum, use at your own risk!");
+            try
+            {
+                await MessageBoxHelper.ShowAsync(this, "About Ratbuddyssey",
+                    "Shout out to AVS Forum, use at your own risk!");
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("About_OnClick failed: {0}", ex);
+            }
         }
 
         private void OpenFile(string filePath)
