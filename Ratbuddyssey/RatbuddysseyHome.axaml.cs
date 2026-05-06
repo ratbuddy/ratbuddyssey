@@ -59,24 +59,16 @@ public partial class RatbuddysseyHome : Window, IDialogService
     {
         try
         {
-            // Avalonia 11.3 deprecated e.Data / DataFormats.Files in favor of the new
-            // DataTransfer/DataFormat.File API; the legacy surface still works and the
-            // migration is queued behind the broader Avalonia upgrade work.
-#pragma warning disable CS0618
-            if (e.Data.Contains(DataFormats.Files))
+            var files = e.DataTransfer.TryGetFiles();
+            if (files == null) return;
+            foreach (var f in files)
             {
-                var files = e.Data.GetFiles();
-#pragma warning restore CS0618
-                if (files == null) return;
-                foreach (var f in files)
-                {
-                    var path = f.TryGetLocalPath();
-                    if (string.IsNullOrEmpty(path)) continue;
-                    if (!string.Equals(Path.GetExtension(path), ".ady", StringComparison.OrdinalIgnoreCase))
-                        continue;
-                    _viewModel.LoadFile(path);
-                    break;
-                }
+                var path = f.TryGetLocalPath();
+                if (string.IsNullOrEmpty(path)) continue;
+                if (!string.Equals(Path.GetExtension(path), ".ady", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                _viewModel.LoadFile(path);
+                break;
             }
         }
         catch (Exception ex)

@@ -2,7 +2,6 @@
 
 Cross-platform editor for Audyssey MultEQ `.ady` calibration files.
 
-> Originally a fork of [ratbuddy/ratbudyssey](https://github.com/ratbuddy/ratbudyssey).
 > Discussion thread: [AVS Forum announcement](https://www.avsforum.com/forum/90-receivers-amps-processors/3006886-announcing-ratbuddyssey-tool-tweaking-audyssey-multeq-app-files.html).
 
 ## What it is
@@ -11,9 +10,6 @@ Ratbuddyssey is an **offline `.ady` file editor**. It loads a calibration file
 exported from the official Audyssey MultEQ Editor app, lets you tweak channel
 parameters / target curves / EQ filters, and saves the result back as `.ady`
 (JSON) so you can re-import it into the Audyssey app.
-
-It does **not** talk to your AVR over the network. There is no sniffer, no
-TCP/IP feature, and no elevated-privilege requirement.
 
 ## Status
 
