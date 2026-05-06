@@ -7,6 +7,7 @@
 
 # Visual Studio / Rider / VS Code
 .vs/
+.vscode/
 .idea/
 *.user
 *.suo

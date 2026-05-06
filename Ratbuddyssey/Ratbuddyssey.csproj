@@ -5,8 +5,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Ratbuddyssey</RootNamespace>
     <AssemblyName>Ratbuddyssey</AssemblyName>
-    <Nullable>disable</Nullable>
-    <LangVersion>latest</LangVersion>
     <Version>0.5.0</Version>
     <Authors>Ratbuddyssey contributors</Authors>
     <Product>Ratbuddyssey</Product>
