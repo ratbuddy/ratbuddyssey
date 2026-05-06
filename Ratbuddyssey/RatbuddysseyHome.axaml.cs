@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia;
@@ -13,7 +14,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Audyssey;
 using Audyssey.MultEQApp;
-using Audyssey.MultEQAvr;
 
 namespace Ratbuddyssey
 {
@@ -22,7 +22,24 @@ namespace Ratbuddyssey
         private AudysseyMultEQReferenceCurveFilter audysseyMultEQReferenceCurveFilter = new AudysseyMultEQReferenceCurveFilter();
         private AudysseyMultEQApp audysseyMultEQApp = null;
 
-        private const string TcpClientFileName = "TcpClient.json";
+        // Refuse to deserialize anything wildly larger than typical Audyssey calibrations
+        // (real-world files are <2 MiB). Defends against zip-bomb-style JSON nesting and
+        // accidental drops of huge unrelated files.
+        private const long MaxAdyFileBytes = 32L * 1024 * 1024;
+
+        // Pinned defensively even though TypeNameHandling defaults to None.
+        private static readonly JsonSerializerSettings AdyReadSettings = new JsonSerializerSettings
+        {
+            FloatParseHandling = FloatParseHandling.Decimal,
+            TypeNameHandling = TypeNameHandling.None,
+            MaxDepth = 64
+        };
+
+        private static readonly JsonSerializerSettings AdyWriteSettings = new JsonSerializerSettings
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            TypeNameHandling = TypeNameHandling.None
+        };
 
         public RatbuddysseyHome()
         {
@@ -32,21 +49,6 @@ namespace Ratbuddyssey
 #endif
             BuildFilterSliders();
             AddHandler(DragDrop.DropEvent, HandleDroppedFile);
-
-            string clientFile = Path.Combine(AppContext.BaseDirectory, TcpClientFileName);
-            if (File.Exists(clientFile))
-            {
-                string content = File.ReadAllText(clientFile);
-                if (content.Length > 0)
-                {
-                    var tcp = JsonConvert.DeserializeObject<TcpIP>(content);
-                    if (tcp?.Address != null)
-                    {
-                        cmbInterfaceClient.ItemsSource = new[] { tcp.Address.ToString() };
-                        cmbInterfaceClient.SelectedIndex = 0;
-                    }
-                }
-            }
         }
 
         private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
@@ -60,24 +62,35 @@ namespace Ratbuddyssey
                 foreach (var f in files)
                 {
                     var path = f.TryGetLocalPath();
-                    if (!string.IsNullOrEmpty(path))
-                    {
-                        OpenFile(path);
-                        break;
-                    }
+                    if (string.IsNullOrEmpty(path)) continue;
+                    if (!string.Equals(Path.GetExtension(path), ".ady", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    OpenFile(path);
+                    break;
                 }
             }
         }
 
         private void ParseFileToAudysseyMultEQApp(string fileName)
         {
-            if (File.Exists(fileName))
+            if (!File.Exists(fileName)) return;
+            var info = new FileInfo(fileName);
+            if (info.Length == 0 || info.Length > MaxAdyFileBytes)
             {
-                string serialized = File.ReadAllText(fileName);
-                audysseyMultEQApp = JsonConvert.DeserializeObject<AudysseyMultEQApp>(serialized, new JsonSerializerSettings
-                {
-                    FloatParseHandling = FloatParseHandling.Decimal
-                });
+                Trace.TraceWarning("Refusing to load '{0}': size {1} outside accepted range (1..{2}).",
+                    fileName, info.Length, MaxAdyFileBytes);
+                return;
+            }
+
+            string serialized = File.ReadAllText(fileName);
+            try
+            {
+                audysseyMultEQApp = JsonConvert.DeserializeObject<AudysseyMultEQApp>(serialized, AdyReadSettings);
+            }
+            catch (JsonException ex)
+            {
+                Trace.TraceWarning("Failed to parse '{0}' as Audyssey calibration: {1}", fileName, ex.Message);
+                audysseyMultEQApp = null;
             }
         }
 
@@ -85,10 +98,7 @@ namespace Ratbuddyssey
         {
             if (audysseyMultEQApp != null)
             {
-                string serialized = JsonConvert.SerializeObject(audysseyMultEQApp, new JsonSerializerSettings
-                {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver()
-                });
+                string serialized = JsonConvert.SerializeObject(audysseyMultEQApp, AdyWriteSettings);
                 if (!string.IsNullOrEmpty(serialized) && !string.IsNullOrEmpty(fileName))
                 {
                     File.WriteAllText(fileName, serialized);
@@ -124,7 +134,7 @@ namespace Ratbuddyssey
             if (File.Exists(path))
             {
                 ParseFileToAudysseyMultEQApp(path);
-                if (audysseyMultEQApp != null && tabControl.SelectedIndex == 0)
+                if (audysseyMultEQApp != null)
                 {
                     DataContext = audysseyMultEQApp;
                 }
@@ -185,40 +195,13 @@ namespace Ratbuddyssey
                 "Shout out to AVS Forum, use at your own risk!");
         }
 
-        private void tabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            int currentTab = tabControl.SelectedIndex;
-            switch (currentTab)
-            {
-                case 0:
-                    if (audysseyMultEQApp == null)
-                    {
-                        if (audysseyMultEQAvrAdapter != null)
-                        {
-                            DataContext = audysseyMultEQAvrAdapter;
-                        }
-                    }
-                    else
-                    {
-                        DataContext = audysseyMultEQApp;
-                    }
-                    break;
-                case 1:
-                    if (audysseyMultEQAvr != null)
-                    {
-                        DataContext = audysseyMultEQAvr;
-                    }
-                    break;
-            }
-        }
-
         private void OpenFile(string filePath)
         {
             if (File.Exists(filePath))
             {
                 currentFile.Text = filePath;
                 ParseFileToAudysseyMultEQApp(filePath);
-                if (audysseyMultEQApp != null && tabControl.SelectedIndex == 0)
+                if (audysseyMultEQApp != null)
                 {
                     DataContext = audysseyMultEQApp;
                 }
