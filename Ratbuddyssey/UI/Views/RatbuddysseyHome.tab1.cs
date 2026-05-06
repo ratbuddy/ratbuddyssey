@@ -881,19 +881,34 @@ namespace Ratbuddyssey
                     : audysseyMultEQReferenceCurveFilter.HighFrequencyRollOff1();
                 if (refPoints == null || refPoints.Count == 0) return;
 
-                double[] xs = new double[refPoints.Count];
-                double[] ys = new double[refPoints.Count];
+                // The shipped JSON spans 0 Hz - 48 kHz but only the 20 Hz - 19 kHz
+                // band carries finite data; everything else is -Infinity. Passing
+                // those points through to ScottPlot used to render the curve as
+                // either a clipped sliver or nothing at all (the -Inf segments
+                // either short-circuit the path or stretch the y-axis to a value
+                // ScottPlot then auto-clips). Filter to finite, in-band points
+                // and we get the expected high-frequency rolloff line.
+                var xList = new List<double>(refPoints.Count);
+                var yList = new List<double>(refPoints.Count);
                 for (int i = 0; i < refPoints.Count; i++)
                 {
-                    xs[i] = logX ? Math.Log10(Math.Max(1e-9, refPoints[i].X)) : refPoints[i].X;
+                    double x = refPoints[i].X;
+                    double y = refPoints[i].Y;
+                    if (double.IsNaN(x) || double.IsInfinity(x) || x <= 0) continue;
+                    if (double.IsNaN(y) || double.IsInfinity(y)) continue;
+                    if (x < 20 || x > 24000) continue; // outside the audible band
+                    xList.Add(logX ? Math.Log10(x) : x);
                     // Reference roll-off points are relative-dB; share the
                     // 75 dB anchor with measurements and target curve.
-                    ys[i] = refPoints[i].Y + NormalizeToReferenceDb;
+                    yList.Add(y + NormalizeToReferenceDb);
                 }
-                var line = plot.Plot.Add.Scatter(xs, ys);
+                if (xList.Count < 2) return;
+
+                var line = plot.Plot.Add.Scatter(xList.ToArray(), yList.ToArray());
                 line.Color = ScottPlot.Colors.Red;
                 line.LineWidth = 2;
                 line.MarkerSize = 0;
+                line.LegendText = secondaryChannel ? "HF rolloff #2" : "HF rolloff #1";
                 return;
             }
 
