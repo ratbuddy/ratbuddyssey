@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
@@ -8,30 +10,66 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using CommunityToolkit.Mvvm.ComponentModel;
 using ScottPlot;
 
 namespace Ratbuddyssey
 {
+    public enum XRange
+    {
+        Full,
+        Subwoofer,
+        Chirp,
+    }
+
     public partial class RatbuddysseyHome
     {
         private readonly List<int> measurementKeys = new();
         private readonly Dictionary<int, ScottPlot.Color> measurementColors = new();
 
-        private double smoothingFactor = 0;
+        private double smoothingFactor;
 
-        private DetectedChannel selectedChannel = null;
+        private DetectedChannel selectedChannel;
         private readonly List<DetectedChannel> stickyChannel = new();
 
-        private string selectedAxisLimits = "rbtnXRangeFull";
-        private readonly Dictionary<string, AxisLimit> AxisLimits = new()
+        private XRange selectedXRange = XRange.Full;
+        private static readonly Dictionary<XRange, AxisLimit> AxisLimits = new()
         {
-            { "rbtnXRangeFull",      new AxisLimit { XMin = 10, XMax = 24000, YMin = -35, YMax = 20, YShift = 0, MajorStep = 5,    MinorStep = 1 } },
-            { "rbtnXRangeSubwoofer", new AxisLimit { XMin = 10, XMax = 1000,  YMin = -35, YMax = 20, YShift = 0, MajorStep = 5,    MinorStep = 1 } },
-            { "rbtnXRangeChirp",     new AxisLimit { XMin = 0,  XMax = 350,   YMin = -0.1, YMax = 0.1, YShift = 0, MajorStep = 0.01, MinorStep = 0.001 } }
+            { XRange.Full,      new AxisLimit { XMin = 10, XMax = 24000, YMin = -35, YMax = 20, YShift = 0, MajorStep = 5,    MinorStep = 1 } },
+            { XRange.Subwoofer, new AxisLimit { XMin = 10, XMax = 1000,  YMin = -35, YMax = 20, YShift = 0, MajorStep = 5,    MinorStep = 1 } },
+            { XRange.Chirp,     new AxisLimit { XMin = 0,  XMax = 350,   YMin = -0.1, YMax = 0.1, YShift = 0, MajorStep = 0.01, MinorStep = 0.001 } },
         };
+
+        private readonly ObservableCollection<MeasurementSlot> measurementSlotItems = BuildMeasurementSlots();
+
+        private static readonly (string Label, string ColorName)[] MeasurementSlotDescriptors =
+        {
+            ("1", "Black"),
+            ("2", "Blue"),
+            ("3", "Violet"),
+            ("4", "Green"),
+            ("5", "Orange"),
+            ("6", "Red"),
+            ("7", "Cyan"),
+            ("8", "DeepPink"),
+        };
+
+        private static ObservableCollection<MeasurementSlot> BuildMeasurementSlots()
+        {
+            var slots = new ObservableCollection<MeasurementSlot>();
+            for (int i = 0; i < MeasurementSlotDescriptors.Length; i++)
+            {
+                var (label, colorName) = MeasurementSlotDescriptors[i];
+                var brush = (IBrush)(Brush.Parse(colorName));
+                slots.Add(new MeasurementSlot(i, label, brush));
+            }
+            return slots;
+        }
 
         private void BuildFilterSliders()
         {
+            WireMeasurementSlots();
+
             // 61-band filter sliders are built in code-behind to avoid 60+ lines of repetitive XAML.
             var labels = new[]
             {
@@ -61,6 +99,29 @@ namespace Ratbuddyssey
                 sp.Children.Add(slider);
                 sp.Children.Add(new TextBlock { Text = labels[i], FontSize = 10, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center });
                 panel.Children.Add(sp);
+            }
+        }
+
+        private void WireMeasurementSlots()
+        {
+            var itemsControl = this.FindControl<ItemsControl>("measurementSlots");
+            if (itemsControl != null) itemsControl.ItemsSource = measurementSlotItems;
+            foreach (var slot in measurementSlotItems)
+            {
+                if (slot.IsChecked)
+                {
+                    measurementKeys.Add(slot.Index);
+                    measurementColors[slot.Index] = BrushToColor(slot.Brush);
+                }
+                slot.PropertyChanged += OnMeasurementSlotPropertyChanged;
+            }
+        }
+
+        private void OnMeasurementSlotPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MeasurementSlot.IsChecked) && sender is MeasurementSlot slot)
+            {
+                CheckBoxMeasurementPositionChanged(slot);
             }
         }
 
@@ -103,8 +164,8 @@ namespace Ratbuddyssey
 
         private void ApplyAxes()
         {
-            var limits = AxisLimits[selectedAxisLimits];
-            bool isChirp = selectedAxisLimits == "rbtnXRangeChirp";
+            var limits = AxisLimits[selectedXRange];
+            bool isChirp = selectedXRange == XRange.Chirp;
             bool logX = chbxLogarithmicAxis?.IsChecked == true && !isChirp;
 
             plot.Plot.Axes.Bottom.Label.Text = isChirp ? "ms" : "Hz";
@@ -139,13 +200,13 @@ namespace Ratbuddyssey
 
         private void PlotLine(DetectedChannel channel, bool secondaryChannel = false)
         {
-            bool logX = chbxLogarithmicAxis?.IsChecked == true && selectedAxisLimits != "rbtnXRangeChirp";
+            bool logX = chbxLogarithmicAxis?.IsChecked == true && selectedXRange != XRange.Chirp;
 
             if (channel == null)
             {
                 var refPoints = secondaryChannel
-                    ? audysseyMultEQReferenceCurveFilter.High_Frequency_Roll_Off_2()
-                    : audysseyMultEQReferenceCurveFilter.High_Frequency_Roll_Off_1();
+                    ? audysseyMultEQReferenceCurveFilter.HighFrequencyRollOff2()
+                    : audysseyMultEQReferenceCurveFilter.HighFrequencyRollOff1();
                 if (refPoints == null || refPoints.Count == 0) return;
 
                 double[] xs = new double[refPoints.Count];
@@ -164,17 +225,17 @@ namespace Ratbuddyssey
 
             for (int i = 0; i < measurementKeys.Count; i++)
             {
-                string key = measurementKeys[i].ToString();
+                string key = measurementKeys[i].ToString(CultureInfo.InvariantCulture);
                 if (!channel.ResponseData.ContainsKey(key)) continue;
 
                 string[] values = channel.ResponseData[key];
                 int count = values.Length;
-                var limits = AxisLimits[selectedAxisLimits];
+                var limits = AxisLimits[selectedXRange];
 
                 List<double> xList = new(count);
                 List<double> yList = new(count);
 
-                if (selectedAxisLimits == "rbtnXRangeChirp")
+                if (selectedXRange == XRange.Chirp)
                 {
                     const float sampleRate = 48000f;
                     float totalTimeMs = 1000f * count / sampleRate;
@@ -199,7 +260,7 @@ namespace Ratbuddyssey
                     MathNet.Numerics.IntegralTransforms.Fourier.Forward(cValues);
 
                     int half = count / 2;
-                    if (radioButtonSmoothingFactorNone?.IsChecked == true)
+                    if (smoothingFactor == 0)
                     {
                         for (int x = 0; x < half; x++)
                         {
@@ -230,7 +291,7 @@ namespace Ratbuddyssey
             }
         }
 
-        private void LinSpacedFracOctaveSmooth(double frac, ref double[] smoothed, float startFreq, double freqStep)
+        private static void LinSpacedFracOctaveSmooth(double frac, ref double[] smoothed, float startFreq, double freqStep)
         {
             const int passes = 8;
             double scaledFrac = 7.5 * frac;
@@ -259,35 +320,28 @@ namespace Ratbuddyssey
             }
         }
 
-        private CheckBox[] MeasurementCheckBoxes() => new[] { chbx1, chbx2, chbx3, chbx4, chbx5, chbx6, chbx7, chbx8 };
-
-        private void CheckBoxMeasurementPositionChanged(object sender, RoutedEventArgs e)
+        private void CheckBoxMeasurementPositionChanged(MeasurementSlot slot)
         {
-            if (sender is not CheckBox cb || cb.Content == null) return;
-            if (!int.TryParse(cb.Content.ToString(), out int n)) return;
-            int val = n - 1;
-            bool isChecked = cb.IsChecked == true;
-
-            if (!isChecked)
+            int val = slot.Index;
+            if (!slot.IsChecked)
             {
-                if (measurementKeys.Contains(val))
+                if (measurementKeys.Remove(val))
                 {
-                    measurementKeys.Remove(val);
                     measurementColors.Remove(val);
                     DrawChart();
                 }
                 return;
             }
 
-            if (selectedChannel != null && !selectedChannel.ResponseData.ContainsKey(val.ToString()))
+            if (selectedChannel != null && !selectedChannel.ResponseData.ContainsKey(val.ToString(CultureInfo.InvariantCulture)))
             {
-                cb.IsChecked = false;
+                slot.IsChecked = false;
                 return;
             }
             if (!measurementKeys.Contains(val))
             {
                 measurementKeys.Add(val);
-                measurementColors[val] = BrushToColor(cb.Foreground);
+                measurementColors[val] = BrushToColor(slot.Brush);
                 DrawChart();
             }
         }
@@ -296,25 +350,24 @@ namespace Ratbuddyssey
         {
             if (sender is not CheckBox cb) return;
             bool target = cb.IsChecked == true;
-            foreach (var c in MeasurementCheckBoxes())
+            foreach (var slot in measurementSlotItems)
             {
-                if (c.IsEnabled || !target) c.IsChecked = target;
+                if (slot.IsEnabled || !target) slot.IsChecked = target;
             }
             DrawChart();
         }
 
         private void ChannelsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var checkBoxes = MeasurementCheckBoxes();
-            foreach (var checkBox in checkBoxes) checkBox.IsEnabled = false;
+            foreach (var slot in measurementSlotItems) slot.IsEnabled = false;
 
             if (channelsView.SelectedItem is DetectedChannel sel && sel.ResponseData != null)
             {
                 foreach (var measurementPosition in sel.ResponseData)
                 {
-                    if (int.TryParse(measurementPosition.Key, out int idx) && idx >= 0 && idx < checkBoxes.Length)
+                    if (int.TryParse(measurementPosition.Key, out int idx) && idx >= 0 && idx < measurementSlotItems.Count)
                     {
-                        checkBoxes[idx].IsEnabled = true;
+                        measurementSlotItems[idx].IsEnabled = true;
                     }
                 }
                 if (sel.ResponseData.Count > 0)
@@ -325,9 +378,9 @@ namespace Ratbuddyssey
                 }
             }
 
-            foreach (var cb in checkBoxes)
+            foreach (var slot in measurementSlotItems)
             {
-                if (!cb.IsEnabled && cb.IsChecked == true) cb.IsChecked = false;
+                if (!slot.IsEnabled && slot.IsChecked) slot.IsChecked = false;
             }
         }
 
@@ -362,25 +415,19 @@ namespace Ratbuddyssey
         private void RadioButtonSmoothingFactorChanged(object sender, RoutedEventArgs e)
         {
             if (sender is not RadioButton rb || rb.IsChecked != true) return;
-            smoothingFactor = rb.Name switch
+            if (rb.Tag is string tag && double.TryParse(tag, NumberStyles.Float, CultureInfo.InvariantCulture, out double f))
             {
-                "radioButtonSmoothingFactorNone" => 1,
-                "radioButtonSmoothingFactor2" => 2,
-                "radioButtonSmoothingFactor3" => 3,
-                "radioButtonSmoothingFactor6" => 6,
-                "radioButtonSmoothingFactor12" => 12,
-                "radioButtonSmoothingFactor24" => 24,
-                "radioButtonSmoothingFactor48" => 48,
-                _ => smoothingFactor
-            };
-            DrawChart();
+                smoothingFactor = f;
+                DrawChart();
+            }
         }
 
-        private void rbtnXRange_Changed(object sender, RoutedEventArgs e)
+        private void XRangeChanged(object sender, RoutedEventArgs e)
         {
-            if (sender is RadioButton rb && rb.IsChecked == true)
+            if (sender is RadioButton rb && rb.IsChecked == true && rb.Tag is string tag &&
+                Enum.TryParse<XRange>(tag, out var range))
             {
-                selectedAxisLimits = rb.Name;
+                selectedXRange = range;
                 DrawChart();
             }
         }
@@ -390,7 +437,7 @@ namespace Ratbuddyssey
         private void TargetCurveTypeSelectionChanged(object sender, SelectionChangedEventArgs e) => DrawChart();
     }
 
-    internal class AxisLimit
+    internal sealed class AxisLimit
     {
         public double XMin { get; set; }
         public double XMax { get; set; }
@@ -399,5 +446,27 @@ namespace Ratbuddyssey
         public double YShift { get; set; }
         public double MajorStep { get; set; }
         public double MinorStep { get; set; }
+    }
+
+    public partial class MeasurementSlot : ObservableObject
+    {
+        public int Index { get; }
+        public string Label { get; }
+        public IBrush Brush { get; }
+
+        [ObservableProperty]
+        private bool _isChecked;
+
+        [ObservableProperty]
+        private bool _isEnabled = true;
+
+        public MeasurementSlot(int index, string label, IBrush brush)
+        {
+            Index = index;
+            Label = label;
+            Brush = brush;
+            // First slot starts checked to match prior UI default.
+            _isChecked = index == 0;
+        }
     }
 }

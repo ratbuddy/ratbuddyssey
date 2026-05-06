@@ -233,30 +233,39 @@
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Orientation="Horizontal">
                       <TextBlock Text="Measurement position:" VerticalAlignment="Center" Margin="4"/>
-                      <CheckBox Content="1" x:Name="chbx1" Foreground="Black"      IsCheckedChanged="CheckBoxMeasurementPositionChanged" VerticalAlignment="Center" Margin="3,0,0,0" IsChecked="True"/>
-                      <CheckBox Content="2" x:Name="chbx2" Foreground="Blue"       IsCheckedChanged="CheckBoxMeasurementPositionChanged" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                      <CheckBox Content="3" x:Name="chbx3" Foreground="Violet"     IsCheckedChanged="CheckBoxMeasurementPositionChanged" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                      <CheckBox Content="4" x:Name="chbx4" Foreground="Green"      IsCheckedChanged="CheckBoxMeasurementPositionChanged" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                      <CheckBox Content="5" x:Name="chbx5" Foreground="Orange"     IsCheckedChanged="CheckBoxMeasurementPositionChanged" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                      <CheckBox Content="6" x:Name="chbx6" Foreground="Red"        IsCheckedChanged="CheckBoxMeasurementPositionChanged" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                      <CheckBox Content="7" x:Name="chbx7" Foreground="Cyan"       IsCheckedChanged="CheckBoxMeasurementPositionChanged" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                      <CheckBox Content="8" x:Name="chbx8" Foreground="DeepPink"   IsCheckedChanged="CheckBoxMeasurementPositionChanged" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                      <ItemsControl x:Name="measurementSlots">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <CheckBox Content="{Binding Label}"
+                                      Foreground="{Binding Brush}"
+                                      IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                      IsEnabled="{Binding IsEnabled}"
+                                      VerticalAlignment="Center"
+                                      Margin="3,0,0,0"/>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
                       <CheckBox Content="Select/Unselect all" x:Name="allChbx" IsCheckedChanged="AllCheckBoxMeasurementPositionChanged" VerticalAlignment="Center" Margin="8,0,0,0"/>
                     </StackPanel>
                     <scott:AvaPlot Grid.Row="1" x:Name="plot"/>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                      <RadioButton GroupName="smoothing" Content="No Smoothing" x:Name="radioButtonSmoothingFactorNone" IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0" IsChecked="True"/>
-                      <RadioButton GroupName="smoothing" Content="1/2"  x:Name="radioButtonSmoothingFactor2"  IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
-                      <RadioButton GroupName="smoothing" Content="1/3"  x:Name="radioButtonSmoothingFactor3"  IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
-                      <RadioButton GroupName="smoothing" Content="1/6"  x:Name="radioButtonSmoothingFactor6"  IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
-                      <RadioButton GroupName="smoothing" Content="1/12" x:Name="radioButtonSmoothingFactor12" IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
-                      <RadioButton GroupName="smoothing" Content="1/24" x:Name="radioButtonSmoothingFactor24" IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
-                      <RadioButton GroupName="smoothing" Content="1/48" x:Name="radioButtonSmoothingFactor48" IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
+                      <RadioButton GroupName="smoothing" Content="No Smoothing" Tag="0"  IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0" IsChecked="True"/>
+                      <RadioButton GroupName="smoothing" Content="1/2"  Tag="2"  IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
+                      <RadioButton GroupName="smoothing" Content="1/3"  Tag="3"  IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
+                      <RadioButton GroupName="smoothing" Content="1/6"  Tag="6"  IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
+                      <RadioButton GroupName="smoothing" Content="1/12" Tag="12" IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
+                      <RadioButton GroupName="smoothing" Content="1/24" Tag="24" IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
+                      <RadioButton GroupName="smoothing" Content="1/48" Tag="48" IsCheckedChanged="RadioButtonSmoothingFactorChanged" Margin="0,0,10,0"/>
                     </StackPanel>
                     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                      <RadioButton GroupName="xrange" x:Name="rbtnXRangeChirp"     Content="0-350ms"    IsCheckedChanged="rbtnXRange_Changed" Margin="0,0,10,0"/>
-                      <RadioButton GroupName="xrange" x:Name="rbtnXRangeSubwoofer" Content="10-1000Hz"  IsCheckedChanged="rbtnXRange_Changed" Margin="0,0,10,0"/>
-                      <RadioButton GroupName="xrange" x:Name="rbtnXRangeFull"      Content="10Hz-24kHz" IsCheckedChanged="rbtnXRange_Changed" Margin="0,0,10,0" IsChecked="True"/>
+                      <RadioButton GroupName="xrange" Tag="Chirp"     Content="0-350ms"    IsCheckedChanged="XRangeChanged" Margin="0,0,10,0"/>
+                      <RadioButton GroupName="xrange" Tag="Subwoofer" Content="10-1000Hz"  IsCheckedChanged="XRangeChanged" Margin="0,0,10,0"/>
+                      <RadioButton GroupName="xrange" Tag="Full"      Content="10Hz-24kHz" IsCheckedChanged="XRangeChanged" Margin="0,0,10,0" IsChecked="True"/>
                     </StackPanel>
                     <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                       <CheckBox Content="Logarithmic Axis" x:Name="chbxLogarithmicAxis" IsChecked="True" IsCheckedChanged="chbxLogarithmicAxis_Changed"/>

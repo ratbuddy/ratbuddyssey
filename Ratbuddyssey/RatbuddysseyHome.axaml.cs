@@ -20,7 +20,7 @@ namespace Ratbuddyssey
     public partial class RatbuddysseyHome : Window
     {
         private AudysseyMultEQReferenceCurveFilter audysseyMultEQReferenceCurveFilter = new AudysseyMultEQReferenceCurveFilter();
-        private AudysseyMultEQApp audysseyMultEQApp = null;
+        private AudysseyMultEQApp audysseyMultEQApp;
 
         // Refuse to deserialize anything wildly larger than typical Audyssey calibrations
         // (real-world files are <2 MiB). Defends against zip-bomb-style JSON nesting and
@@ -28,6 +28,16 @@ namespace Ratbuddyssey
         private const long MaxAdyFileBytes = 32L * 1024 * 1024;
 
         // Pinned defensively even though TypeNameHandling defaults to None.
+        private static readonly FilePickerFileType[] AdyFileTypes =
+        {
+            new("Audyssey files") { Patterns = new[] { "*.ady" } },
+        };
+
+        private static readonly FilePickerFileType[] AdySaveFileTypes =
+        {
+            new("Audyssey calibration") { Patterns = new[] { "*.ady" } },
+        };
+
         private static readonly JsonSerializerSettings AdyReadSettings = new JsonSerializerSettings
         {
             FloatParseHandling = FloatParseHandling.Decimal,
@@ -57,9 +67,14 @@ namespace Ratbuddyssey
         {
             try
             {
+                // Avalonia 11.3 deprecated e.Data / DataFormats.Files in favor of the new
+                // DataTransfer/DataFormat.File API; the legacy surface still works and the
+                // migration is queued behind the broader Avalonia upgrade work.
+#pragma warning disable CS0618
                 if (e.Data.Contains(DataFormats.Files))
                 {
                     var files = e.Data.GetFiles();
+#pragma warning restore CS0618
                     if (files == null) return;
                     foreach (var f in files)
                     {
@@ -121,10 +136,7 @@ namespace Ratbuddyssey
                 {
                     Title = "Open Audyssey file",
                     AllowMultiple = false,
-                    FileTypeFilter = new[]
-                    {
-                        new FilePickerFileType("Audyssey files") { Patterns = new[] { "*.ady" } }
-                    }
+                    FileTypeFilter = AdyFileTypes,
                 });
                 if (files != null && files.Count > 0)
                 {
@@ -184,10 +196,7 @@ namespace Ratbuddyssey
                     Title = "Save As",
                     SuggestedFileName = currentFile.Text,
                     DefaultExtension = "ady",
-                    FileTypeChoices = new[]
-                    {
-                        new FilePickerFileType("Audyssey calibration") { Patterns = new[] { "*.ady" } }
-                    }
+                    FileTypeChoices = AdySaveFileTypes,
                 });
                 if (file != null)
                 {

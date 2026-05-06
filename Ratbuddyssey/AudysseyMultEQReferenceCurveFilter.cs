@@ -35,8 +35,8 @@ namespace Audyssey
             high_frequency_roll_off_2_points = LoadCurve("high_frequency_roll_off_2.json");
         }
 
-        public Collection<DataPoint> High_Frequency_Roll_Off_1() => high_frequency_roll_off_1_points;
-        public Collection<DataPoint> High_Frequency_Roll_Off_2() => high_frequency_roll_off_2_points;
+        public Collection<DataPoint> HighFrequencyRollOff1() => high_frequency_roll_off_1_points;
+        public Collection<DataPoint> HighFrequencyRollOff2() => high_frequency_roll_off_2_points;
 
         private static Collection<DataPoint> LoadCurve(string fileName)
         {
