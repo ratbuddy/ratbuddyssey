@@ -31,8 +31,6 @@
         <StackPanel Grid.Row="2" Panel.ZIndex="1" Orientation="Horizontal" HorizontalAlignment="Right">
             <Label Content="Receiver IP Address:" VerticalAlignment="Top" ></Label>
             <ComboBox x:Name="cmbInterfaceClient"  VerticalAlignment="Top" Width="120" IsEditable="True"/>
-            <Label Content="Computer IP Address:" VerticalAlignment="Top" ></Label>
-            <ComboBox x:Name="cmbInterfaceHost" VerticalAlignment="Top" Width="120"/>
         </StackPanel>
         <Menu Grid.Row="1">
             <!--menu-->
@@ -50,7 +48,6 @@
                 <MenuItem Header="_Save Project" Name="saveProjectFile" Click="saveProjectFile_Click"/>
                 <Separator/>
                 <MenuItem Header="Connect _Receiver" Name="connectReceiver" Click="ConnectReceiver_OnClick" IsCheckable="True"/>
-                <MenuItem Header="Connect S_niffer" Name="connectSniffer" Click="ConnectSniffer_OnClick" IsCheckable="True"/>
                 <Separator/>
                 <MenuItem Header="Get Receiver _Info" Name="getReceiverInfo" Click="getReceiverInfo_Click" />
                 <MenuItem Header="Get Receiver _Status" Name="getReceiverStatus" Click="getReceiverStatus_Click" />

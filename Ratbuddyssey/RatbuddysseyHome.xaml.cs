@@ -28,17 +28,7 @@ namespace Ratbuddyssey
             channelsView.SelectionChanged += ChannelsView_SelectionChanged;
             plot.PreviewMouseWheel += Plot_PreviewMouseWheel;
 
-            System.Net.IPHostEntry HostEntry = System.Net.Dns.GetHostEntry((System.Net.Dns.GetHostName()));
-            if (HostEntry.AddressList.Length > 0)
-            {
-                foreach (System.Net.IPAddress ip in HostEntry.AddressList)
-                {
-                    cmbInterfaceHost.Items.Add(ip.ToString());
-                }
-                cmbInterfaceHost.SelectedIndex = cmbInterfaceHost.Items.Count - 1;
-            }
-
-             if (File.Exists(Environment.CurrentDirectory + "\\" + TcpClientFileName))
+            if (File.Exists(Environment.CurrentDirectory + "\\" + TcpClientFileName))
             {
                 String ClientTcpIPFile = File.ReadAllText(Environment.CurrentDirectory + "\\" + TcpClientFileName);
                 if (ClientTcpIPFile.Length > 0)
@@ -49,17 +39,6 @@ namespace Ratbuddyssey
                     cmbInterfaceClient.SelectedIndex = cmbInterfaceClient.Items.Count - 1;
                 }
             }
-
-            for(int x=0; x<61; x++)
-            {
-                var fcentre = Math.Pow(10.0, 3.0) * Math.Pow(2.0, ((float)x-34.0)/6.0);
-                Console.Write(x); Console.Write(" ");
-                Console.WriteLine("{0:N1}", fcentre);
-            }
-        }
-
-        ~RatbuddysseyHome()
-        {
         }
 
         private void HandleDroppedFile(object sender, DragEventArgs e)
@@ -91,7 +70,7 @@ namespace Ratbuddyssey
 
         private void ParseAudysseyMultEQAppToFile(string FileName)
         {
-            if(audysseyMultEQApp != null)
+            if (audysseyMultEQApp != null)
             {
                 string Serialized = JsonConvert.SerializeObject(audysseyMultEQApp, new JsonSerializerSettings
                 {
@@ -180,43 +159,6 @@ namespace Ratbuddyssey
             }
         }
         #endregion
-
-        private static void RunAsAdmin()
-        {
-            try
-            {
-                var path = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                using (var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path, "/run_elevated_action")
-                {
-                    Verb = "runas"
-                }))
-                {
-                    process?.WaitForExit();
-                }
-
-            }
-            catch (Win32Exception ex)
-            {
-                if (ex.NativeErrorCode == 1223)
-                {
-                    System.Windows.Forms.MessageBox.Show("Sniffer needs elevated rights for raw socket!", "Warning");
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
-
-        private static bool IsElevated()
-        {
-            using (var identity = System.Security.Principal.WindowsIdentity.GetCurrent())
-            {
-                var principal = new System.Security.Principal.WindowsPrincipal(identity);
-
-                return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
-            }
-        }
 
         private void tabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

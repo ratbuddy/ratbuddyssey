@@ -1,5 +1,5 @@
-﻿using System;
-using System.Windows.Forms;
+using System;
+using System.Windows;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +27,7 @@ namespace Audyssey
             if (high_frequency_roll_off_1_points == null)
             {
                 string warning = high_frequency_roll_off_1_points_filename + " missing";
-                MessageBox.Show(warning, "Json file reader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(warning, "Json file reader", MessageBoxButton.OK, MessageBoxImage.Warning);
                 high_frequency_roll_off_1_points_filename = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), high_frequency_roll_off_1_points_filename), "png");
                 high_frequency_roll_off_1_points = GeneratePointsFromBitmap(high_frequency_roll_off_1_points_filename);
             }
@@ -38,7 +38,7 @@ namespace Audyssey
             else
             {
                 string warning = high_frequency_roll_off_1_points_filename + " missing";
-                MessageBox.Show(warning, "Bitmap file reader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(warning, "Bitmap file reader", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
 
             high_frequency_roll_off_2_points_filename = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), high_frequency_roll_off_2_points_filename), "json");
@@ -46,7 +46,7 @@ namespace Audyssey
             if (high_frequency_roll_off_2_points == null)
             {
                 string warning = high_frequency_roll_off_2_points_filename + " missing";
-                MessageBox.Show(warning, "Json file reader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(warning, "Json file reader", MessageBoxButton.OK, MessageBoxImage.Warning);
                 high_frequency_roll_off_2_points_filename = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), high_frequency_roll_off_2_points_filename), "png");
                 high_frequency_roll_off_2_points = GeneratePointsFromBitmap(high_frequency_roll_off_2_points_filename);
             }
@@ -57,7 +57,7 @@ namespace Audyssey
             else
             {
                 string warning = high_frequency_roll_off_2_points_filename + " missing";
-                MessageBox.Show(warning, "Bitmap file reader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(warning, "Bitmap file reader", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
         public Collection<DataPoint> High_Frequency_Roll_Off_1()
