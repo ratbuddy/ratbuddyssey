@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Windows.Controls;
 
 namespace Audyssey
 {
@@ -78,7 +77,7 @@ namespace Audyssey
                 }
             }
             [JsonIgnore]
-            public Dictionary<string,string> SelectedItem
+            public Dictionary<string, string> SelectedItem
             {
                 set
                 {
@@ -113,6 +112,6 @@ namespace Audyssey
                 }
             }
             #endregion
-        }       
+        }
     }
 }

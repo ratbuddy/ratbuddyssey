@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Windows;
 
 namespace Audyssey
 {
@@ -34,7 +33,7 @@ namespace Audyssey
 
             #region Properties
             public bool? HPPlug
-            { 
+            {
                 get
                 {
                     return _HPPlug;

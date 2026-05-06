@@ -1,269 +1,247 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using OxyPlot;
-using OxyPlot.Axes;
-using OxyPlot.Series;
 using Audyssey.MultEQApp;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Interactivity;
+using Avalonia.Media;
+using ScottPlot;
 
 namespace Ratbuddyssey
 {
-    public partial class RatbuddysseyHome : Page
+    public partial class RatbuddysseyHome
     {
-        private PlotModel plotModel = new PlotModel();
-        
-        private List<int> keys = new List<int>();
-        private Dictionary<int, Brush> colors = new Dictionary<int, Brush>();
-        
+        private readonly List<int> measurementKeys = new();
+        private readonly Dictionary<int, ScottPlot.Color> measurementColors = new();
+
         private double smoothingFactor = 0;
-        
+
         private DetectedChannel selectedChannel = null;
-        private List<DetectedChannel> stickyChannel = new List<DetectedChannel>();
+        private readonly List<DetectedChannel> stickyChannel = new();
 
         private string selectedAxisLimits = "rbtnXRangeFull";
-        private Dictionary<string, AxisLimit> AxisLimits = new Dictionary<string, AxisLimit>()
+        private readonly Dictionary<string, AxisLimit> AxisLimits = new()
         {
-            {"rbtnXRangeFull", new AxisLimit { XMin = 10, XMax = 24000, YMin = -35, YMax = 20, YShift = 0, MajorStep = 5, MinorStep = 1 } },
-            {"rbtnXRangeSubwoofer", new AxisLimit { XMin = 10, XMax = 1000, YMin = -35, YMax = 20, YShift = 0, MajorStep = 5, MinorStep = 1 } },
-            {"rbtnXRangeChirp", new AxisLimit { XMin = 0, XMax = 350, YMin = -0.1, YMax = 0.1, YShift = 0, MajorStep = 0.01, MinorStep = 0.001 } }
+            { "rbtnXRangeFull",      new AxisLimit { XMin = 10, XMax = 24000, YMin = -35, YMax = 20, YShift = 0, MajorStep = 5,    MinorStep = 1 } },
+            { "rbtnXRangeSubwoofer", new AxisLimit { XMin = 10, XMax = 1000,  YMin = -35, YMax = 20, YShift = 0, MajorStep = 5,    MinorStep = 1 } },
+            { "rbtnXRangeChirp",     new AxisLimit { XMin = 0,  XMax = 350,   YMin = -0.1, YMax = 0.1, YShift = 0, MajorStep = 0.01, MinorStep = 0.001 } }
         };
+
+        private void BuildFilterSliders()
+        {
+            // 61-band filter sliders are built in code-behind to avoid 60+ lines of repetitive XAML.
+            var labels = new[]
+            {
+                "20Hz","22Hz","25Hz","28Hz","31Hz","35Hz","39Hz","44Hz","50Hz","56Hz",
+                "62.5Hz","70Hz","79Hz","88Hz","100Hz","111Hz","125Hz","140Hz","157.5Hz","177Hz",
+                "200Hz","223Hz","250","280","315","354","400","445","500","561",
+                "630","707","800","890","1kHz","1.1kHz","1.2kHz","1.4kHz","1.6kHz","1.8kHz",
+                "2kHz","2.2kHz","2.5kHz","2.8kHz","3.2kHz","3.6kHz","4kHz","4.5kHz","5kHz","5.6kHz",
+                "6.4kHz","7.2kHz","8kHz","9kHz","10kHz","11.2kHz","12.8kHz","14.4kHz","16kHz","18kHz","20kHz"
+            };
+            var panel = this.FindControl<StackPanel>("FilBandsPanel");
+            if (panel == null) return;
+            for (int i = 0; i < labels.Length; i++)
+            {
+                var sp = new StackPanel { Orientation = Avalonia.Layout.Orientation.Vertical };
+                var slider = new Slider
+                {
+                    Height = 150,
+                    Minimum = -20,
+                    Maximum = 10,
+                    Orientation = Avalonia.Layout.Orientation.Vertical,
+                    TickPlacement = TickPlacement.Outside,
+                    LargeChange = 5,
+                    SmallChange = 1
+                };
+                slider.Bind(Slider.ValueProperty, new Avalonia.Data.Binding($"SelectedDisFil.FilData[{i}]"));
+                sp.Children.Add(slider);
+                sp.Children.Add(new TextBlock { Text = labels[i], FontSize = 10, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center });
+                panel.Children.Add(sp);
+            }
+        }
+
+        private static ScottPlot.Color BrushToColor(IBrush brush)
+        {
+            if (brush is ISolidColorBrush scb)
+            {
+                var c = scb.Color;
+                return new ScottPlot.Color(c.R, c.G, c.B, c.A);
+            }
+            return ScottPlot.Colors.Black;
+        }
 
         private void DrawChart()
         {
-            if (plot != null)
-            {
-                ClearPlot();
-                if (selectedChannel != null)
-                {
-                    PlotLine(selectedChannel);
-                }
-                if (stickyChannel != null)
-                {
-                    foreach(var channel in stickyChannel)
-                    {
-                        if (channel.Sticky == true)
-                        {
-                            PlotLine(channel, true);
-                        }
-                    }
-                }
-                if (audysseyMultEQApp != null)
-                {
-                    switch (audysseyMultEQApp.EnTargetCurveType)
-                    {
-                        case 0:
-                            break;
-                        case 1:
-                            PlotLine(null, false);
-                            break;
-                        case 2:
-                            PlotLine(null, true);
-                            break;
-                        default:
-                            PlotLine(null, false);
-                            PlotLine(null, true);
-                            break;
+            if (plot == null) return;
+            plot.Plot.Clear();
 
-                    }
-                }
-                PlotAxis();
-                PlotChart();
-            }
-        }
-        private void ClearPlot()
-        {
-            if (plot.Model != null && plot.Model.Series != null)
+            if (selectedChannel != null) PlotLine(selectedChannel);
+            foreach (var channel in stickyChannel)
             {
-                plot.Model.Series.Clear();
-                plot.Model = null;
+                if (channel.Sticky) PlotLine(channel, secondaryChannel: true);
             }
-        }
-        private void PlotChart()
-        {
-            plot.Model = plotModel;
-        }
-        private void PlotAxis()
-        {
-            plotModel.Axes.Clear();
-            AxisLimit Limits = AxisLimits[selectedAxisLimits];
-            if (selectedAxisLimits == "rbtnXRangeChirp")
+            if (audysseyMultEQApp != null)
             {
-                if (chbxLogarithmicAxis != null)
+                switch (audysseyMultEQApp.EnTargetCurveType)
                 {
-                    if (chbxLogarithmicAxis.IsChecked == true)
-                    {
-                        plotModel.Axes.Add(new LogarithmicAxis { Position = AxisPosition.Bottom, Title = "ms", Minimum = Limits.XMin, Maximum = Limits.XMax, MajorGridlineStyle = LineStyle.Dot });
-                    }
-                    else
-                    {
-                        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "ms", Minimum = Limits.XMin, Maximum = Limits.XMax, MajorGridlineStyle = LineStyle.Dot });
-                    }
+                    case 0: break;
+                    case 1: PlotLine(null, false); break;
+                    case 2: PlotLine(null, true); break;
+                    default:
+                        PlotLine(null, false);
+                        PlotLine(null, true);
+                        break;
                 }
-                plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "", Minimum = Limits.YMin, Maximum = Limits.YMax, MajorStep = Limits.MajorStep, MinorStep = Limits.MinorStep, MajorGridlineStyle = LineStyle.Solid });
+            }
+            ApplyAxes();
+            plot.Refresh();
+        }
+
+        private void ApplyAxes()
+        {
+            var limits = AxisLimits[selectedAxisLimits];
+            bool isChirp = selectedAxisLimits == "rbtnXRangeChirp";
+            bool logX = chbxLogarithmicAxis?.IsChecked == true && !isChirp;
+
+            plot.Plot.Axes.Bottom.Label.Text = isChirp ? "ms" : "Hz";
+            plot.Plot.Axes.Left.Label.Text = isChirp ? string.Empty : "dB";
+
+            if (logX)
+            {
+                var minorTickGen = new ScottPlot.TickGenerators.LogMinorTickGenerator();
+                var tickGen = new ScottPlot.TickGenerators.NumericAutomatic
+                {
+                    MinorTickGenerator = minorTickGen,
+                    IntegerTicksOnly = true,
+                    LabelFormatter = v => Math.Pow(10, v).ToString("N0", CultureInfo.InvariantCulture)
+                };
+                plot.Plot.Axes.Bottom.TickGenerator = tickGen;
+                plot.Plot.Axes.SetLimits(
+                    Math.Log10(Math.Max(1, limits.XMin)),
+                    Math.Log10(limits.XMax),
+                    limits.YMin + limits.YShift,
+                    limits.YMax + limits.YShift);
             }
             else
             {
-                if (chbxLogarithmicAxis != null)
-                {
-                    if (chbxLogarithmicAxis.IsChecked == true)
-                    {
-                        plotModel.Axes.Add(new LogarithmicAxis { Position = AxisPosition.Bottom, Title = "Hz", Minimum = Limits.XMin, Maximum = Limits.XMax, MajorGridlineStyle = LineStyle.Dot });
-                    }
-                    else
-                    {
-                        plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "Hz", Minimum = Limits.XMin, Maximum = Limits.XMax, MajorGridlineStyle = LineStyle.Dot });
-                    }
-                }
-                plotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = "dB", Minimum = Limits.YMin + Limits.YShift, Maximum = Limits.YMax + Limits.YShift, MajorStep = Limits.MajorStep, MinorStep = Limits.MinorStep, MajorGridlineStyle = LineStyle.Solid });
+                plot.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericAutomatic();
+                plot.Plot.Axes.SetLimits(
+                    limits.XMin,
+                    limits.XMax,
+                    limits.YMin + (isChirp ? 0 : limits.YShift),
+                    limits.YMax + (isChirp ? 0 : limits.YShift));
             }
         }
-        private void PlotLine(DetectedChannel selectedChannel, bool secondaryChannel = false)
+
+        private void PlotLine(DetectedChannel channel, bool secondaryChannel = false)
         {
-            if (selectedChannel == null)
+            bool logX = chbxLogarithmicAxis?.IsChecked == true && selectedAxisLimits != "rbtnXRangeChirp";
+
+            if (channel == null)
             {
-                Collection<DataPoint> points = null;
-                //time domain data
+                var refPoints = secondaryChannel
+                    ? audysseyMultEQReferenceCurveFilter.High_Frequency_Roll_Off_2()
+                    : audysseyMultEQReferenceCurveFilter.High_Frequency_Roll_Off_1();
+                if (refPoints == null || refPoints.Count == 0) return;
+
+                double[] xs = new double[refPoints.Count];
+                double[] ys = new double[refPoints.Count];
+                for (int i = 0; i < refPoints.Count; i++)
+                {
+                    xs[i] = logX ? Math.Log10(Math.Max(1e-9, refPoints[i].X)) : refPoints[i].X;
+                    ys[i] = refPoints[i].Y;
+                }
+                var line = plot.Plot.Add.Scatter(xs, ys);
+                line.Color = ScottPlot.Colors.Red;
+                line.LineWidth = 2;
+                line.MarkerSize = 0;
+                return;
+            }
+
+            for (int i = 0; i < measurementKeys.Count; i++)
+            {
+                string key = measurementKeys[i].ToString();
+                if (!channel.ResponseData.ContainsKey(key)) continue;
+
+                string[] values = channel.ResponseData[key];
+                int count = values.Length;
+                var limits = AxisLimits[selectedAxisLimits];
+
+                List<double> xList = new(count);
+                List<double> yList = new(count);
+
                 if (selectedAxisLimits == "rbtnXRangeChirp")
                 {
+                    const float sampleRate = 48000f;
+                    float totalTimeMs = 1000f * count / sampleRate;
+                    for (int j = 0; j < count; j++)
+                    {
+                        double d = double.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
+                        xList.Add(j * totalTimeMs / count);
+                        yList.Add(d);
+                    }
                 }
-                //frequency domain data
                 else
                 {
-                    if (secondaryChannel)
+                    const float sampleRate = 48000f;
+                    var cValues = new Complex[count];
+                    var xs = new double[count];
+                    for (int j = 0; j < count; j++)
                     {
-                        points = audysseyMultEQReferenceCurveFilter.High_Frequency_Roll_Off_2();
+                        decimal d = decimal.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
+                        cValues[j] = 100 * (Complex)d;
+                        xs[j] = (double)j / count * sampleRate;
                     }
-                    else
-                    {
-                        points = audysseyMultEQReferenceCurveFilter.High_Frequency_Roll_Off_1();
-                    }
+                    MathNet.Numerics.IntegralTransforms.Fourier.Forward(cValues);
 
-                    if (points != null)
+                    int half = count / 2;
+                    if (radioButtonSmoothingFactorNone?.IsChecked == true)
                     {
-                        OxyColor color = OxyColor.FromRgb(255, 0, 0);
-                        LineSeries lineserie = new LineSeries
+                        for (int x = 0; x < half; x++)
                         {
-                            ItemsSource = points,
-                            DataFieldX = "X",
-                            DataFieldY = "Y",
-                            StrokeThickness = 2,
-                            MarkerSize = 0,
-                            LineStyle = LineStyle.Solid,
-                            Color = color,
-                            MarkerType = MarkerType.None,
-                        };
-                        plotModel.Series.Add(lineserie);
-                    }
-                }
-            }
-            else
-            {
-                for (int i = 0; i < keys.Count; i++)
-                {
-                    Collection<DataPoint> points = new Collection<DataPoint>();
-
-                    string s = keys[i].ToString();
-                    if (!selectedChannel.ResponseData.ContainsKey(s))
-                        continue;
-
-                    string[] values = selectedChannel.ResponseData[s];
-                    int count = values.Length;
-                    Complex[] cValues = new Complex[count];
-                    double[] Xs = new double[count];
-
-                    float sample_rate = 48000;
-                    float total_time = count / sample_rate;
-
-                    AxisLimit Limits = AxisLimits[selectedAxisLimits];
-                    if (selectedAxisLimits == "rbtnXRangeChirp")
-                    {
-                        Limits.XMax = 1000 * total_time; // horizotal scale: s to ms
-                        for (int j = 0; j < count; j++)
-                        {
-                            double d = Double.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
-                            points.Add(new DataPoint(1000 * j * total_time / count, d));
+                            double freq = xs[x];
+                            xList.Add(logX ? Math.Log10(Math.Max(1e-9, freq)) : freq);
+                            yList.Add(limits.YShift + 20 * Math.Log10(cValues[x].Magnitude));
                         }
                     }
                     else
                     {
-                        for (int j = 0; j < count; j++)
+                        var smoothed = cValues.Select(c => c.Magnitude).ToArray();
+                        LinSpacedFracOctaveSmooth(smoothingFactor, ref smoothed, 1, 1d / 48);
+                        for (int x = 0; x < half; x++)
                         {
-                            decimal d = Decimal.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
-                            Complex cValue = (Complex)d;
-                            cValues[j] = 100 * cValue;
-                            Xs[j] = (double)j / count * sample_rate;
-                        }
-
-                        MathNet.Numerics.IntegralTransforms.Fourier.Forward(cValues);
-
-                        int x = 0;
-                        if (radioButtonSmoothingFactorNone.IsChecked.Value)
-                        {
-                            foreach (Complex cValue in cValues)
-                            {
-                                points.Add(new DataPoint(Xs[x++], Limits.YShift + 20 * Math.Log10(cValue.Magnitude)));
-                                if (x == count / 2) break;
-                            }
-                        }
-                        else
-                        {
-                            double[] smoothed = new double[count];
-                            for (int j = 0; j < count; j++)
-                            {
-                                smoothed[j] = cValues[j].Magnitude;
-                            }
-
-                            LinSpacedFracOctaveSmooth(smoothingFactor, ref smoothed, 1, 1d / 48);
-
-                            foreach (double smoothetResult in smoothed)
-                            {
-                                points.Add(new DataPoint(Xs[x++], Limits.YShift + 20 * Math.Log10(smoothetResult)));
-                                if (x == count / 2) break;
-                            }
+                            double freq = xs[x];
+                            xList.Add(logX ? Math.Log10(Math.Max(1e-9, freq)) : freq);
+                            yList.Add(limits.YShift + 20 * Math.Log10(smoothed[x]));
                         }
                     }
-
-                    OxyColor color = OxyColor.Parse(colors[keys[i]].ToString());
-                    LineSeries lineserie = new LineSeries
-                    {
-                        ItemsSource = points,
-                        DataFieldX = "X",
-                        DataFieldY = "Y",
-                        StrokeThickness = 1,
-                        MarkerSize = 0,
-                        LineStyle = secondaryChannel ? LineStyle.Dot : LineStyle.Solid,
-                        Color = color,
-                        MarkerType = MarkerType.None,
-                    };
-
-                    plotModel.Series.Add(lineserie);
                 }
+
+                var color = measurementColors.TryGetValue(measurementKeys[i], out var c) ? c : ScottPlot.Colors.Black;
+                var series = plot.Plot.Add.Scatter(xList.ToArray(), yList.ToArray());
+                series.Color = color;
+                series.LineWidth = 1;
+                series.MarkerSize = 0;
+                series.LinePattern = secondaryChannel ? LinePattern.Dotted : LinePattern.Solid;
             }
         }
+
         private void LinSpacedFracOctaveSmooth(double frac, ref double[] smoothed, float startFreq, double freqStep)
         {
-            int passes = 8;
-            // Scale octave frac to allow for number of passes
-            double scaledFrac = 7.5 * frac; //Empirical tweak to better match Gaussian smoothing
+            const int passes = 8;
+            double scaledFrac = 7.5 * frac;
             double octMult = Math.Pow(2, 0.5 / scaledFrac);
-            double bwFactor = (octMult - 1 / octMult);
+            double bwFactor = octMult - 1 / octMult;
             double b = 0.5 + bwFactor * startFreq / freqStep;
             int N = smoothed.Length;
-            double xp;
-            double yp;
-            // Smooth from HF to LF to avoid artificial elevation of HF data
             for (int pass = 0; pass < passes; pass++)
             {
-                xp = smoothed[N - 1];
-                yp = xp;
-                // reverse pass
+                double xp = smoothed[N - 1];
+                double yp = xp;
                 for (int i = N - 2; i >= 0; i--)
                 {
                     double a = 1 / (b + i * bwFactor);
@@ -271,7 +249,6 @@ namespace Ratbuddyssey
                     xp = smoothed[i];
                     smoothed[i] = (float)yp;
                 }
-                // forward pass
                 for (int i = 1; i < N; i++)
                 {
                     double a = 1 / (b + i * bwFactor);
@@ -281,183 +258,139 @@ namespace Ratbuddyssey
                 }
             }
         }
-        private void Plot_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+
+        private CheckBox[] MeasurementCheckBoxes() => new[] { chbx1, chbx2, chbx3, chbx4, chbx5, chbx6, chbx7, chbx8 };
+
+        private void CheckBoxMeasurementPositionChanged(object sender, RoutedEventArgs e)
         {
-            e.Handled = true;
-        }
-        private void CheckBoxMeasurementPositionUnchecked(object sender, RoutedEventArgs e)
-        {
-            CheckBox checkBox = sender as CheckBox;
-            int val = int.Parse(checkBox.Content.ToString()) - 1;
-            if (keys.Contains(val))
+            if (sender is not CheckBox cb || cb.Content == null) return;
+            if (!int.TryParse(cb.Content.ToString(), out int n)) return;
+            int val = n - 1;
+            bool isChecked = cb.IsChecked == true;
+
+            if (!isChecked)
             {
-                keys.Remove(val);
-                colors.Remove(val);
-                DrawChart();
+                if (measurementKeys.Contains(val))
+                {
+                    measurementKeys.Remove(val);
+                    measurementColors.Remove(val);
+                    DrawChart();
+                }
+                return;
             }
-        }
-        private void CheckBoxMeasurementPositionChecked(object sender, RoutedEventArgs e)
-        {
-            CheckBox checkBox = sender as CheckBox;
-            int val = int.Parse(checkBox.Content.ToString()) - 1;
+
             if (selectedChannel != null && !selectedChannel.ResponseData.ContainsKey(val.ToString()))
             {
-                // This channel has not been measured in this Audyssey calibration. Don't attempt to plot it, and clear the checkbox.
-                checkBox.IsChecked = false;
+                cb.IsChecked = false;
+                return;
             }
-            else if (!keys.Contains(val))
+            if (!measurementKeys.Contains(val))
             {
-                keys.Add(val);
-                colors.Add(val, checkBox.Foreground);
+                measurementKeys.Add(val);
+                measurementColors[val] = BrushToColor(cb.Foreground);
                 DrawChart();
             }
         }
-        private void AllCheckBoxMeasurementPositionChecked(object sender, RoutedEventArgs e)
+
+        private void AllCheckBoxMeasurementPositionChanged(object sender, RoutedEventArgs e)
         {
-            chbx1.IsChecked = true;
-            chbx2.IsChecked = true;
-            chbx3.IsChecked = true;
-            chbx4.IsChecked = true;
-            chbx5.IsChecked = true;
-            chbx6.IsChecked = true;
-            chbx7.IsChecked = true;
-            chbx8.IsChecked = true;
+            if (sender is not CheckBox cb) return;
+            bool target = cb.IsChecked == true;
+            foreach (var c in MeasurementCheckBoxes())
+            {
+                if (c.IsEnabled || !target) c.IsChecked = target;
+            }
             DrawChart();
         }
-        private void AllCheckBoxMeasurementPositionUnchecked(object sender, RoutedEventArgs e)
-        {
-            chbx1.IsChecked = false;
-            chbx2.IsChecked = false;
-            chbx3.IsChecked = false;
-            chbx4.IsChecked = false;
-            chbx5.IsChecked = false;
-            chbx6.IsChecked = false;
-            chbx7.IsChecked = false;
-            chbx8.IsChecked = false;
-            DrawChart();
-        }
+
         private void ChannelsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            List<CheckBox> checkBoxes = new List<CheckBox> {
-                chbx1, chbx2, chbx3, chbx4, chbx5, chbx6, chbx7, chbx8
-            };
+            var checkBoxes = MeasurementCheckBoxes();
+            foreach (var checkBox in checkBoxes) checkBox.IsEnabled = false;
 
-            // Disable all the check boxes
-            foreach (var checkBox in checkBoxes)
+            if (channelsView.SelectedItem is DetectedChannel sel && sel.ResponseData != null)
             {
-                checkBox.IsEnabled = false;
-            }
-
-            var selectedValue = channelsView.SelectedValue as DetectedChannel;
-            if (selectedValue != null && selectedValue.ResponseData != null)
-            {
-                // Enable the check boxes corresponding to those positions for which the measurement is available
-                foreach (var measurementPosition in selectedValue.ResponseData)
+                foreach (var measurementPosition in sel.ResponseData)
                 {
-                    int positionIndex = int.Parse(measurementPosition.Key);
-                    Debug.Assert(positionIndex >= 0 && positionIndex < checkBoxes.Count);
-                    checkBoxes[positionIndex].IsEnabled = true;
+                    if (int.TryParse(measurementPosition.Key, out int idx) && idx >= 0 && idx < checkBoxes.Length)
+                    {
+                        checkBoxes[idx].IsEnabled = true;
+                    }
                 }
-
-                if (selectedValue.ResponseData.Count > 0)
+                if (sel.ResponseData.Count > 0)
                 {
-                    selectedChannel = (DetectedChannel)channelsView.SelectedValue;
+                    selectedChannel = sel;
+                    RefreshStickyChannels();
                     DrawChart();
                 }
             }
 
-            // Un-check all the disabled check boxes
-            foreach (var checkBox in checkBoxes)
+            foreach (var cb in checkBoxes)
             {
-                if (!checkBox.IsEnabled && checkBox.IsChecked == true)
-                    checkBox.IsChecked = false;
+                if (!cb.IsEnabled && cb.IsChecked == true) cb.IsChecked = false;
             }
         }
-        private void ChannelsView_OnClickSticky(object sender, RoutedEventArgs e)
+
+        private void RefreshStickyChannels()
         {
+            stickyChannel.Clear();
+            if (audysseyMultEQApp?.DetectedChannels == null) return;
             foreach (var channel in audysseyMultEQApp.DetectedChannels)
             {
-                if (channel.Sticky)
-                {
-                    stickyChannel.Add(channel);
-                    DrawChart();
-                }
-                else if (stickyChannel.Contains(channel))
-                {
-                    stickyChannel.Remove(channel);
-                    DrawChart();
-                }
+                if (channel.Sticky) stickyChannel.Add(channel);
             }
         }
+
         private void ButtonClickAddTargetCurvePoint(object sender, RoutedEventArgs e)
         {
-            if(!string.IsNullOrEmpty(keyTbx.Text) && !string.IsNullOrEmpty(valueTbx.Text))
+            if (channelsView.SelectedItem is DetectedChannel ch &&
+                !string.IsNullOrEmpty(keyTbx.Text) && !string.IsNullOrEmpty(valueTbx.Text))
             {
-                ((DetectedChannel)channelsView.SelectedValue).CustomTargetCurvePointsDictionary.Add(new MyKeyValuePair(keyTbx.Text, valueTbx.Text));
+                ch.CustomTargetCurvePointsDictionary.Add(new MyKeyValuePair(keyTbx.Text, valueTbx.Text));
             }
         }
+
         private void ButtonClickRemoveTargetCurvePoint(object sender, RoutedEventArgs e)
         {
-            Button b = sender as Button;
-            MyKeyValuePair pair = b.DataContext as MyKeyValuePair;
-            ((DetectedChannel)channelsView.SelectedValue).CustomTargetCurvePointsDictionary.Remove(pair);            
-        }
-        private void RadioButtonSmoothingFactorChecked(object sender, RoutedEventArgs e)
-        {
-            RadioButton radioButton = sender as RadioButton;
-            switch (radioButton.Name)
+            if (sender is Button b && b.DataContext is MyKeyValuePair pair &&
+                channelsView.SelectedItem is DetectedChannel ch)
             {
-                case "radioButtonSmoothingFactorNone":
-                    smoothingFactor = 1;
-                    break;
-                case "radioButtonSmoothingFactor2":
-                    smoothingFactor = 2;
-                    break;
-                case "radioButtonSmoothingFactor3":
-                    smoothingFactor = 3;
-                    break;
-                case "radioButtonSmoothingFactor6":
-                    smoothingFactor = 6;
-                    break;
-                case "radioButtonSmoothingFactor12":
-                    smoothingFactor = 12;
-                    break;
-                case "radioButtonSmoothingFactor24":
-                    smoothingFactor = 24;
-                    break;
-                case "radioButtonSmoothingFactor48":
-                    smoothingFactor = 48;
-                    break;
-                default:
-                    break;
+                ch.CustomTargetCurvePointsDictionary.Remove(pair);
             }
-            DrawChart();
         }
-        private void rbtnXRange_Checked(object sender, RoutedEventArgs e)
+
+        private void RadioButtonSmoothingFactorChanged(object sender, RoutedEventArgs e)
         {
-            RadioButton radioButton = sender as RadioButton;
-            selectedAxisLimits = radioButton.Name;
+            if (sender is not RadioButton rb || rb.IsChecked != true) return;
+            smoothingFactor = rb.Name switch
+            {
+                "radioButtonSmoothingFactorNone" => 1,
+                "radioButtonSmoothingFactor2" => 2,
+                "radioButtonSmoothingFactor3" => 3,
+                "radioButtonSmoothingFactor6" => 6,
+                "radioButtonSmoothingFactor12" => 12,
+                "radioButtonSmoothingFactor24" => 24,
+                "radioButtonSmoothingFactor48" => 48,
+                _ => smoothingFactor
+            };
             DrawChart();
         }
-        private void chbxStickSubwoofer_Checked(object sender, RoutedEventArgs e)
+
+        private void rbtnXRange_Changed(object sender, RoutedEventArgs e)
         {
-            DrawChart();
+            if (sender is RadioButton rb && rb.IsChecked == true)
+            {
+                selectedAxisLimits = rb.Name;
+                DrawChart();
+            }
         }
-        private void chbxLogarithmicAxis_Checked(object sender, RoutedEventArgs e)
-        {
-            DrawChart();
-        }
-        private void chbxLogarithmicAxis_Unchecked(object sender, RoutedEventArgs e)
-        {
-            DrawChart();
-        }
-        private void TargetCurveTypeSelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            DrawChart();
-        }
+
+        private void chbxLogarithmicAxis_Changed(object sender, RoutedEventArgs e) => DrawChart();
+
+        private void TargetCurveTypeSelectionChanged(object sender, SelectionChangedEventArgs e) => DrawChart();
     }
 
-    class AxisLimit
+    internal class AxisLimit
     {
         public double XMin { get; set; }
         public double XMax { get; set; }

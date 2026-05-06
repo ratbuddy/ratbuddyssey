@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Ratbuddyssey</RootNamespace>
     <AssemblyName>Ratbuddyssey</AssemblyName>
     <Nullable>disable</Nullable>
@@ -12,17 +11,25 @@
     <Authors>Ratbuddyssey contributors</Authors>
     <Product>Ratbuddyssey</Product>
     <Copyright>Copyright © Ratbuddyssey contributors</Copyright>
-    <StartupObject>Ratbuddyssey.App</StartupObject>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.14" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.14" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.14" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.14" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.13" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.14" Condition="'$(Configuration)' == 'Debug'" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="OxyPlot.Wpf" Version="2.2.0" />
-    <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
+    <PackageReference Include="ScottPlot.Avalonia" Version="5.1.58" />
   </ItemGroup>
 
   <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
     <None Include="..\high_frequency_roll_off_1.json" Link="high_frequency_roll_off_1.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

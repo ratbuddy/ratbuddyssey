@@ -1,28 +1,28 @@
-﻿using Audyssey;
-using Audyssey.MultEQAvr;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Windows;
-using System.Windows.Controls;
+using Audyssey;
+using Audyssey.MultEQAvr;
 using Audyssey.MultEQAvrAdapter;
-using System.Collections.ObjectModel;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
+using Newtonsoft.Json;
 
 namespace Ratbuddyssey
 {
-    public partial class RatbuddysseyHome : Page
+    public partial class RatbuddysseyHome
     {
         private AudysseyMultEQAvr audysseyMultEQAvr = null;
         private AudysseyMultEQAvrTcp audysseyMultEQAvrTcp = null;
         private AudysseyMultEQAvrAdapter audysseyMultEQAvrAdapter = null;
 
-        private void ParseFileToAudysseyMultEQAvr(string FileName)
+        private void ParseFileToAudysseyMultEQAvr(string fileName)
         {
-            if (File.Exists(FileName))
+            if (File.Exists(fileName))
             {
-                string Serialized = File.ReadAllText(FileName);
-                audysseyMultEQAvr = JsonConvert.DeserializeObject<AudysseyMultEQAvr>(Serialized, new JsonSerializerSettings { });
+                string serialized = File.ReadAllText(fileName);
+                audysseyMultEQAvr = JsonConvert.DeserializeObject<AudysseyMultEQAvr>(serialized, new JsonSerializerSettings { });
                 if (audysseyMultEQAvrAdapter == null)
                 {
                     audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
@@ -30,272 +30,213 @@ namespace Ratbuddyssey
             }
         }
 
-        private void ParseAudysseyMultEQAvrToFile(string FileName)
+        private void ParseAudysseyMultEQAvrToFile(string fileName)
         {
             if (audysseyMultEQAvr != null)
             {
-                string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
+                string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
                 {
                     NullValueHandling = NullValueHandling.Ignore
                 });
-                if ((Serialized != null) && (!string.IsNullOrEmpty(FileName)))
+                if (!string.IsNullOrEmpty(serialized) && !string.IsNullOrEmpty(fileName))
                 {
-                    File.WriteAllText(FileName, Serialized);
+                    File.WriteAllText(fileName, serialized);
                 }
             }
         }
 
-        private void openProjectFile_Click(object sender, RoutedEventArgs e)
+        private async void openProjectFile_Click(object sender, RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.FileName = "AudysseySniffer.aud";
-            dlg.DefaultExt = ".aud";
-            dlg.Filter = "Audyssey sniffer (*.aud)|*.aud";
-            Nullable<bool> result = dlg.ShowDialog();
-
-            if (result == true)
+            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                ParseFileToAudysseyMultEQAvr(dlg.FileName);
+                Title = "Open Project",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Audyssey sniffer") { Patterns = new[] { "*.aud" } }
+                }
+            });
+            if (files != null && files.Count > 0)
+            {
+                var path = files[0].TryGetLocalPath();
+                if (string.IsNullOrEmpty(path)) return;
+                ParseFileToAudysseyMultEQAvr(path);
                 if (audysseyMultEQAvr != null)
                 {
-                    if (tabControl.SelectedIndex == 0)
-                    {
-                        this.DataContext = audysseyMultEQAvrAdapter;
-                    }
+                    if (tabControl.SelectedIndex == 0) DataContext = audysseyMultEQAvrAdapter;
+                    if (tabControl.SelectedIndex == 1) DataContext = audysseyMultEQAvr;
+                }
+            }
+        }
+
+        private async void saveProjectFile_Click(object sender, RoutedEventArgs e)
+        {
+            var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = "Save Project",
+                SuggestedFileName = "AudysseySniffer.aud",
+                DefaultExtension = "aud",
+                FileTypeChoices = new[]
+                {
+                    new FilePickerFileType("Audyssey sniffer") { Patterns = new[] { "*.aud" } }
+                }
+            });
+            if (file != null)
+            {
+                var path = file.TryGetLocalPath();
+                if (!string.IsNullOrEmpty(path)) ParseAudysseyMultEQAvrToFile(path);
+            }
+        }
+
+        private async void ConnectReceiver_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (sender != connectReceiver) return;
+
+            if (connectReceiver.IsChecked == true)
+            {
+                if (string.IsNullOrEmpty(cmbInterfaceClient.Text))
+                {
+                    await MessageBoxHelper.ShowAsync(this, "Ratbuddyssey", "Please enter receiver IP address.");
+                    connectReceiver.IsChecked = false;
+                    return;
+                }
+
+                if (audysseyMultEQAvrTcp == null)
+                {
+                    audysseyMultEQAvr ??= new AudysseyMultEQAvr();
+                    audysseyMultEQAvrTcp = new AudysseyMultEQAvrTcp(audysseyMultEQAvr, cmbInterfaceClient.Text);
+                    audysseyMultEQAvrAdapter ??= new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
+
+                    if (tabControl.SelectedIndex == 0 && audysseyMultEQApp == null)
+                        DataContext = audysseyMultEQAvrAdapter;
                     if (tabControl.SelectedIndex == 1)
-                    {
-                        this.DataContext = audysseyMultEQAvr;
-                    }
+                        DataContext = audysseyMultEQAvr;
                 }
+                audysseyMultEQAvrTcp.Connect();
             }
-        }
-
-        private void saveProjectFile_Click(object sender, RoutedEventArgs e)
-        {
-            Microsoft.Win32.SaveFileDialog dlg = new Microsoft.Win32.SaveFileDialog();
-
-            // Set filter for file extension and default file extension 
-            dlg.FileName = "AudysseySniffer.aud";
-            dlg.DefaultExt = ".aud";
-            dlg.Filter = "Audyssey sniffer (.aud)|*.aud";
-
-            // Show save file dialog box
-            Nullable<bool> result = dlg.ShowDialog();
-
-            // Process save file dialog box results
-            if (result == true)
+            else
             {
-                ParseAudysseyMultEQAvrToFile(dlg.FileName);
-            }
-        }
-
-        private void ConnectReceiver_OnClick(object sender, RoutedEventArgs e)
-        {
-            if (sender == connectReceiver)
-            {
-                if (connectReceiver.IsChecked)
-                {
-                    if (string.IsNullOrEmpty(cmbInterfaceClient.Text))
-                    {
-                        System.Windows.MessageBox.Show("Please enter receiver IP address.");
-                    }
-                    else
-                    {
-                        // if there is no Tcp client
-                        if (audysseyMultEQAvrTcp == null)
-                        {
-                            // create receiver instance
-                            if (audysseyMultEQAvr == null)
-                            {
-                                audysseyMultEQAvr = new AudysseyMultEQAvr();
-                            }
-                            // create receiver tcp instance
-                            audysseyMultEQAvrTcp = new AudysseyMultEQAvrTcp(audysseyMultEQAvr, cmbInterfaceClient.Text);
-                            // create adapter to interface MultEQAvr properties as if they were MultEQApp properties 
-                            if (audysseyMultEQAvrAdapter == null)
-                            {
-                                audysseyMultEQAvrAdapter = new AudysseyMultEQAvrAdapter(audysseyMultEQAvr);
-                            }
-                            // data Binding to adapter
-                            if ((tabControl.SelectedIndex == 0) && (audysseyMultEQApp == null))
-                            {
-                                this.DataContext = audysseyMultEQAvrAdapter;
-                            }
-                            if (tabControl.SelectedIndex == 1)
-                            {
-                                this.DataContext = audysseyMultEQAvr;
-                            }
-                        }
-                        audysseyMultEQAvrTcp.Connect();
-                    }
-                }
-                else
-                {
-                    audysseyMultEQAvrAdapter = null;
-                    audysseyMultEQAvrTcp = null;
-                    audysseyMultEQAvr = null;
-                    // immediately clean up the object
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                    this.DataContext = null;
-                }
+                audysseyMultEQAvrAdapter = null;
+                audysseyMultEQAvrTcp = null;
+                audysseyMultEQAvr = null;
+                DataContext = null;
             }
         }
 
         private void ChannelSetupView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (audysseyMultEQAvr != null)
+            if (audysseyMultEQAvr != null && ChannelSetupView.SelectedItem is KeyValuePair<string, string> kvp)
             {
-                if (ChannelSetupView.SelectedItem != null)
-                {
-                    audysseyMultEQAvr.SelectedItem = (Dictionary<string, string>)ChannelSetupView.SelectedItem;
-                }
+                audysseyMultEQAvr.SelectedItem = new Dictionary<string, string> { { kvp.Key, kvp.Value } };
             }
         }
 
         private void ConnectAudyssey_OnClick(object sender, RoutedEventArgs e)
         {
-            if (sender == connectAudyssey)
+            if (sender != connectAudyssey) return;
+
+            if (connectAudyssey.IsChecked == true)
             {
-                if (connectAudyssey.IsChecked)
-                {
-                    if (audysseyMultEQAvrTcp != null)
-                    {
-                        audysseyMultEQAvrTcp.EnterAudysseyMode();
-                    }
-                    else
-                    {
-                        connectAudyssey.IsChecked = false;
-                    }
-                }
-                else
-                {
-                    if (audysseyMultEQAvrTcp != null)
-                    {
-                        audysseyMultEQAvrTcp.ExitAudysseyMode();
-                    }
-                    else
-                    {
-                        // if we end up here we have a problem
-                    }
-                }
+                if (audysseyMultEQAvrTcp != null) audysseyMultEQAvrTcp.EnterAudysseyMode();
+                else connectAudyssey.IsChecked = false;
+            }
+            else
+            {
+                audysseyMultEQAvrTcp?.ExitAudysseyMode();
             }
         }
 
         private void getReceiverInfo_Click(object sender, RoutedEventArgs e)
         {
-            if ((audysseyMultEQAvrTcp != null) && (audysseyMultEQAvr != null))
+            if (audysseyMultEQAvrTcp != null && audysseyMultEQAvr != null && audysseyMultEQAvrTcp.GetAvrInfo())
             {
-                if (audysseyMultEQAvrTcp.GetAvrInfo())
-                {
 #if DEBUG
-                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
-                    {
-                        ContractResolver = new InterfaceContractResolver(typeof(IInfo))
-                    });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrInfo.json", Serialized);
+                string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
+                {
+                    ContractResolver = new InterfaceContractResolver(typeof(IInfo))
+                });
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "AvrInfo.json"), serialized);
 #endif
-                }
             }
         }
 
         private void getReceiverStatus_Click(object sender, RoutedEventArgs e)
         {
-            if ((audysseyMultEQAvrTcp != null) && (audysseyMultEQAvr != null))
+            if (audysseyMultEQAvrTcp != null && audysseyMultEQAvr != null && audysseyMultEQAvrTcp.GetAvrStatus())
             {
-                if (audysseyMultEQAvrTcp.GetAvrStatus())
-                {
 #if DEBUG
-                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
-                    {
-                        ContractResolver = new InterfaceContractResolver(typeof(IStatus))
-                    });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrStatus.json", Serialized);
+                string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
+                {
+                    ContractResolver = new InterfaceContractResolver(typeof(IStatus))
+                });
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "AvrStatus.json"), serialized);
 #endif
-                }
             }
         }
 
         private void setAvrSetAmp_Click(object sender, RoutedEventArgs e)
         {
-            if ((audysseyMultEQAvrTcp != null) && (audysseyMultEQAvr != null))
+            if (audysseyMultEQAvrTcp != null && audysseyMultEQAvr != null && audysseyMultEQAvrTcp.SetAvrSetAmp())
             {
-                if (audysseyMultEQAvrTcp.SetAvrSetAmp())
-                {
 #if DEBUG
-                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
-                    {
-                        ContractResolver = new InterfaceContractResolver(typeof(IAmp))
-                    });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAmp.json", Serialized);
+                string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
+                {
+                    ContractResolver = new InterfaceContractResolver(typeof(IAmp))
+                });
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "AvrSetDataAmp.json"), serialized);
 #endif
-                }
             }
         }
 
         private void setAvrSetAudy_Click(object sender, RoutedEventArgs e)
         {
-            if ((audysseyMultEQAvrTcp != null) && (audysseyMultEQAvr != null))
+            if (audysseyMultEQAvrTcp != null && audysseyMultEQAvr != null && audysseyMultEQAvrTcp.SetAvrSetAudy())
             {
-                if (audysseyMultEQAvrTcp.SetAvrSetAudy())
-                {
 #if DEBUG
-                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
-                    {
-                        ContractResolver = new InterfaceContractResolver(typeof(IAudy))
-                    });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrSetDataAud.json", Serialized);
+                string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr, new JsonSerializerSettings
+                {
+                    ContractResolver = new InterfaceContractResolver(typeof(IAudy))
+                });
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "AvrSetDataAud.json"), serialized);
 #endif
-                }
-
             }
         }
 
         private void setAvrSetDisFil_Click(object sender, RoutedEventArgs e)
         {
-            if ((audysseyMultEQAvrTcp != null) && (audysseyMultEQAvr != null))
+            if (audysseyMultEQAvrTcp != null && audysseyMultEQAvr != null && audysseyMultEQAvrTcp.SetAvrSetDisFil())
             {
-                if (audysseyMultEQAvrTcp.SetAvrSetDisFil())
-                {
 #if DEBUG
-                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr.DisFil, new JsonSerializerSettings { });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrDisFil.json", Serialized);
+                string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr.DisFil, new JsonSerializerSettings { });
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "AvrDisFil.json"), serialized);
 #endif
-                }
             }
         }
 
         private void setAvrInitCoefs_Click(object sender, RoutedEventArgs e)
         {
-            if ((audysseyMultEQAvrTcp != null) && (audysseyMultEQAvr != null))
+            if (audysseyMultEQAvrTcp != null && audysseyMultEQAvr != null)
             {
-                if (audysseyMultEQAvrTcp.SetAvrInitCoefs())
-                {
-                }
+                audysseyMultEQAvrTcp.SetAvrInitCoefs();
             }
         }
 
         private void setAvrSetCoefDt_Click(object sender, RoutedEventArgs e)
         {
-            if ((audysseyMultEQAvrTcp != null) && (audysseyMultEQAvr != null))
+            if (audysseyMultEQAvrTcp != null && audysseyMultEQAvr != null && audysseyMultEQAvrTcp.SetAvrSetCoefDt())
             {
-                if (audysseyMultEQAvrTcp.SetAvrSetCoefDt())
-                {
 #if DEBUG
-                    string Serialized = JsonConvert.SerializeObject(audysseyMultEQAvr.CoefData, new JsonSerializerSettings { });
-                    File.WriteAllText(Environment.CurrentDirectory + "\\AvrCoefDafa.json", Serialized);
+                string serialized = JsonConvert.SerializeObject(audysseyMultEQAvr.CoefData, new JsonSerializerSettings { });
+                File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "AvrCoefDafa.json"), serialized);
 #endif
-                }
             }
         }
 
         private void setAudysseyFinishedFlag_Click(object sender, RoutedEventArgs e)
         {
-            if ((audysseyMultEQAvrTcp != null) && (audysseyMultEQAvr != null))
+            if (audysseyMultEQAvrTcp != null && audysseyMultEQAvr != null)
             {
-                if (audysseyMultEQAvrTcp.SetAudysseyFinishedFlag())
-                {
-                }
+                audysseyMultEQAvrTcp.SetAudysseyFinishedFlag();
             }
         }
     }
