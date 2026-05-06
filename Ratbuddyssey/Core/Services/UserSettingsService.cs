@@ -35,6 +35,17 @@ public sealed class UserSettingsService : IUserSettingsService
     public const int MaxRecentFiles = 8;
     private const long MaxSettingsFileBytes = 256 * 1024;
 
+    /// <summary>
+    /// Newtonsoft defaults <see cref="TypeNameHandling"/> to <c>None</c>, but we
+    /// pin it explicitly here so a future global default change can't silently
+    /// open a polymorphic-deserialization vector against an on-disk format.
+    /// </summary>
+    private static readonly JsonSerializerSettings JsonSettings = new()
+    {
+        TypeNameHandling = TypeNameHandling.None,
+        MissingMemberHandling = MissingMemberHandling.Ignore,
+    };
+
     private readonly string _path;
 
     public UserSettings Current { get; private set; } = new();
@@ -53,7 +64,7 @@ public sealed class UserSettingsService : IUserSettingsService
         {
             string dir = Path.GetDirectoryName(_path);
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-            string json = JsonConvert.SerializeObject(Current, Formatting.Indented);
+            string json = JsonConvert.SerializeObject(Current, Formatting.Indented, JsonSettings);
             File.WriteAllText(_path, json);
         }
         catch (Exception ex)
@@ -93,7 +104,7 @@ public sealed class UserSettingsService : IUserSettingsService
             var info = new FileInfo(path);
             if (info.Length == 0 || info.Length > MaxSettingsFileBytes) return null;
             string json = File.ReadAllText(path);
-            return JsonConvert.DeserializeObject<UserSettings>(json);
+            return JsonConvert.DeserializeObject<UserSettings>(json, JsonSettings);
         }
         catch (Exception ex)
         {

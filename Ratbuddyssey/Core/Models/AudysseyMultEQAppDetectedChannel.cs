@@ -80,7 +80,13 @@ public partial class DetectedChannel : MultEQList
         {
             if (SetProperty(ref _customCrossover, value))
             {
-                _customCrossoverIndex = CrossoverList.IndexOf(value + "0");
+                // CrossoverList items are " ", "40", "60", ..., "F". The on-disk
+                // .ady stores the same tokens verbatim, so a direct IndexOf is the
+                // correct lookup. (A previous version appended "0" to value, which
+                // produced "800" / "F0" and silently returned -1 for every loaded
+                // channel.) A null or unrecognised token falls back to -1, which
+                // the ComboBox renders as "no selection".
+                _customCrossoverIndex = value == null ? -1 : CrossoverList.IndexOf(value);
                 OnPropertyChanged(nameof(CustomCrossoverIndex));
             }
         }
@@ -95,7 +101,11 @@ public partial class DetectedChannel : MultEQList
         {
             if (SetProperty(ref _customCrossoverIndex, value))
             {
-                _customCrossover = CrossoverList[value];
+                // Guard against a ComboBox that fires SelectedIndex = -1 when its
+                // ItemsSource is replaced; without this we'd index out of range.
+                _customCrossover = (value >= 0 && value < CrossoverList.Count)
+                    ? CrossoverList[value]
+                    : null;
                 OnPropertyChanged(nameof(CustomCrossover));
             }
         }

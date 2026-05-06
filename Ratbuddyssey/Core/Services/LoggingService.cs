@@ -36,8 +36,10 @@ internal static class LoggingService
 
             Trace.Listeners.Add(listener);
             Trace.AutoFlush = true;
-            Trace.TraceInformation("=== Ratbuddyssey starting (pid {0}, cwd '{1}') ===",
-                Environment.ProcessId, Environment.CurrentDirectory);
+            // Intentionally NOT logging Environment.CurrentDirectory or any other
+            // path: cwd commonly resolves to the user profile, and the log file
+            // travels with bug reports. Process id is enough to correlate runs.
+            Trace.TraceInformation("=== Ratbuddyssey starting (pid {0}) ===", Environment.ProcessId);
         }
         catch (Exception ex)
         {
@@ -71,7 +73,19 @@ internal static class LoggingService
             if (type == "System.Threading.Tasks.TaskCanceledException"
                 || type == "System.OperationCanceledException")
                 return;
-            Trace.TraceWarning("FirstChance {0}: {1}", type, e.Exception.Message);
+            // Log only the exception type at first-chance. Messages frequently
+            // embed full file paths, URLs, or user-supplied strings; the full
+            // detail is still captured if the exception escapes (UnhandledException
+            // / UnobservedTaskException). For deeper diagnostics, opt in via
+            // the RATBUDDYSSEY_TRACE_FIRSTCHANCE_DETAIL environment variable.
+            if (Environment.GetEnvironmentVariable("RATBUDDYSSEY_TRACE_FIRSTCHANCE_DETAIL") == "1")
+            {
+                Trace.TraceWarning("FirstChance {0}: {1}", type, e.Exception.Message);
+            }
+            else
+            {
+                Trace.TraceWarning("FirstChance {0}", type);
+            }
         };
     }
 
