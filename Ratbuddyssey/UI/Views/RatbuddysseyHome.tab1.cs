@@ -272,22 +272,31 @@ namespace Ratbuddyssey
             bool hasUserPoints = userPoints.Count > 0;
 
             // Modifiers that reshape the target.
-            bool midrangeComp = selectedChannel.MidrangeCompensation == true;
+            // Midrange comp, the high-frequency-range rolloff, and the HF
+            // rolloff reference curves are all main-speaker concerns: a
+            // subwoofer never plays above ~120 Hz, so applying a 2 kHz dip,
+            // a 19 kHz cutoff, or an "HF rolloff" reference shape to it just
+            // produces a misleading target line. Restrict them to non-sub
+            // channels so the sub's target is purely its low-pass.
+            bool isSub = Audyssey.AudysseyHardwareQuirks.IsSubwoofer(selectedChannel);
+            bool midrangeComp = !isSub && selectedChannel.MidrangeCompensation == true;
 
             decimal? rolloff = selectedChannel.FrequencyRangeRolloff;
             // Audyssey's default for full-range channels is 20 kHz, which is
             // effectively "no cutoff" — only treat it as a real frequency-range
-            // rolloff if the user dialled it below ~19.5 kHz.
-            bool hasFreqRangeRolloff = rolloff.HasValue && rolloff.Value > 0m && (double)rolloff.Value < 19500.0;
+            // rolloff if the user dialled it below ~19.5 kHz. Subs ignore it.
+            bool hasFreqRangeRolloff = !isSub
+                && rolloff.HasValue && rolloff.Value > 0m && (double)rolloff.Value < 19500.0;
 
-            bool isSub = Audyssey.AudysseyHardwareQuirks.IsSubwoofer(selectedChannel);
             double crossoverHz = ResolveCrossoverHz(selectedChannel, isSub);
             bool hasCrossover = crossoverHz > 0;
 
             // Audyssey's app exposes two preset HF rolloff target shapes
             // (EnTargetCurveType 1 & 2). They're shipped JSON curves whose
             // passband sits at 0 dB and whose shoulder rolls off above ~5 kHz.
-            int hfType = _viewModel?.AudysseyMultEQApp?.EnTargetCurveType ?? 0;
+            // Skip them on subs — the curves' clamped low-frequency endpoint
+            // (~ -14 dB at 20 Hz) would otherwise warp the sub's bass target.
+            int hfType = isSub ? 0 : (_viewModel?.AudysseyMultEQApp?.EnTargetCurveType ?? 0);
             (double[] Hz, double[] Db)? hfShape1 = (hfType == 1 || hfType > 2) ? GetNormalizedHfRolloffShape(false) : null;
             (double[] Hz, double[] Db)? hfShape2 = (hfType == 2 || hfType > 2) ? GetNormalizedHfRolloffShape(true) : null;
 
