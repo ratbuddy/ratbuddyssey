@@ -3,14 +3,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:scott="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
-        xmlns:conv="clr-namespace:Ratbuddyssey.Converters"
         mc:Ignorable="d"
         x:Class="Ratbuddyssey.RatbuddysseyHome"
         Title="Ratbuddyssey - Home"
         Width="1400" Height="900"
         DragDrop.AllowDrop="True">
 
-  <Grid Background="White">
+  <Grid Background="White" DataContext="{Binding AudysseyMultEQApp}">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="Auto"/>
@@ -22,16 +21,16 @@
     <!-- Menu -->
     <Menu Grid.Row="0">
       <MenuItem Header="_File">
-        <MenuItem Header="_Open Audyssey file" Name="openFile" Click="OpenFile_OnClick"/>
-        <MenuItem Header="_Reload (discard unsaved changes)" Name="reloadFile" Click="ReloadFile_OnClick"/>
+        <MenuItem Header="_Open Audyssey file" Command="{Binding $parent[Window].DataContext.OpenFileCommand}"/>
+        <MenuItem Header="_Reload (discard unsaved changes)" Command="{Binding $parent[Window].DataContext.ReloadFileCommand}"/>
         <Separator/>
-        <MenuItem Header="_Save" Name="saveFile" Click="SaveFile_OnClick"/>
-        <MenuItem Header="Save _As" Name="saveFileAs" Click="SaveFileAs_OnClick"/>
+        <MenuItem Header="_Save" Command="{Binding $parent[Window].DataContext.SaveFileCommand}"/>
+        <MenuItem Header="Save _As" Command="{Binding $parent[Window].DataContext.SaveFileAsCommand}"/>
         <Separator/>
-        <MenuItem Header="E_xit" Name="exitProgram" Click="ExitProgram_OnClick"/>
+        <MenuItem Header="E_xit" Command="{Binding $parent[Window].DataContext.ExitProgramCommand}"/>
       </MenuItem>
       <MenuItem Header="_About">
-        <MenuItem Header="About Ratbuddyssey" Name="about" Click="About_OnClick"/>
+        <MenuItem Header="About Ratbuddyssey" Command="{Binding $parent[Window].DataContext.AboutCommand}"/>
       </MenuItem>
     </Menu>
 
@@ -118,7 +117,7 @@
                   <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="Current File:" Grid.Row="0" Grid.Column="0" Margin="4" VerticalAlignment="Center"/>
-                <TextBlock x:Name="currentFile" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="5" Margin="4" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding $parent[Window].DataContext.CurrentFilePath}" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="5" Margin="4" VerticalAlignment="Center"/>
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Amp Assign Info" Margin="4" VerticalAlignment="Center"/>
                 <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="5" Text="{Binding AmpAssignInfo}" VerticalAlignment="Center" Margin="2"/>
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Title" Margin="4" VerticalAlignment="Center"/>

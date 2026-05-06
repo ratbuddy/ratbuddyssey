@@ -145,9 +145,9 @@ namespace Ratbuddyssey
             {
                 if (channel.Sticky) PlotLine(channel, secondaryChannel: true);
             }
-            if (audysseyMultEQApp != null)
+            if (_viewModel.AudysseyMultEQApp != null)
             {
-                switch (audysseyMultEQApp.EnTargetCurveType)
+                switch (_viewModel.AudysseyMultEQApp.EnTargetCurveType)
                 {
                     case 0: break;
                     case 1: PlotLine(null, false); break;
@@ -387,8 +387,8 @@ namespace Ratbuddyssey
         private void RefreshStickyChannels()
         {
             stickyChannel.Clear();
-            if (audysseyMultEQApp?.DetectedChannels == null) return;
-            foreach (var channel in audysseyMultEQApp.DetectedChannels)
+            if (_viewModel.AudysseyMultEQApp?.DetectedChannels == null) return;
+            foreach (var channel in _viewModel.AudysseyMultEQApp.DetectedChannels)
             {
                 if (channel.Sticky) stickyChannel.Add(channel);
             }
