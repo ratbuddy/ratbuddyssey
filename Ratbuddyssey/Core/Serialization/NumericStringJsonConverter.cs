@@ -5,8 +5,8 @@ using Newtonsoft.Json;
 namespace Audyssey.MultEQApp;
 
 /// <summary>
-/// Reads either a JSON string or a JSON number into a string property; always
-/// writes back as a string with invariant-culture formatting.
+/// Reads either a JSON string or a JSON number into a string property; writes
+/// back as a JSON string.
 /// <para>
 /// The official Audyssey MultEQ Editor emits <c>customLevel</c>,
 /// <c>delayAdjustment</c>, and <c>trimAdjustment</c> as JSON strings (e.g.
@@ -15,6 +15,15 @@ namespace Audyssey.MultEQApp;
 /// rewrites them as JSON numbers. Accept both on read so users can feed
 /// AudysseyOne-processed files back into Ratbuddyssey, but always emit strings
 /// so output stays compatible with the official editor.
+/// </para>
+/// <para>
+/// On write the stored string is preserved verbatim so a round-trip of an
+/// untouched file is byte-for-byte identical, even if the user's locale
+/// formats decimals differently. The integer / float read paths use
+/// <see cref="CultureInfo.InvariantCulture"/> to construct the string in the
+/// first place, so culture leakage can only occur if a caller assigns a
+/// locale-formatted string directly to the property — which the rest of the
+/// app does not do.
 /// </para>
 /// </summary>
 internal sealed class NumericStringJsonConverter : JsonConverter<string>

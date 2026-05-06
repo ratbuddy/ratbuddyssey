@@ -54,8 +54,13 @@ public class MultEQList
     [JsonIgnore]
     public ObservableCollection<decimal> SelectedChLevelList { get; } = new()
     {
-        -12m, -11.5m, -11m, -10.5m, -10m, -9.5m, -9m, -8.5m, -8m, -7.5m, -7m, -6.5m, -6m, -5.5m, -5m, -4.5m, -4m, -3.5m, -3m, -2.5m, -2m, -1.5m, -1m, -0.5m, 0m,
-        0.5m, 1.0m, 1.5m, 2.0m, 2.5m, 3m, 3.5m, 4m, 4.5m, 5m, 5.5m, 6m, 6.5m, 7m, 7.5m, 9m, 8.5m, 9m, 9.5m, 10m, 10.5m, 11m, 11.5m, 12m
+        // Strictly increasing 0.5 dB steps from -12 to +12. The original
+        // hand-typed literal accidentally skipped 8.0 dB and listed 9.0 dB
+        // twice (a transposition between 7.5 and 9.5).
+        -12m, -11.5m, -11m, -10.5m, -10m, -9.5m, -9m, -8.5m, -8m, -7.5m, -7m, -6.5m,
+        -6m, -5.5m, -5m, -4.5m, -4m, -3.5m, -3m, -2.5m, -2m, -1.5m, -1m, -0.5m,
+        0m, 0.5m, 1m, 1.5m, 2m, 2.5m, 3m, 3.5m, 4m, 4.5m, 5m, 5.5m,
+        6m, 6.5m, 7m, 7.5m, 8m, 8.5m, 9m, 9.5m, 10m, 10.5m, 11m, 11.5m, 12m
     };
 
     [JsonIgnore]

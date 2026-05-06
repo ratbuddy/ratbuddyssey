@@ -76,10 +76,11 @@ public partial class AudysseyMultEQApp : MultEQList
     [JsonIgnore]
     public string TargetCurveType
     {
-        get => TargetCurveTypeList[(int)EnTargetCurveType];
+        get => GetListItem(TargetCurveTypeList, EnTargetCurveType);
         set
         {
-            EnTargetCurveType = TargetCurveTypeList.IndexOf(value);
+            int idx = TargetCurveTypeList.IndexOf(value);
+            EnTargetCurveType = idx >= 0 ? idx : (int?)null;
             OnPropertyChanged(nameof(TargetCurveType));
         }
     }
@@ -87,10 +88,11 @@ public partial class AudysseyMultEQApp : MultEQList
     [JsonIgnore]
     public string AmpAssignType
     {
-        get => AmpAssignTypeList[(int)EnAmpAssignType];
+        get => GetListItem(AmpAssignTypeList, EnAmpAssignType);
         set
         {
-            EnAmpAssignType = AmpAssignTypeList.IndexOf(value);
+            int idx = AmpAssignTypeList.IndexOf(value);
+            EnAmpAssignType = idx >= 0 ? idx : (int?)null;
             OnPropertyChanged(nameof(AmpAssignType));
         }
     }
@@ -98,11 +100,25 @@ public partial class AudysseyMultEQApp : MultEQList
     [JsonIgnore]
     public string MultEQType
     {
-        get => MultEQTypeList[(int)EnMultEQType];
+        get => GetListItem(MultEQTypeList, EnMultEQType);
         set
         {
-            EnMultEQType = MultEQTypeList.IndexOf(value);
+            int idx = MultEQTypeList.IndexOf(value);
+            EnMultEQType = idx >= 0 ? idx : (int?)null;
             OnPropertyChanged(nameof(MultEQType));
         }
+    }
+
+    /// <summary>
+    /// Safely resolves an enum-as-int (nullable, may be out of range from a
+    /// future schema bump or a corrupt file) to a list entry. Returns null on
+    /// any out-of-band index so bindings render "no selection" instead of
+    /// throwing inside a debugger / data-template evaluation.
+    /// </summary>
+    private static string GetListItem(System.Collections.ObjectModel.ObservableCollection<string> list, int? index)
+    {
+        if (list == null || index == null) return null;
+        int i = index.Value;
+        return (i >= 0 && i < list.Count) ? list[i] : null;
     }
 }
