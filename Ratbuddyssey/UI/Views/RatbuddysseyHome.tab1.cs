@@ -888,8 +888,22 @@ namespace Ratbuddyssey
                 // either short-circuit the path or stretch the y-axis to a value
                 // ScottPlot then auto-clips). Filter to finite, in-band points
                 // and we get the expected high-frequency rolloff line.
+                //
+                // The shipped curves' passband sits at y = +1.0 (not 0), so
+                // adding the 75 dB anchor would put the rolloff line 1 dB above
+                // a flat target. Subtract the curve's passband peak so the
+                // flat region lines up with the flat target curve and only the
+                // rolloff shoulder dips below.
                 var xList = new List<double>(refPoints.Count);
                 var yList = new List<double>(refPoints.Count);
+                double passbandPeak = double.NegativeInfinity;
+                for (int i = 0; i < refPoints.Count; i++)
+                {
+                    double y = refPoints[i].Y;
+                    if (double.IsNaN(y) || double.IsInfinity(y)) continue;
+                    if (y > passbandPeak) passbandPeak = y;
+                }
+                if (double.IsNegativeInfinity(passbandPeak)) passbandPeak = 0.0;
                 for (int i = 0; i < refPoints.Count; i++)
                 {
                     double x = refPoints[i].X;
@@ -900,7 +914,7 @@ namespace Ratbuddyssey
                     xList.Add(logX ? Math.Log10(x) : x);
                     // Reference roll-off points are relative-dB; share the
                     // 75 dB anchor with measurements and target curve.
-                    yList.Add(y + NormalizeToReferenceDb);
+                    yList.Add((y - passbandPeak) + NormalizeToReferenceDb);
                 }
                 if (xList.Count < 2) return;
 
