@@ -18,6 +18,9 @@ public interface IDialogService
     /// <summary>Show the confirm-reload yes/no prompt.</summary>
     Task<bool> ConfirmReloadAsync();
 
+    /// <summary>Confirm with the user that unsaved changes can be discarded. Returns true to proceed.</summary>
+    Task<bool> ConfirmDiscardChangesAsync();
+
     /// <summary>Show the About dialog.</summary>
     Task ShowAboutAsync();
 

@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Audyssey;
 using Audyssey.MultEQApp;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -39,9 +43,191 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _currentFilePath = string.Empty;
 
+    /// <summary>
+    /// True when the loaded model has been mutated since the last open/save.
+    /// Drives the title-bar asterisk and the discard-changes prompt.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isDirty;
+
+    /// <summary>Title shown in the host window. Tracks file name + dirty marker.</summary>
+    [ObservableProperty]
+    private string _windowTitle = "Ratbuddyssey";
+
+    /// <summary>
+    /// Per-channel display rows (decorates <see cref="DetectedChannel"/> with
+    /// a friendly speaker name + AudysseyOne-derived hardware-limits validation).
+    /// </summary>
+    public ObservableCollection<ChannelRowViewModel> ChannelRows { get; } = new();
+
+    /// <summary>Live-filtered view of <see cref="ChannelRows"/> driven by <see cref="ChannelFilter"/>.</summary>
+    public ObservableCollection<ChannelRowViewModel> FilteredChannelRows { get; } = new();
+
+    /// <summary>Free-text filter applied to the channel grid (matches commandId or speaker name).</summary>
+    [ObservableProperty]
+    private string _channelFilter = string.Empty;
+
+    partial void OnChannelFilterChanged(string value) => RebuildFilteredRows();
+
+    /// <summary>
+    /// AudysseyOne-style hardware quirks summary for the loaded receiver/file.
+    /// Empty when no file is loaded.
+    /// </summary>
+    [ObservableProperty]
+    private string _hardwareInfo = string.Empty;
+
+    /// <summary>Speed of sound (m/s) Audyssey uses on the loaded receiver. 0 when no file is loaded.</summary>
+    [ObservableProperty]
+    private double _speedOfSoundMps;
+
+    /// <summary>Remaining sub-distance headroom (m) given the per-sub <c>delayAdjustment</c> already applied.</summary>
+    [ObservableProperty]
+    private decimal _subwooferDelayHeadroomMeters;
+
+    /// <summary>Most-negative trim (dB) AudysseyOne would still let the AVR accept on the sub channel.</summary>
+    [ObservableProperty]
+    private decimal _subwooferTrimFloorDb;
+
+    /// <summary>Catalogue of "house curve" presets shown in the Target Curve Points section.</summary>
+    public IReadOnlyList<Ratbuddyssey.HouseCurves.HouseCurve> HouseCurves => Ratbuddyssey.HouseCurves.All;
+
+    /// <summary>Currently-selected preset; defaults to the flat reference so applying it is a safe no-op.</summary>
+    [ObservableProperty]
+    private Ratbuddyssey.HouseCurves.HouseCurve _selectedHouseCurve = Ratbuddyssey.HouseCurves.All[0];
+
     public MainViewModel(IDialogService dialogs)
     {
         _dialogs = dialogs;
+    }
+
+    partial void OnAudysseyMultEQAppChanged(AudysseyMultEQApp oldValue, AudysseyMultEQApp newValue)
+    {
+        if (oldValue != null) UnsubscribeDirtyTracking(oldValue);
+        if (newValue != null) SubscribeDirtyTracking(newValue);
+        RefreshHardwareQuirks();
+        RebuildChannelRows();
+        UpdateWindowTitle();
+    }
+
+    private void RebuildChannelRows()
+    {
+        foreach (var row in ChannelRows) row.Dispose();
+        ChannelRows.Clear();
+        var app = AudysseyMultEQApp;
+        if (app?.DetectedChannels != null)
+        {
+            foreach (var ch in app.DetectedChannels)
+            {
+                if (ch == null) continue;
+                ChannelRows.Add(new ChannelRowViewModel(ch, () => SubwooferTrimFloorDb));
+            }
+        }
+        RebuildFilteredRows();
+    }
+
+    private void RebuildFilteredRows()
+    {
+        FilteredChannelRows.Clear();
+        foreach (var r in ChannelRows)
+        {
+            if (r.MatchesFilter(ChannelFilter)) FilteredChannelRows.Add(r);
+        }
+    }
+
+    private void RefreshAllRowValidations()
+    {
+        foreach (var r in ChannelRows) r.Refresh();
+    }
+
+    partial void OnCurrentFilePathChanged(string value) => UpdateWindowTitle();
+    partial void OnIsDirtyChanged(bool value) => UpdateWindowTitle();
+    partial void OnSubwooferTrimFloorDbChanged(decimal value) => RefreshAllRowValidations();
+
+    private void UpdateWindowTitle()
+    {
+        string name = string.IsNullOrEmpty(CurrentFilePath) ? "(no file)" : Path.GetFileName(CurrentFilePath);
+        string mark = IsDirty ? "*" : string.Empty;
+        WindowTitle = $"Ratbuddyssey — {name}{mark}";
+    }
+
+    private void SubscribeDirtyTracking(AudysseyMultEQApp app)
+    {
+        app.PropertyChanged += OnModelChanged;
+        if (app.DetectedChannels != null)
+        {
+            app.DetectedChannels.CollectionChanged += OnDetectedChannelsChanged;
+            foreach (var ch in app.DetectedChannels)
+            {
+                if (ch != null) ch.PropertyChanged += OnModelChanged;
+            }
+        }
+    }
+
+    private void UnsubscribeDirtyTracking(AudysseyMultEQApp app)
+    {
+        app.PropertyChanged -= OnModelChanged;
+        if (app.DetectedChannels != null)
+        {
+            app.DetectedChannels.CollectionChanged -= OnDetectedChannelsChanged;
+            foreach (var ch in app.DetectedChannels)
+            {
+                if (ch != null) ch.PropertyChanged -= OnModelChanged;
+            }
+        }
+    }
+
+    private void OnDetectedChannelsChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems != null)
+        {
+            foreach (var item in e.OldItems)
+            {
+                if (item is Audyssey.MultEQApp.DetectedChannel ch) ch.PropertyChanged -= OnModelChanged;
+            }
+        }
+        if (e.NewItems != null)
+        {
+            foreach (var item in e.NewItems)
+            {
+                if (item is Audyssey.MultEQApp.DetectedChannel ch) ch.PropertyChanged += OnModelChanged;
+            }
+        }
+        IsDirty = true;
+    }
+
+    private void OnModelChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        // Hardware quirks need to refresh when sub trim/delay/model edits happen.
+        if (sender is AudysseyMultEQApp
+            || e.PropertyName == nameof(Audyssey.MultEQApp.DetectedChannel.DelayAdjustment)
+            || e.PropertyName == nameof(Audyssey.MultEQApp.DetectedChannel.TrimAdjustment))
+        {
+            RefreshHardwareQuirks();
+        }
+        IsDirty = true;
+    }
+
+    private void RefreshHardwareQuirks()
+    {
+        var app = AudysseyMultEQApp;
+        if (app == null)
+        {
+            HardwareInfo = string.Empty;
+            SpeedOfSoundMps = 0;
+            SubwooferDelayHeadroomMeters = 0;
+            SubwooferTrimFloorDb = 0;
+            return;
+        }
+
+        SpeedOfSoundMps = AudysseyHardwareQuirks.GetSpeedOfSoundMps(app.TargetModelName);
+        SubwooferDelayHeadroomMeters = AudysseyHardwareQuirks.GetSubwooferDelayHeadroomMeters(app.DetectedChannels);
+        SubwooferTrimFloorDb = AudysseyHardwareQuirks.GetSubwooferTrimFloorDb(app.DetectedChannels);
+
+        string model = string.IsNullOrEmpty(app.TargetModelName) ? "(unknown receiver)" : app.TargetModelName;
+        HardwareInfo = string.Format(
+            System.Globalization.CultureInfo.InvariantCulture,
+            "{0}  •  speed of sound {1:0.#} m/s  •  sub delay headroom {2:0.##} m  •  sub trim floor {3:0.##} dB",
+            model, SpeedOfSoundMps, SubwooferDelayHeadroomMeters, SubwooferTrimFloorDb);
     }
 
     [RelayCommand]
@@ -49,6 +235,7 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
+            if (IsDirty && !await _dialogs.ConfirmDiscardChangesAsync()) return;
             string path = await _dialogs.OpenAdyFileAsync();
             if (!string.IsNullOrEmpty(path)) LoadFile(path);
         }
@@ -200,6 +387,7 @@ public partial class MainViewModel : ObservableObject
         NormalizeModel(parsed);
         AudysseyMultEQApp = parsed;
         CurrentFilePath = filePath;
+        IsDirty = false;
     }
 
     /// <summary>
@@ -241,6 +429,7 @@ public partial class MainViewModel : ObservableObject
         string serialized = JsonConvert.SerializeObject(AudysseyMultEQApp, AdyWriteSettings);
         if (!string.IsNullOrEmpty(serialized))
         {
+            IsDirty = false;
             File.WriteAllText(fileName, serialized);
         }
     }

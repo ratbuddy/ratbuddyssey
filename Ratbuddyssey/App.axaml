@@ -1,9 +1,98 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:rb="clr-namespace:Ratbuddyssey"
              x:Class="Ratbuddyssey.App"
              RequestedThemeVariant="Default">
+  <Application.Resources>
+    <rb:StatusKindToBrushConverter x:Key="StatusKindToBrush"/>
+  </Application.Resources>
   <Application.Styles>
     <FluentTheme />
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+    <!-- Section card: subtle background, rounded corners, prominent header. -->
+    <Style Selector="HeaderedContentControl">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{DynamicResource SystemControlBackgroundAltMediumLowBrush}"
+                  BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                  BorderThickness="1"
+                  CornerRadius="6"
+                  Padding="0"
+                  Margin="3">
+            <DockPanel>
+              <Border DockPanel.Dock="Top"
+                      Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                      BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                      BorderThickness="0,0,0,1"
+                      Padding="10,6">
+                <ContentPresenter Content="{TemplateBinding Header}"
+                                  FontWeight="SemiBold"
+                                  FontSize="13"
+                                  Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+              </Border>
+              <ContentPresenter Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                Margin="6" />
+            </DockPanel>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+
+    <!-- Form controls: consistent height + a touch more breathing room. -->
+    <Style Selector="TextBox">
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="Padding" Value="6,4" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="MinHeight" Value="30" />
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="Margin" Value="0,2" />
+    </Style>
+
+    <!-- TabControl: stronger header strip, clearly clickable pill-style tabs
+         with a hover state and an accent underline on the active tab. -->
+    <Style Selector="TabControl">
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="TabControl > TabItem">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Padding" Value="14,8" />
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="TabControl > TabItem:pointerover">
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+    </Style>
+    <Style Selector="TabControl > TabItem:selected">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorBrush}" />
+    </Style>
+
+    <!-- Menu items: a hair more padding so the menu bar doesn't feel cramped. -->
+    <Style Selector="Menu > MenuItem">
+      <Setter Property="Padding" Value="10,6" />
+    </Style>
+
+    <!-- DataGrid: lighter alternating rows + clearer selection highlight. -->
+    <Style Selector="DataGrid">
+      <Setter Property="GridLinesVisibility" Value="Horizontal" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+      <Setter Property="RowBackground" Value="Transparent" />
+      <Setter Property="HeadersVisibility" Value="Column" />
+    </Style>
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Padding" Value="8,6" />
+    </Style>
+
+    <!-- GridSplitter: visible enough to grab. -->
+    <Style Selector="GridSplitter">
+      <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+    </Style>
   </Application.Styles>
 </Application>

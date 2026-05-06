@@ -7,6 +7,7 @@ using System.Text;
 using Audyssey.MultEQ;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Audyssey.MultEQApp;
 
@@ -20,16 +21,26 @@ public partial class DetectedChannel : MultEQList
     private bool? _isSkipMeasurement;
 
     [ObservableProperty]
+    [property: JsonConverter(typeof(NumericStringJsonConverter))]
     private string _delayAdjustment;
 
     [ObservableProperty]
     private string _commandId;
 
     [ObservableProperty]
+    [property: JsonConverter(typeof(NumericStringJsonConverter))]
     private string _trimAdjustment;
 
     [ObservableProperty]
     private ChannelReport _channelReport;
+
+    /// <summary>
+    /// Per-channel reference-curve filter. Empty object (<c>{}</c>) in factory .ady
+    /// files but reserved by the official MultEQ Editor; preserved verbatim so
+    /// round-tripping doesn't drop data we don't yet model.
+    /// </summary>
+    [ObservableProperty]
+    private JObject _referenceCurveFilter;
 
     [ObservableProperty]
     private Dictionary<string, string[]> _responseData;
@@ -41,6 +52,7 @@ public partial class DetectedChannel : MultEQList
     private decimal? _frequencyRangeRolloff;
 
     [ObservableProperty]
+    [property: JsonConverter(typeof(NumericStringJsonConverter))]
     private string _customLevel;
 
     [ObservableProperty]
@@ -55,6 +67,10 @@ public partial class DetectedChannel : MultEQList
 
     [JsonIgnore]
     public bool Sticky { get; set; }
+
+    /// <summary>Human-friendly speaker name derived from <see cref="CommandId"/>.</summary>
+    [JsonIgnore]
+    public string SpeakerName => Audyssey.AudysseyChannelNames.Friendly(CommandId);
 
     private string _customCrossover;
     public string CustomCrossover
@@ -102,7 +118,15 @@ public partial class DetectedChannel : MultEQList
     public bool ShouldSerializeCustomSpeakerType() => CustomSpeakerType != null;
     public bool ShouldSerializeCustomDistance() => CustomDistance.HasValue;
     public bool ShouldSerializeCustomCrossover() => CustomCrossover != null;
+    public bool ShouldSerializeReferenceCurveFilter() => ReferenceCurveFilter != null;
 #pragma warning restore CA1822
+
+    /// <summary>
+    /// Catch-all for any per-channel keys we don't explicitly model so they
+    /// survive a round-trip back into the official MultEQ Editor.
+    /// </summary>
+    [JsonExtensionData]
+    public IDictionary<string, JToken> ExtensionData { get; set; }
 
     private static ObservableCollection<MyKeyValuePair> ConvertStringArrayToDictionary(string[] array)
     {

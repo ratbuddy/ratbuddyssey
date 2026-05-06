@@ -11,6 +11,36 @@ exported from the official Audyssey MultEQ Editor app, lets you tweak channel
 parameters / target curves / EQ filters, and saves the result back as `.ady`
 (JSON) so you can re-import it into the Audyssey app.
 
+It does **not** talk to your AVR over the network. You always go through the
+official MultEQ Editor app for the upload step. That keeps Ratbuddyssey out of
+the receiver's authentication / pairing path and means you can experiment
+freely without ever risking the device's own state.
+
+## What you get
+
+- **Channels panel** with friendly speaker names (Front L, Top Front R,
+  Subwoofer 1, ...) derived from the Audyssey `commandId`. Live filter box on
+  top to jump to a channel by name or id.
+- **Per-channel hardware-limits validation** with a status dot in the leftmost
+  column: green = within the receiver's allowed ranges, yellow = soft warning
+  (e.g. crossover off the receiver's snap list), red = the official Editor
+  will refuse the value (e.g. trim outside ±12 dB).
+- **Hardware quirks summary** in the status strip: detected receiver model,
+  speed of sound (300 vs 343 m/s depending on firmware era), remaining
+  subwoofer-distance headroom, and the most-negative trim the AVR will still
+  accept on the sub channel — all derived from the same heuristics
+  [AudysseyOne](https://github.com/ObsessiveCompulsiveAudiophile/AudysseyOne)
+  uses.
+- **Target-curve editor** with add/remove points and an 8-position
+  measurement-slot strip on the chart, using the
+  [Wong (2011) colorblind-safe palette](https://www.nature.com/articles/nmeth.1618).
+- **Light / Dark / System theme** with persistence between launches.
+- **Recent files** menu (up to 8 entries, MRU-ordered).
+- **Drag-and-drop or `ratbuddyssey foo.ady`** from the command line to open
+  a calibration directly.
+- **Dirty tracking**: title bar shows `Ratbuddyssey — file.ady*` while
+  unsaved, with a confirm-discard prompt on close or open.
+
 ## Status
 
 Early/alpha. Use at your own risk — always keep a backup of your original
@@ -59,6 +89,21 @@ CI also publishes framework-dependent artifacts for `win-x64`, `linux-x64`,
 - [Newtonsoft.Json](https://www.newtonsoft.com/json) for `.ady` serialization
   (preserves the property order the official Audyssey app expects)
 - [MathNet.Numerics](https://numerics.mathdotnet.com/) for filter math
+
+## File-association on Windows
+
+Optional — associate `.ady` files with Ratbuddyssey so double-clicking opens
+them. Edit the path in [`scripts/ratbuddyssey-ady-association.reg`](scripts/ratbuddyssey-ady-association.reg)
+to point at your installed `Ratbuddyssey.exe`, then double-click the `.reg`
+file. Remove with `scripts/ratbuddyssey-ady-association-remove.reg`.
+
+## Acknowledgements
+
+The hardware-quirks heuristics (receiver-model speed-of-sound list, ±12 dB
+trim clamp, sub-trim floor, crossover snap list, default-curve replacement
+rules used in the optional post-process) were derived from
+[AudysseyOne](https://github.com/ObsessiveCompulsiveAudiophile/AudysseyOne)
+by ObsessiveCompulsiveAudiophile, which is also MIT-licensed.
 
 ## License
 

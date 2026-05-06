@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
@@ -35,23 +36,31 @@ namespace Ratbuddyssey
         private XRange selectedXRange = XRange.Full;
         private static readonly Dictionary<XRange, AxisLimit> AxisLimits = new()
         {
-            { XRange.Full,      new AxisLimit { XMin = 10, XMax = 24000, YMin = -35, YMax = 20, YShift = 0, MajorStep = 5,    MinorStep = 1 } },
-            { XRange.Subwoofer, new AxisLimit { XMin = 10, XMax = 1000,  YMin = -35, YMax = 20, YShift = 0, MajorStep = 5,    MinorStep = 1 } },
+            // Y range is anchored around the normalization target (75 dB — see
+            // NormalizeToReferenceDb). 45–95 gives ±20 dB of headroom which is
+            // generous for in-room measurements; bumps and dips beyond that are
+            // pathological and worth being clipped so they're noticed.
+            { XRange.Full,      new AxisLimit { XMin = 20, XMax = 20000, YMin = 45, YMax = 95, YShift = 0, MajorStep = 5,    MinorStep = 1 } },
+            { XRange.Subwoofer, new AxisLimit { XMin = 10, XMax = 1000,  YMin = 45, YMax = 95, YShift = 0, MajorStep = 5,    MinorStep = 1 } },
             { XRange.Chirp,     new AxisLimit { XMin = 0,  XMax = 350,   YMin = -0.1, YMax = 0.1, YShift = 0, MajorStep = 0.01, MinorStep = 0.001 } },
         };
 
         private readonly ObservableCollection<MeasurementSlot> measurementSlotItems = BuildMeasurementSlots();
 
+        // Wong (2011) 8-color colorblind-safe palette. Reordered so the
+        // first slot is the high-contrast anchor color and adjacent slots stay
+        // distinguishable for deuteranopia/protanopia/tritanopia viewers.
+        // Reference: https://www.nature.com/articles/nmeth.1618
         private static readonly (string Label, string ColorName)[] MeasurementSlotDescriptors =
         {
-            ("1", "Black"),
-            ("2", "Blue"),
-            ("3", "Violet"),
-            ("4", "Green"),
-            ("5", "Orange"),
-            ("6", "Red"),
-            ("7", "Cyan"),
-            ("8", "DeepPink"),
+            ("1", "#000000"), // Black
+            ("2", "#0072B2"), // Blue
+            ("3", "#E69F00"), // Orange
+            ("4", "#009E73"), // Green
+            ("5", "#CC79A7"), // Reddish purple
+            ("6", "#D55E00"), // Vermillion
+            ("7", "#56B4E9"), // Sky blue
+            ("8", "#F0E442"), // Yellow
         };
 
         private static ObservableCollection<MeasurementSlot> BuildMeasurementSlots()
@@ -143,35 +152,251 @@ namespace Ratbuddyssey
             return ScottPlot.Colors.Black;
         }
 
+        /// <summary>
+        /// The first measurement slot uses pure black for max contrast against
+        /// the white plot. In dark mode that's invisible, so swap it to a soft
+        /// off-white. Called from <c>ApplyPlotTheme</c>.
+        /// </summary>
+        private void AdaptFirstMeasurementSlotToTheme(bool dark)
+        {
+            if (measurementSlotItems.Count == 0) return;
+            var slot = measurementSlotItems[0];
+            var newBrush = (IBrush)Brush.Parse(dark ? "#F5F5F5" : "#000000");
+            slot.Brush = newBrush;
+            if (slot.IsChecked) measurementColors[slot.Index] = BrushToColor(newBrush);
+        }
+
         private void DrawChart()
         {
-            if (plot == null) return;
+            if (plot == null)
+            {
+                Trace.TraceWarning("DrawChart skipped: plot control is null.");
+                return;
+            }
             plot.Plot.Clear();
 
-            if (selectedChannel != null) PlotLine(selectedChannel);
+            int linesAdded = 0;
+            if (selectedChannel != null) { PlotLine(selectedChannel); linesAdded++; }
             foreach (var channel in stickyChannel)
             {
-                if (channel.Sticky) PlotLine(channel, secondaryChannel: true);
+                if (channel.Sticky) { PlotLine(channel, secondaryChannel: true); linesAdded++; }
             }
             if (_viewModel.AudysseyMultEQApp != null)
             {
                 switch (_viewModel.AudysseyMultEQApp.EnTargetCurveType)
                 {
                     case 0: break;
-                    case 1: PlotLine(null, false); break;
-                    case 2: PlotLine(null, true); break;
+                    case 1: PlotLine(null, false); linesAdded++; break;
+                    case 2: PlotLine(null, true); linesAdded++; break;
                     default:
                         PlotLine(null, false);
                         PlotLine(null, true);
+                        linesAdded += 2;
                         break;
                 }
             }
+            OverlayTargetCurve();
             ApplyAxes();
             plot.Refresh();
+            Trace.TraceInformation("DrawChart: lines={0}, selectedChannel={1}, sticky={2}, measurementKeys=[{3}], xRange={4}, logX={5}",
+                linesAdded,
+                selectedChannel?.CommandId ?? "(null)",
+                stickyChannel.Count,
+                string.Join(",", measurementKeys),
+                selectedXRange,
+                chbxLogarithmicAxis?.IsChecked == true);
         }
+
+        // Vivid violet, deliberately outside the Wong measurement palette and
+        // the red reference-curve color so the user-defined target stands out.
+        private static readonly ScottPlot.Color TargetCurveColor = new(156, 39, 176);
+
+        // A lighter violet for the "projected" curve — same hue family as the
+        // user target so the eye groups them, but visually subordinate so the
+        // editable target stays the dominant element on the chart.
+        private static readonly ScottPlot.Color ProjectedTargetCurveColor = new(186, 104, 200);
+
+        // Audyssey's midrange compensation dips the target a small amount
+        // around 2 kHz to counter the perceived brightness of
+        // flat-measured loudspeakers in real rooms. Public docs put the
+        // depth at "about 2 dB" with the centre near 2 kHz; we model it as a
+        // Gaussian on a log-frequency axis so it tapers smoothly into the
+        // surrounding band rather than being a sharp notch.
+        private const double MidrangeCompCenterHz = 2000.0;
+        private const double MidrangeCompDepthDb = 2.0;
+        // ~0.18 in log10(Hz) gives roughly a half-octave 1-sigma half-width,
+        // which matches the visible dip on Audyssey app screenshots.
+        private const double MidrangeCompLogSigma = 0.18;
+
+        /// <summary>
+        /// Overlays the selected channel's <c>CustomTargetCurvePointsDictionary</c>
+        /// on the chart as a thick, marker-decorated line. Audyssey draws straight
+        /// segments between adjacent points (in dB on a log-frequency axis), so we
+        /// emit exactly the points the user typed and let the line renderer
+        /// connect them — no interpolation needed here.
+        /// </summary>
+        private void OverlayTargetCurve()
+        {
+            if (chbxShowTargetCurve?.IsChecked != true) return;
+            if (selectedXRange == XRange.Chirp) return; // target curves are frequency-domain only
+            if (selectedChannel?.CustomTargetCurvePointsDictionary == null) return;
+
+            var pts = selectedChannel.CustomTargetCurvePointsDictionary;
+            if (pts.Count == 0) return;
+
+            bool logX = chbxLogarithmicAxis?.IsChecked == true;
+            var ordered = new List<(double Hz, double Db)>(pts.Count);
+            foreach (var p in pts)
+            {
+                if (!double.TryParse(p.Key, NumberStyles.Float, CultureInfo.InvariantCulture, out double hz)) continue;
+                if (!double.TryParse(p.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double db)) continue;
+                ordered.Add((hz, db));
+            }
+            if (ordered.Count == 0) return;
+            ordered.Sort((a, b) => a.Hz.CompareTo(b.Hz));
+
+            var xs = new double[ordered.Count];
+            var ys = new double[ordered.Count];
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                xs[i] = logX ? Math.Log10(Math.Max(1e-9, ordered[i].Hz)) : ordered[i].Hz;
+                // Target curve points are stored as relative-dB offsets (e.g. 0, -2);
+                // add the same 75 dB anchor we apply to measurements so they
+                // share a y-axis. See ComputeMidbandOffsetDb.
+                ys[i] = ordered[i].Db + NormalizeToReferenceDb;
+            }
+
+            var line = plot.Plot.Add.Scatter(xs, ys);
+            line.Color = TargetCurveColor;
+            line.LineWidth = 2.5f;
+            line.MarkerSize = 7;
+            line.MarkerShape = ScottPlot.MarkerShape.FilledCircle;
+            line.LegendText = "Target curve";
+
+            OverlayProjectedTargetCurve(ordered, logX);
+        }
+
+        /// <summary>
+        /// Renders a secondary "projected" target curve showing the effective
+        /// processing target after Audyssey's <c>MidrangeCompensation</c> dip
+        /// and <c>FrequencyRangeRolloff</c> cutoff are applied. This is a
+        /// preview only — nothing here is written back to the file. We render
+        /// it as a thinner dashed line in a lighter shade of the target colour
+        /// so the eye reads "same family, less prominent" against the editable
+        /// user curve.
+        /// </summary>
+        /// <param name="userPoints">The user's target points, sorted ascending by Hz.</param>
+        /// <param name="logX">Whether the chart's X axis is currently logarithmic.</param>
+        private void OverlayProjectedTargetCurve(List<(double Hz, double Db)> userPoints, bool logX)
+        {
+            if (selectedChannel == null || userPoints.Count < 2) return;
+
+            bool midrangeComp = selectedChannel.MidrangeCompensation == true;
+            decimal? rolloff = selectedChannel.FrequencyRangeRolloff;
+            // Audyssey's default for full-range channels is 20 kHz, which is
+            // effectively "no cutoff" — don't bother with the projected line
+            // unless midrange comp is on or the rolloff is set lower.
+            bool hasRolloff = rolloff.HasValue && rolloff.Value > 0m && (double)rolloff.Value < 19500.0;
+            if (!midrangeComp && !hasRolloff) return;
+
+            var limits = AxisLimits[selectedXRange];
+            double sampleLoHz = Math.Max(limits.XMin, userPoints[0].Hz);
+            double sampleHiHz = Math.Min(limits.XMax, userPoints[^1].Hz);
+            if (hasRolloff) sampleHiHz = Math.Min(sampleHiHz, (double)rolloff!.Value);
+            if (sampleHiHz <= sampleLoHz) return;
+
+            // Fine log-spaced sampling so the midrange dip renders smoothly
+            // instead of as a piecewise-linear approximation of itself.
+            const int sampleCount = 200;
+            double logLo = Math.Log10(sampleLoHz);
+            double logHi = Math.Log10(sampleHiHz);
+            var xs = new double[sampleCount];
+            var ys = new double[sampleCount];
+            for (int i = 0; i < sampleCount; i++)
+            {
+                double t = (double)i / (sampleCount - 1);
+                double hz = Math.Pow(10, logLo + t * (logHi - logLo));
+                double baseDb = InterpolateUserCurveDb(userPoints, hz);
+                if (midrangeComp)
+                {
+                    double z = (Math.Log10(hz) - Math.Log10(MidrangeCompCenterHz)) / MidrangeCompLogSigma;
+                    baseDb -= MidrangeCompDepthDb * Math.Exp(-0.5 * z * z);
+                }
+                xs[i] = logX ? Math.Log10(hz) : hz;
+                ys[i] = baseDb + NormalizeToReferenceDb;
+            }
+
+            var projected = plot.Plot.Add.Scatter(xs, ys);
+            projected.Color = ProjectedTargetCurveColor;
+            projected.LineWidth = 2.0f;
+            projected.LinePattern = ScottPlot.LinePattern.Dashed;
+            projected.MarkerSize = 0;
+            projected.LegendText = BuildProjectedLegend(midrangeComp, hasRolloff, rolloff);
+
+            // Vertical marker at the rolloff so the user can see where MultEQ
+            // stops correcting. Drawn after the projected line so it sits on top.
+            if (hasRolloff)
+            {
+                double rolloffHz = (double)rolloff!.Value;
+                if (rolloffHz >= limits.XMin && rolloffHz <= limits.XMax)
+                {
+                    double xMark = logX ? Math.Log10(rolloffHz) : rolloffHz;
+                    var vline = plot.Plot.Add.VerticalLine(xMark);
+                    vline.Color = ProjectedTargetCurveColor;
+                    vline.LineWidth = 1.5f;
+                    vline.LinePattern = ScottPlot.LinePattern.Dotted;
+                    vline.Text = $"correction stops at {rolloffHz:N0} Hz";
+                    vline.LabelOppositeAxis = false;
+                }
+            }
+        }
+
+        private static string BuildProjectedLegend(bool midrangeComp, bool hasRolloff, decimal? rolloff)
+        {
+            if (midrangeComp && hasRolloff)
+                return $"Projected (mid-comp + rolloff @ {rolloff:N0} Hz)";
+            if (midrangeComp) return "Projected (with midrange comp)";
+            return $"Projected (rolloff @ {rolloff:N0} Hz)";
+        }
+
+        /// <summary>
+        /// Linear-in-frequency dB interpolation between adjacent target points.
+        /// Clamps to the endpoints outside the curve's range. Matches the
+        /// straight-segment rendering Audyssey itself uses between target points.
+        /// </summary>
+        private static double InterpolateUserCurveDb(List<(double Hz, double Db)> sorted, double hz)
+        {
+            if (hz <= sorted[0].Hz) return sorted[0].Db;
+            if (hz >= sorted[^1].Hz) return sorted[^1].Db;
+            for (int i = 1; i < sorted.Count; i++)
+            {
+                var a = sorted[i - 1];
+                var b = sorted[i];
+                if (hz <= b.Hz)
+                {
+                    double t = (hz - a.Hz) / (b.Hz - a.Hz);
+                    return a.Db + t * (b.Db - a.Db);
+                }
+            }
+            return sorted[^1].Db;
+        }
+
+        private void ShowTargetCurve_Changed(object sender, RoutedEventArgs e) => DrawChart();
+
+        // Re-renders the chart when the user toggles MidrangeCompensation or
+        // edits FrequencyRangeRolloff so the dashed "projected" line updates
+        // live. Wired to both the checkbox's IsCheckedChanged and the textbox's
+        // LostFocus so we don't redraw on every keystroke (which would also
+        // trigger before the binding has committed the value).
+        private void OnTargetProjectionInputChanged(object sender, RoutedEventArgs e) => DrawChart();
 
         private void ApplyAxes()
         {
+            if (plot == null)
+            {
+                Trace.TraceWarning("ApplyAxes skipped: plot is null.");
+                return;
+            }
             var limits = AxisLimits[selectedXRange];
             bool isChirp = selectedXRange == XRange.Chirp;
             bool logX = chbxLogarithmicAxis?.IsChecked == true && !isChirp;
@@ -179,6 +404,7 @@ namespace Ratbuddyssey
             plot.Plot.Axes.Bottom.Label.Text = isChirp ? "ms" : "Hz";
             plot.Plot.Axes.Left.Label.Text = isChirp ? string.Empty : "dB";
 
+            double xLo, xHi, yLo, yHi;
             if (logX)
             {
                 var minorTickGen = new ScottPlot.TickGenerators.LogMinorTickGenerator();
@@ -189,21 +415,22 @@ namespace Ratbuddyssey
                     LabelFormatter = v => Math.Pow(10, v).ToString("N0", CultureInfo.InvariantCulture)
                 };
                 plot.Plot.Axes.Bottom.TickGenerator = tickGen;
-                plot.Plot.Axes.SetLimits(
-                    Math.Log10(Math.Max(1, limits.XMin)),
-                    Math.Log10(limits.XMax),
-                    limits.YMin + limits.YShift,
-                    limits.YMax + limits.YShift);
+                xLo = Math.Log10(Math.Max(1, limits.XMin));
+                xHi = Math.Log10(limits.XMax);
+                yLo = limits.YMin + limits.YShift;
+                yHi = limits.YMax + limits.YShift;
             }
             else
             {
                 plot.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericAutomatic();
-                plot.Plot.Axes.SetLimits(
-                    limits.XMin,
-                    limits.XMax,
-                    limits.YMin + (isChirp ? 0 : limits.YShift),
-                    limits.YMax + (isChirp ? 0 : limits.YShift));
+                xLo = limits.XMin;
+                xHi = limits.XMax;
+                yLo = limits.YMin + (isChirp ? 0 : limits.YShift);
+                yHi = limits.YMax + (isChirp ? 0 : limits.YShift);
             }
+            plot.Plot.Axes.SetLimits(xLo, xHi, yLo, yHi);
+            Trace.TraceInformation("ApplyAxes: range={0}, logX={1}, limits=[{2:G4}..{3:G4}, {4:G4}..{5:G4}]",
+                selectedXRange, logX, xLo, xHi, yLo, yHi);
         }
 
         private void PlotLine(DetectedChannel channel, bool secondaryChannel = false)
@@ -222,7 +449,9 @@ namespace Ratbuddyssey
                 for (int i = 0; i < refPoints.Count; i++)
                 {
                     xs[i] = logX ? Math.Log10(Math.Max(1e-9, refPoints[i].X)) : refPoints[i].X;
-                    ys[i] = refPoints[i].Y;
+                    // Reference roll-off points are relative-dB; share the
+                    // 75 dB anchor with measurements and target curve.
+                    ys[i] = refPoints[i].Y + NormalizeToReferenceDb;
                 }
                 var line = plot.Plot.Add.Scatter(xs, ys);
                 line.Color = ScottPlot.Colors.Red;
@@ -257,27 +486,33 @@ namespace Ratbuddyssey
                     MathNet.Numerics.IntegralTransforms.Fourier.Forward(cValues);
 
                     int half = count / 2;
-                    xList = new List<double>(half);
-                    yList = new List<double>(half);
+                    var mag = new double[half];
                     if (smoothingFactor == 0)
                     {
-                        for (int x = 0; x < half; x++)
-                        {
-                            double freq = xs[x];
-                            xList.Add(logX ? Math.Log10(Math.Max(1e-9, freq)) : freq);
-                            yList.Add(limits.YShift + 20 * Math.Log10(cValues[x].Magnitude));
-                        }
+                        for (int x = 0; x < half; x++) mag[x] = cValues[x].Magnitude;
                     }
                     else
                     {
                         var smoothed = cValues.Select(c => c.Magnitude).ToArray();
                         LinSpacedFracOctaveSmooth(smoothingFactor, ref smoothed, 1, 1d / 48);
-                        for (int x = 0; x < half; x++)
-                        {
-                            double freq = xs[x];
-                            xList.Add(logX ? Math.Log10(Math.Max(1e-9, freq)) : freq);
-                            yList.Add(limits.YShift + 20 * Math.Log10(smoothed[x]));
-                        }
+                        for (int x = 0; x < half; x++) mag[x] = smoothed[x];
+                    }
+
+                    // Per-trace midband normalization to a 75 dB reference (see
+                    // NormalizeToReferenceDb for rationale). This is intentionally
+                    // not user-toggleable: raw FFT magnitude isn't dBFS, dB SPL, or
+                    // anything else interpretable, and every comparable tool
+                    // (REW, Dirac, the Audyssey app, Trinnov) normalizes the same
+                    // way. A toggle would just be UI weight without a use case.
+                    double offset = ComputeMidbandOffsetDb(mag, xs, channel);
+
+                    xList = new List<double>(half);
+                    yList = new List<double>(half);
+                    for (int x = 0; x < half; x++)
+                    {
+                        double freq = xs[x];
+                        xList.Add(logX ? Math.Log10(Math.Max(1e-9, freq)) : freq);
+                        yList.Add(limits.YShift + 20 * Math.Log10(Math.Max(1e-30, mag[x])) + offset);
                     }
                 }
 
@@ -288,6 +523,55 @@ namespace Ratbuddyssey
                 series.MarkerSize = 0;
                 series.LinePattern = secondaryChannel ? LinePattern.Dotted : LinePattern.Solid;
             }
+        }
+
+        /// <summary>
+        /// Reference SPL we anchor each normalized trace to. 75 dB makes the
+        /// numbers feel like SPL even though they aren't truly calibrated
+        /// (we have no mic correction file), matching the convention used by
+        /// the Audyssey app and most room-EQ tools.
+        /// </summary>
+        private const double NormalizeToReferenceDb = 75.0;
+
+        /// <summary>
+        /// Returns the dB offset that, when added to <c>20*log10(mag[x])</c>,
+        /// places this trace's midband average at <see cref="NormalizeToReferenceDb"/>.
+        /// Subwoofer channels are anchored to 30–80 Hz (their actual pass-band);
+        /// everything else uses 500 Hz – 2 kHz, the standard "presence" band
+        /// used by REW / Dirac / Audyssey.
+        /// Falls back to a wider band, then to no offset, if the preferred band
+        /// is empty (e.g. extremely short response data).
+        /// </summary>
+        private static double ComputeMidbandOffsetDb(double[] mag, double[] freqs, DetectedChannel channel)
+        {
+            bool isSub = Audyssey.AudysseyHardwareQuirks.IsSubwoofer(channel);
+            double bandLo = isSub ? 30.0 : 500.0;
+            double bandHi = isSub ? 80.0 : 2000.0;
+
+            double avg = AverageDbOverBand(mag, freqs, bandLo, bandHi);
+            if (double.IsNaN(avg))
+            {
+                // Fallback: widen the band before giving up entirely.
+                avg = AverageDbOverBand(mag, freqs, isSub ? 20.0 : 200.0, isSub ? 200.0 : 5000.0);
+            }
+            if (double.IsNaN(avg)) return 0.0;
+            return NormalizeToReferenceDb - avg;
+        }
+
+        private static double AverageDbOverBand(double[] mag, double[] freqs, double loHz, double hiHz)
+        {
+            int half = Math.Min(mag.Length, freqs.Length / 1); // freqs is full length, mag is half
+            int n = 0;
+            double sumDb = 0.0;
+            for (int i = 0; i < mag.Length && i < freqs.Length; i++)
+            {
+                double f = freqs[i];
+                if (f < loHz || f > hiHz) continue;
+                double m = Math.Max(1e-30, mag[i]);
+                sumDb += 20.0 * Math.Log10(m);
+                n++;
+            }
+            return n == 0 ? double.NaN : sumDb / n;
         }
 
         private static void LinSpacedFracOctaveSmooth(double frac, ref double[] smoothed, float startFreq, double freqStep)
@@ -357,30 +641,68 @@ namespace Ratbuddyssey
             DrawChart();
         }
 
+        private DetectedChannel SelectedDetectedChannel()
+            => UnwrapChannel(channelsView?.SelectedItem);
+
+        private static DetectedChannel UnwrapChannel(object selectedItem)
+            => selectedItem switch
+            {
+                ChannelRowViewModel row => row?.Channel,
+                DetectedChannel ch => ch,
+                _ => null,
+            };
+
         private void ChannelsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            foreach (var slot in measurementSlotItems) slot.IsEnabled = false;
-
-            if (channelsView.SelectedItem is DetectedChannel sel && sel.ResponseData != null)
+            try
             {
-                foreach (var measurementPosition in sel.ResponseData)
+                foreach (var slot in measurementSlotItems) slot.IsEnabled = false;
+
+                // Prefer e.AddedItems[0] — it's the row that was just clicked,
+                // and is set even when SelectionChanged fires before the
+                // DataGrid's own SelectedItem getter is ready (which throws
+                // NRE in some Avalonia 11 / DataGrid 11.3 internal states).
+                object selObj = e?.AddedItems != null && e.AddedItems.Count > 0
+                    ? e.AddedItems[0]
+                    : (sender as DataGrid)?.SelectedItem;
+                var sel = UnwrapChannel(selObj);
+
+                Trace.TraceInformation("ChannelsView_SelectionChanged: selectedItemType={0}, commandId={1}, hasResponseData={2}, keys={3}",
+                    selObj?.GetType().Name ?? "null",
+                    sel?.CommandId ?? "(null)",
+                    sel?.ResponseData != null,
+                    sel?.ResponseData?.Count ?? -1);
+
+                if (sel != null && sel.ResponseData != null)
                 {
-                    if (int.TryParse(measurementPosition.Key, out int idx) && idx >= 0 && idx < measurementSlotItems.Count)
+                    foreach (var measurementPosition in sel.ResponseData)
                     {
-                        measurementSlotItems[idx].IsEnabled = true;
+                        if (int.TryParse(measurementPosition.Key, out int idx) && idx >= 0 && idx < measurementSlotItems.Count)
+                        {
+                            measurementSlotItems[idx].IsEnabled = true;
+                        }
+                    }
+                    if (sel.ResponseData.Count > 0)
+                    {
+                        selectedChannel = sel;
+                        RefreshStickyChannels();
+                        AutoSelectXRangeForChannel(sel);
+                        DrawChart();
+                    }
+                    else
+                    {
+                        Trace.TraceWarning("Channel '{0}' has no measurement keys; nothing to plot.", sel.CommandId);
                     }
                 }
-                if (sel.ResponseData.Count > 0)
+
+                foreach (var slot in measurementSlotItems)
                 {
-                    selectedChannel = sel;
-                    RefreshStickyChannels();
-                    DrawChart();
+                    if (!slot.IsEnabled && slot.IsChecked) slot.IsChecked = false;
                 }
             }
-
-            foreach (var slot in measurementSlotItems)
+            catch (Exception ex)
             {
-                if (!slot.IsEnabled && slot.IsChecked) slot.IsChecked = false;
+                Trace.TraceError("ChannelsView_SelectionChanged failed: {0}", ex);
             }
         }
 
@@ -396,19 +718,22 @@ namespace Ratbuddyssey
 
         private void ButtonClickAddTargetCurvePoint(object sender, RoutedEventArgs e)
         {
-            if (channelsView.SelectedItem is DetectedChannel ch &&
+            var ch = SelectedDetectedChannel();
+            if (ch != null &&
                 !string.IsNullOrEmpty(keyTbx.Text) && !string.IsNullOrEmpty(valueTbx.Text))
             {
                 ch.CustomTargetCurvePointsDictionary.Add(new MyKeyValuePair(keyTbx.Text, valueTbx.Text));
+                DrawChart();
             }
         }
 
         private void ButtonClickRemoveTargetCurvePoint(object sender, RoutedEventArgs e)
         {
-            if (sender is Button b && b.DataContext is MyKeyValuePair pair &&
-                channelsView.SelectedItem is DetectedChannel ch)
+            var ch = SelectedDetectedChannel();
+            if (sender is Button b && b.DataContext is MyKeyValuePair pair && ch != null)
             {
                 ch.CustomTargetCurvePointsDictionary.Remove(pair);
+                DrawChart();
             }
         }
 
@@ -428,8 +753,43 @@ namespace Ratbuddyssey
                 Enum.TryParse<XRange>(tag, out var range))
             {
                 selectedXRange = range;
-                DrawChart();
+                if (!_suppressXRangeRedraw) DrawChart();
             }
+        }
+
+        // Set true around programmatic radio-button updates so the resulting
+        // IsCheckedChanged storm doesn't trigger a redraw before our caller
+        // (e.g. ChannelsView_SelectionChanged) does its own.
+        private bool _suppressXRangeRedraw;
+
+        /// <summary>
+        /// When the user clicks a different channel, switch the chart between
+        /// the full-range (20 Hz – 20 kHz) and subwoofer (10 – 1000 Hz)
+        /// frequency views automatically. Leaves the impulse-response view
+        /// alone — if the user has chosen to inspect timing, that's a
+        /// deliberate choice we shouldn't second-guess.
+        /// </summary>
+        private void AutoSelectXRangeForChannel(DetectedChannel channel)
+        {
+            if (channel == null) return;
+            if (selectedXRange == XRange.Chirp) return;
+
+            var desired = Audyssey.AudysseyHardwareQuirks.IsSubwoofer(channel)
+                ? XRange.Subwoofer
+                : XRange.Full;
+            if (desired == selectedXRange) return;
+
+            var target = desired switch
+            {
+                XRange.Subwoofer => rbXRangeSubwoofer,
+                XRange.Full => rbXRangeFull,
+                _ => null
+            };
+            if (target == null || target.IsChecked == true) return;
+
+            _suppressXRangeRedraw = true;
+            try { target.IsChecked = true; } // updates selectedXRange via XRangeChanged
+            finally { _suppressXRangeRedraw = false; }
         }
 
         private void chbxLogarithmicAxis_Changed(object sender, RoutedEventArgs e) => DrawChart();
@@ -452,7 +812,9 @@ namespace Ratbuddyssey
     {
         public int Index { get; }
         public string Label { get; }
-        public IBrush Brush { get; }
+
+        [ObservableProperty]
+        private IBrush _brush;
 
         [ObservableProperty]
         private bool _isChecked;
@@ -464,9 +826,10 @@ namespace Ratbuddyssey
         {
             Index = index;
             Label = label;
-            Brush = brush;
-            // First slot starts checked to match prior UI default.
-            _isChecked = index == 0;
+            _brush = brush;
+            // All measurement positions are visible by default; the user can
+            // uncheck individual slots to focus on a single position.
+            _isChecked = true;
         }
     }
 }

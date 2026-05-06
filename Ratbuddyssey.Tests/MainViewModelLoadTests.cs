@@ -17,6 +17,7 @@ public class MainViewModelLoadTests
         public Task<string> OpenAdyFileAsync() => Task.FromResult<string>(null!);
         public Task<string> SaveAdyFileAsAsync(string suggestedName) => Task.FromResult<string>(null!);
         public Task<bool> ConfirmReloadAsync() => Task.FromResult(false);
+        public Task<bool> ConfirmDiscardChangesAsync() => Task.FromResult(true);
         public Task ShowAboutAsync() => Task.CompletedTask;
         public Task ShowErrorAsync(string title, string message)
         {
