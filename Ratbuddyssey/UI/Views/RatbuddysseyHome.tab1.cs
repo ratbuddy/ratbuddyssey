@@ -188,20 +188,12 @@ namespace Ratbuddyssey
             {
                 if (channel.Sticky) { PlotLine(channel, secondaryChannel: true); linesAdded++; }
             }
-            if (_viewModel.AudysseyMultEQApp != null)
-            {
-                switch (_viewModel.AudysseyMultEQApp.EnTargetCurveType)
-                {
-                    case 0: break;
-                    case 1: PlotLine(null, false); linesAdded++; break;
-                    case 2: PlotLine(null, true); linesAdded++; break;
-                    default:
-                        PlotLine(null, false);
-                        PlotLine(null, true);
-                        linesAdded += 2;
-                        break;
-                }
-            }
+            // The high-frequency-rolloff target type, the bass-management
+            // crossover, and the midrange-compensation dip all describe the
+            // same thing: the shape MultEQ is correcting toward. They're baked
+            // into a single combined target line by OverlayTargetCurve so the
+            // chart shows one purple curve that matches what the official app
+            // displays, instead of three near-overlapping lines.
             OverlayTargetCurve();
             OverlayAveragedResponse();
             OverlayRewMeasurement();
@@ -248,11 +240,14 @@ namespace Ratbuddyssey
         private const double MidrangeCompLogSigma = 0.18;
 
         /// <summary>
-        /// Overlays the selected channel's <c>CustomTargetCurvePointsDictionary</c>
-        /// on the chart as a thick, marker-decorated line. Audyssey draws straight
-        /// segments between adjacent points (in dB on a log-frequency axis), so we
-        /// emit exactly the points the user typed and let the line renderer
-        /// connect them — no interpolation needed here.
+        /// Overlays the selected channel's target curve. The line drawn here is
+        /// the actual shape MultEQ is correcting toward: it starts from the
+        /// user's <c>CustomTargetCurvePointsDictionary</c> (or a flat 0 dB
+        /// baseline when there are no points) and bakes in midrange
+        /// compensation, the bass-management crossover, the high-frequency
+        /// frequency-range cutoff, and the selected high-frequency rolloff
+        /// reference curve. Editable user points are drawn as markers sitting
+        /// on the shaped line so the user can still see where they typed.
         /// </summary>
         private void OverlayTargetCurve()
         {
@@ -263,103 +258,53 @@ namespace Ratbuddyssey
             bool logX = chbxLogarithmicAxis?.IsChecked == true;
             var pts = selectedChannel.CustomTargetCurvePointsDictionary;
 
-            var ordered = new List<(double Hz, double Db)>();
+            var userPoints = new List<(double Hz, double Db)>();
             if (pts != null)
             {
                 foreach (var p in pts)
                 {
                     if (!double.TryParse(p.Key, NumberStyles.Float, CultureInfo.InvariantCulture, out double hz)) continue;
                     if (!double.TryParse(p.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double db)) continue;
-                    ordered.Add((hz, db));
+                    userPoints.Add((hz, db));
                 }
-                ordered.Sort((a, b) => a.Hz.CompareTo(b.Hz));
+                userPoints.Sort((a, b) => a.Hz.CompareTo(b.Hz));
             }
+            bool hasUserPoints = userPoints.Count > 0;
 
-            bool hasUserPoints = ordered.Count >= 1;
-            if (ordered.Count == 1)
-            {
-                // A single user point is ambiguous on its own; extend it to the
-                // chart edges as a horizontal target so the projected dip has
-                // a curve to ride on and the line is actually visible.
-                var only = ordered[0];
-                var limits1 = AxisLimits[selectedXRange];
-                ordered.Insert(0, (Math.Min(limits1.XMin, only.Hz), only.Db));
-                ordered.Add((Math.Max(limits1.XMax, only.Hz), only.Db));
-            }
-            else if (ordered.Count == 0)
-            {
-                // No user points: stand in a flat 0 dB target so the user
-                // always sees a target line (and so midrange-comp / rolloff
-                // overlays have a baseline to modulate).
-                var limits0 = AxisLimits[selectedXRange];
-                ordered.Add((limits0.XMin, 0.0));
-                ordered.Add((limits0.XMax, 0.0));
-            }
-
-            var xs = new double[ordered.Count];
-            var ys = new double[ordered.Count];
-            for (int i = 0; i < ordered.Count; i++)
-            {
-                xs[i] = logX ? Math.Log10(Math.Max(1e-9, ordered[i].Hz)) : ordered[i].Hz;
-                // Target curve points are stored as relative-dB offsets (e.g. 0, -2);
-                // add the same 75 dB anchor we apply to measurements so they
-                // share a y-axis. See ComputeMidbandOffsetDb.
-                ys[i] = ordered[i].Db + NormalizeToReferenceDb;
-            }
-
-            var line = plot.Plot.Add.Scatter(xs, ys);
-            line.Color = TargetCurveColor;
-            line.LineWidth = 2.5f;
-            // Hide markers on the synthetic flat baseline — they'd imply
-            // editable points the user didn't actually create.
-            line.MarkerSize = hasUserPoints ? 7 : 0;
-            line.MarkerShape = ScottPlot.MarkerShape.FilledCircle;
-            line.LegendText = hasUserPoints ? "Target curve" : "Target curve (flat)";
-
-            OverlayProjectedTargetCurve(ordered, logX);
-        }
-
-        /// <summary>
-        /// Renders a secondary "projected" target curve showing the effective
-        /// processing target after Audyssey's <c>MidrangeCompensation</c> dip
-        /// and <c>FrequencyRangeRolloff</c> cutoff are applied. This is a
-        /// preview only — nothing here is written back to the file. We render
-        /// it as a thinner dashed line in a lighter shade of the target colour
-        /// so the eye reads "same family, less prominent" against the editable
-        /// user curve.
-        /// </summary>
-        /// <param name="userPoints">The user's target points, sorted ascending by Hz.</param>
-        /// <param name="logX">Whether the chart's X axis is currently logarithmic.</param>
-        private void OverlayProjectedTargetCurve(List<(double Hz, double Db)> userPoints, bool logX)
-        {
-            if (selectedChannel == null || userPoints.Count < 2) return;
-
+            // Modifiers that reshape the target.
             bool midrangeComp = selectedChannel.MidrangeCompensation == true;
+
             decimal? rolloff = selectedChannel.FrequencyRangeRolloff;
             // Audyssey's default for full-range channels is 20 kHz, which is
-            // effectively "no cutoff" — don't bother with the projected line
-            // unless midrange comp is on or the rolloff is set lower.
-            bool hasRolloff = rolloff.HasValue && rolloff.Value > 0m && (double)rolloff.Value < 19500.0;
+            // effectively "no cutoff" — only treat it as a real frequency-range
+            // rolloff if the user dialled it below ~19.5 kHz.
+            bool hasFreqRangeRolloff = rolloff.HasValue && rolloff.Value > 0m && (double)rolloff.Value < 19500.0;
 
-            // Bass management: speakers marked "Small" with a numeric crossover
-            // get a high-pass at fc; subs get a low-pass at the highest fc among
-            // the bass-managed speakers (so the visible target rolloff matches
-            // what the AVR is actually summing into the LFE bus).
             bool isSub = Audyssey.AudysseyHardwareQuirks.IsSubwoofer(selectedChannel);
             double crossoverHz = ResolveCrossoverHz(selectedChannel, isSub);
             bool hasCrossover = crossoverHz > 0;
 
-            if (!midrangeComp && !hasRolloff && !hasCrossover) return;
+            // Audyssey's app exposes two preset HF rolloff target shapes
+            // (EnTargetCurveType 1 & 2). They're shipped JSON curves whose
+            // passband sits at 0 dB and whose shoulder rolls off above ~5 kHz.
+            int hfType = _viewModel?.AudysseyMultEQApp?.EnTargetCurveType ?? 0;
+            (double[] Hz, double[] Db)? hfShape1 = (hfType == 1 || hfType > 2) ? GetNormalizedHfRolloffShape(false) : null;
+            (double[] Hz, double[] Db)? hfShape2 = (hfType == 2 || hfType > 2) ? GetNormalizedHfRolloffShape(true) : null;
 
+            // Sample the shaped target on a fine log grid spanning the visible
+            // axis range. This keeps the midrange-comp Gaussian dip and the
+            // LR4 crossover knees rendering smoothly instead of as piecewise-
+            // linear approximations of themselves.
             var limits = AxisLimits[selectedXRange];
-            double sampleLoHz = Math.Max(limits.XMin, userPoints[0].Hz);
-            double sampleHiHz = Math.Min(limits.XMax, userPoints[^1].Hz);
-            if (hasRolloff) sampleHiHz = Math.Min(sampleHiHz, (double)rolloff!.Value);
+            double sampleLoHz = Math.Max(limits.XMin, 1.0);
+            double sampleHiHz = limits.XMax;
+            // Don't draw the target line past where MultEQ stops correcting —
+            // beyond the frequency-range rolloff, MultEQ leaves the response
+            // alone, so there's no defined target there.
+            if (hasFreqRangeRolloff) sampleHiHz = Math.Min(sampleHiHz, (double)rolloff!.Value);
             if (sampleHiHz <= sampleLoHz) return;
 
-            // Fine log-spaced sampling so the midrange dip renders smoothly
-            // instead of as a piecewise-linear approximation of itself.
-            const int sampleCount = 200;
+            const int sampleCount = 400;
             double logLo = Math.Log10(sampleLoHz);
             double logHi = Math.Log10(sampleHiHz);
             var xs = new double[sampleCount];
@@ -368,30 +313,63 @@ namespace Ratbuddyssey
             {
                 double t = (double)i / (sampleCount - 1);
                 double hz = Math.Pow(10, logLo + t * (logHi - logLo));
-                double baseDb = InterpolateUserCurveDb(userPoints, hz);
+                double db = hasUserPoints ? InterpolateUserCurveDb(userPoints, hz) : 0.0;
                 if (midrangeComp)
                 {
                     double z = (Math.Log10(hz) - Math.Log10(MidrangeCompCenterHz)) / MidrangeCompLogSigma;
-                    baseDb -= MidrangeCompDepthDb * Math.Exp(-0.5 * z * z);
+                    db -= MidrangeCompDepthDb * Math.Exp(-0.5 * z * z);
                 }
-                if (hasCrossover)
-                {
-                    baseDb += CrossoverFilterDb(hz, crossoverHz, isSub);
-                }
+                if (hasCrossover) db += CrossoverFilterDb(hz, crossoverHz, isSub);
+                if (hfShape1.HasValue) db += SampleHfRolloffDb(hfShape1.Value, hz);
+                if (hfShape2.HasValue) db += SampleHfRolloffDb(hfShape2.Value, hz);
                 xs[i] = logX ? Math.Log10(hz) : hz;
-                ys[i] = baseDb + NormalizeToReferenceDb;
+                ys[i] = db + NormalizeToReferenceDb;
             }
 
-            var projected = plot.Plot.Add.Scatter(xs, ys);
-            projected.Color = ProjectedTargetCurveColor;
-            projected.LineWidth = 2.0f;
-            projected.LinePattern = ScottPlot.LinePattern.Dashed;
-            projected.MarkerSize = 0;
-            projected.LegendText = BuildProjectedLegend(midrangeComp, hasRolloff, rolloff, hasCrossover, crossoverHz, isSub);
+            var line = plot.Plot.Add.Scatter(xs, ys);
+            line.Color = TargetCurveColor;
+            line.LineWidth = 2.5f;
+            line.MarkerSize = 0;
+            line.LegendText = BuildTargetCurveLegend(
+                hasUserPoints, midrangeComp, hasFreqRangeRolloff, rolloff,
+                hasCrossover, crossoverHz, isSub, hfType);
 
-            // Vertical marker at the rolloff so the user can see where MultEQ
-            // stops correcting. Drawn after the projected line so it sits on top.
-            if (hasRolloff)
+            // Markers at user-typed points sitting on the shaped line so the
+            // user can see both "what I typed" and "what MultEQ actually
+            // targets". We re-evaluate the shaped target at each user point's
+            // frequency rather than reusing the user's literal dB so the
+            // marker doesn't float off the line.
+            if (hasUserPoints)
+            {
+                int n = userPoints.Count;
+                var mxs = new double[n];
+                var mys = new double[n];
+                for (int i = 0; i < n; i++)
+                {
+                    double hz = userPoints[i].Hz;
+                    double db = InterpolateUserCurveDb(userPoints, hz);
+                    if (midrangeComp)
+                    {
+                        double z = (Math.Log10(hz) - Math.Log10(MidrangeCompCenterHz)) / MidrangeCompLogSigma;
+                        db -= MidrangeCompDepthDb * Math.Exp(-0.5 * z * z);
+                    }
+                    if (hasCrossover) db += CrossoverFilterDb(hz, crossoverHz, isSub);
+                    if (hfShape1.HasValue) db += SampleHfRolloffDb(hfShape1.Value, hz);
+                    if (hfShape2.HasValue) db += SampleHfRolloffDb(hfShape2.Value, hz);
+                    mxs[i] = logX ? Math.Log10(Math.Max(1e-9, hz)) : hz;
+                    mys[i] = db + NormalizeToReferenceDb;
+                }
+                var markers = plot.Plot.Add.Scatter(mxs, mys);
+                markers.Color = TargetCurveColor;
+                markers.LineWidth = 0;
+                markers.MarkerSize = 7;
+                markers.MarkerShape = ScottPlot.MarkerShape.FilledCircle;
+                markers.LegendText = string.Empty;
+            }
+
+            // Vertical marker at the frequency-range rolloff so the user can
+            // see exactly where MultEQ stops correcting.
+            if (hasFreqRangeRolloff)
             {
                 double rolloffHz = (double)rolloff!.Value;
                 if (rolloffHz >= limits.XMin && rolloffHz <= limits.XMax)
@@ -403,9 +381,6 @@ namespace Ratbuddyssey
                     vline.LinePattern = ScottPlot.LinePattern.Dotted;
                     vline.Text = $"correction stops at {rolloffHz:N0} Hz";
                     vline.LabelOppositeAxis = false;
-                    // The label anchors at the line and grows outward; flip the
-                    // alignment so it stays on-screen when the marker sits near
-                    // an edge of the visible X-range.
                     double xLo = logX ? Math.Log10(limits.XMin) : limits.XMin;
                     double xHi = logX ? Math.Log10(limits.XMax) : limits.XMax;
                     double frac = (xMark - xLo) / (xHi - xLo);
@@ -414,6 +389,93 @@ namespace Ratbuddyssey
                         : ScottPlot.Alignment.MiddleLeft;
                 }
             }
+        }
+
+        /// <summary>
+        /// Cached, passband-normalized copy of one of the shipped HF rolloff
+        /// JSON curves. The shipped JSON spans 0 - 48 kHz at 16 384 points but
+        /// most of that range is -Infinity; we filter to finite, in-band
+        /// points and shift so the passband peak sits at 0 dB.
+        /// </summary>
+        private (double[] Hz, double[] Db) GetNormalizedHfRolloffShape(bool secondary)
+        {
+            if (secondary)
+            {
+                if (_hfRolloffShape2 == null)
+                    _hfRolloffShape2 = NormalizeRolloffShape(audysseyMultEQReferenceCurveFilter.HighFrequencyRollOff2());
+                return _hfRolloffShape2.Value;
+            }
+            if (_hfRolloffShape1 == null)
+                _hfRolloffShape1 = NormalizeRolloffShape(audysseyMultEQReferenceCurveFilter.HighFrequencyRollOff1());
+            return _hfRolloffShape1.Value;
+        }
+        private (double[] Hz, double[] Db)? _hfRolloffShape1;
+        private (double[] Hz, double[] Db)? _hfRolloffShape2;
+
+        private static (double[] Hz, double[] Db) NormalizeRolloffShape(System.Collections.ObjectModel.Collection<Audyssey.DataPoint> raw)
+        {
+            if (raw == null || raw.Count == 0) return (Array.Empty<double>(), Array.Empty<double>());
+            double peak = double.NegativeInfinity;
+            for (int i = 0; i < raw.Count; i++)
+            {
+                double y = raw[i].Y;
+                if (double.IsNaN(y) || double.IsInfinity(y)) continue;
+                if (y > peak) peak = y;
+            }
+            if (double.IsNegativeInfinity(peak)) peak = 0.0;
+            var hz = new List<double>(raw.Count);
+            var db = new List<double>(raw.Count);
+            for (int i = 0; i < raw.Count; i++)
+            {
+                double x = raw[i].X;
+                double y = raw[i].Y;
+                if (double.IsNaN(x) || double.IsInfinity(x) || x <= 0) continue;
+                if (double.IsNaN(y) || double.IsInfinity(y)) continue;
+                if (x < 20 || x > 24000) continue;
+                hz.Add(x);
+                db.Add(y - peak);
+            }
+            return (hz.ToArray(), db.ToArray());
+        }
+
+        /// <summary>
+        /// Linear-in-frequency dB interpolation across the cached HF rolloff
+        /// shape. Clamps to the endpoints outside the curve's range (the
+        /// passband is 0 dB so clamping to 0 dB at low frequencies is the
+        /// expected behaviour).
+        /// </summary>
+        private static double SampleHfRolloffDb((double[] Hz, double[] Db) shape, double hz)
+        {
+            if (shape.Hz.Length == 0) return 0.0;
+            if (hz <= shape.Hz[0]) return shape.Db[0];
+            if (hz >= shape.Hz[^1]) return shape.Db[^1];
+            // Binary search for the right segment.
+            int lo = 0, hi = shape.Hz.Length - 1;
+            while (hi - lo > 1)
+            {
+                int mid = (lo + hi) >> 1;
+                if (shape.Hz[mid] <= hz) lo = mid; else hi = mid;
+            }
+            double xa = shape.Hz[lo], xb = shape.Hz[hi];
+            double ya = shape.Db[lo], yb = shape.Db[hi];
+            double t = (hz - xa) / (xb - xa);
+            return ya + t * (yb - ya);
+        }
+
+        private static string BuildTargetCurveLegend(bool hasUserPoints, bool midrangeComp,
+            bool hasFreqRangeRolloff, decimal? rolloff, bool hasCrossover, double crossoverHz,
+            bool isSub, int hfType)
+        {
+            var parts = new List<string>(4);
+            if (hasCrossover) parts.Add($"{(isSub ? "LP" : "HP")} @ {crossoverHz:N0} Hz");
+            if (midrangeComp) parts.Add("mid-comp");
+            if (hasFreqRangeRolloff) parts.Add($"rolloff @ {rolloff:N0} Hz");
+            if (hfType == 1) parts.Add("HF #1");
+            else if (hfType == 2) parts.Add("HF #2");
+            else if (hfType > 2) parts.Add("HF #1+#2");
+
+            string baseLabel = hasUserPoints ? "Target curve" : "Target curve (flat)";
+            return parts.Count == 0 ? baseLabel : baseLabel + " (" + string.Join(" + ", parts) + ")";
         }
 
         /// <summary>
@@ -469,19 +531,6 @@ namespace Ratbuddyssey
             double ratio = lowPass ? hz / fc : fc / hz;
             double r8 = Math.Pow(ratio, 8);
             return -10.0 * Math.Log10(1.0 + r8);
-        }
-
-        private static string BuildProjectedLegend(bool midrangeComp, bool hasRolloff, decimal? rolloff,
-                                                   bool hasCrossover, double crossoverHz, bool isSub)
-        {
-            var parts = new List<string>(3);
-            if (hasCrossover)
-                parts.Add($"{(isSub ? "LP" : "HP")} @ {crossoverHz:N0} Hz");
-            if (midrangeComp) parts.Add("mid-comp");
-            if (hasRolloff) parts.Add($"rolloff @ {rolloff:N0} Hz");
-            return parts.Count == 0
-                ? "Projected"
-                : "Projected (" + string.Join(" + ", parts) + ")";
         }
 
         /// <summary>
@@ -874,57 +923,7 @@ namespace Ratbuddyssey
         {
             bool logX = chbxLogarithmicAxis?.IsChecked == true && selectedXRange != XRange.Chirp;
 
-            if (channel == null)
-            {
-                var refPoints = secondaryChannel
-                    ? audysseyMultEQReferenceCurveFilter.HighFrequencyRollOff2()
-                    : audysseyMultEQReferenceCurveFilter.HighFrequencyRollOff1();
-                if (refPoints == null || refPoints.Count == 0) return;
-
-                // The shipped JSON spans 0 Hz - 48 kHz but only the 20 Hz - 19 kHz
-                // band carries finite data; everything else is -Infinity. Passing
-                // those points through to ScottPlot used to render the curve as
-                // either a clipped sliver or nothing at all (the -Inf segments
-                // either short-circuit the path or stretch the y-axis to a value
-                // ScottPlot then auto-clips). Filter to finite, in-band points
-                // and we get the expected high-frequency rolloff line.
-                //
-                // The shipped curves' passband sits at y = +1.0 (not 0), so
-                // adding the 75 dB anchor would put the rolloff line 1 dB above
-                // a flat target. Subtract the curve's passband peak so the
-                // flat region lines up with the flat target curve and only the
-                // rolloff shoulder dips below.
-                var xList = new List<double>(refPoints.Count);
-                var yList = new List<double>(refPoints.Count);
-                double passbandPeak = double.NegativeInfinity;
-                for (int i = 0; i < refPoints.Count; i++)
-                {
-                    double y = refPoints[i].Y;
-                    if (double.IsNaN(y) || double.IsInfinity(y)) continue;
-                    if (y > passbandPeak) passbandPeak = y;
-                }
-                if (double.IsNegativeInfinity(passbandPeak)) passbandPeak = 0.0;
-                for (int i = 0; i < refPoints.Count; i++)
-                {
-                    double x = refPoints[i].X;
-                    double y = refPoints[i].Y;
-                    if (double.IsNaN(x) || double.IsInfinity(x) || x <= 0) continue;
-                    if (double.IsNaN(y) || double.IsInfinity(y)) continue;
-                    if (x < 20 || x > 24000) continue; // outside the audible band
-                    xList.Add(logX ? Math.Log10(x) : x);
-                    // Reference roll-off points are relative-dB; share the
-                    // 75 dB anchor with measurements and target curve.
-                    yList.Add((y - passbandPeak) + NormalizeToReferenceDb);
-                }
-                if (xList.Count < 2) return;
-
-                var line = plot.Plot.Add.Scatter(xList.ToArray(), yList.ToArray());
-                line.Color = ScottPlot.Colors.Red;
-                line.LineWidth = 2;
-                line.MarkerSize = 0;
-                line.LegendText = secondaryChannel ? "HF rolloff #2" : "HF rolloff #1";
-                return;
-            }
+            if (channel == null) return; // HF rolloff is now baked into OverlayTargetCurve.
 
             for (int i = 0; i < measurementKeys.Count; i++)
             {
