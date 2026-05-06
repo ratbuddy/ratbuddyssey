@@ -21,6 +21,9 @@ public interface IDialogService
     /// <summary>Show the About dialog.</summary>
     Task ShowAboutAsync();
 
+    /// <summary>Show a non-fatal error message to the user.</summary>
+    Task ShowErrorAsync(string title, string message);
+
     /// <summary>Request that the desktop application shut down.</summary>
     void RequestExit();
 }

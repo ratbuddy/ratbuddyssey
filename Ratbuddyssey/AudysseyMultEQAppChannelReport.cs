@@ -18,14 +18,4 @@ public partial class ChannelReport : ObservableObject
     private decimal? _distance;
 
     public bool ShouldSerializeCustomEnSpeakerConnect() => CustomEnSpeakerConnect != null;
-
-    public override string ToString()
-    {
-        var sb = new StringBuilder();
-        foreach (var property in GetType().GetProperties())
-        {
-            sb.Append(property).Append('=').Append(property.GetValue(this, null)).Append("\r\n");
-        }
-        return sb.ToString();
-    }
 }

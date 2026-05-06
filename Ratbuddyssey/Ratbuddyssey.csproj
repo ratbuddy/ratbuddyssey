@@ -28,6 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Ratbuddyssey.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
     <None Include="..\high_frequency_roll_off_1.json" Link="high_frequency_roll_off_1.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

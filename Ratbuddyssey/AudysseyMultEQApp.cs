@@ -105,21 +105,4 @@ public partial class AudysseyMultEQApp : MultEQList
             OnPropertyChanged(nameof(MultEQType));
         }
     }
-
-    public override string ToString()
-    {
-        var sb = new StringBuilder();
-        foreach (var property in GetType().GetProperties())
-        {
-            sb.Append(property).Append('=').Append(property.GetValue(this, null)).Append("\r\n");
-        }
-        if (DetectedChannels != null)
-        {
-            foreach (var channel in DetectedChannels)
-            {
-                sb.Append(channel);
-            }
-        }
-        return sb.ToString();
-    }
 }

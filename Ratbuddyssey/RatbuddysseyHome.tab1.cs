@@ -66,23 +66,25 @@ namespace Ratbuddyssey
             return slots;
         }
 
+        // 61-band Audyssey filter centre frequencies. Drives both the slider strip in
+        // BuildFilterSliders() and any future band-aware feature; do not reorder.
+        private static readonly string[] FilterBandLabels =
+        {
+            "20Hz","22Hz","25Hz","28Hz","31Hz","35Hz","39Hz","44Hz","50Hz","56Hz",
+            "62.5Hz","70Hz","79Hz","88Hz","100Hz","111Hz","125Hz","140Hz","157.5Hz","177Hz",
+            "200Hz","223Hz","250","280","315","354","400","445","500","561",
+            "630","707","800","890","1kHz","1.1kHz","1.2kHz","1.4kHz","1.6kHz","1.8kHz",
+            "2kHz","2.2kHz","2.5kHz","2.8kHz","3.2kHz","3.6kHz","4kHz","4.5kHz","5kHz","5.6kHz",
+            "6.4kHz","7.2kHz","8kHz","9kHz","10kHz","11.2kHz","12.8kHz","14.4kHz","16kHz","18kHz","20kHz"
+        };
+
         private void BuildFilterSliders()
         {
             WireMeasurementSlots();
 
-            // 61-band filter sliders are built in code-behind to avoid 60+ lines of repetitive XAML.
-            var labels = new[]
-            {
-                "20Hz","22Hz","25Hz","28Hz","31Hz","35Hz","39Hz","44Hz","50Hz","56Hz",
-                "62.5Hz","70Hz","79Hz","88Hz","100Hz","111Hz","125Hz","140Hz","157.5Hz","177Hz",
-                "200Hz","223Hz","250","280","315","354","400","445","500","561",
-                "630","707","800","890","1kHz","1.1kHz","1.2kHz","1.4kHz","1.6kHz","1.8kHz",
-                "2kHz","2.2kHz","2.5kHz","2.8kHz","3.2kHz","3.6kHz","4kHz","4.5kHz","5kHz","5.6kHz",
-                "6.4kHz","7.2kHz","8kHz","9kHz","10kHz","11.2kHz","12.8kHz","14.4kHz","16kHz","18kHz","20kHz"
-            };
             var panel = this.FindControl<StackPanel>("FilBandsPanel");
             if (panel == null) return;
-            for (int i = 0; i < labels.Length; i++)
+            for (int i = 0; i < FilterBandLabels.Length; i++)
             {
                 var sp = new StackPanel { Orientation = Avalonia.Layout.Orientation.Vertical };
                 var slider = new Slider
@@ -97,7 +99,7 @@ namespace Ratbuddyssey
                 };
                 slider.Bind(Slider.ValueProperty, new Avalonia.Data.Binding($"SelectedDisFil.FilData[{i}]"));
                 sp.Children.Add(slider);
-                sp.Children.Add(new TextBlock { Text = labels[i], FontSize = 10, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center });
+                sp.Children.Add(new TextBlock { Text = FilterBandLabels[i], FontSize = 10, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center });
                 panel.Children.Add(sp);
             }
         }
@@ -106,8 +108,14 @@ namespace Ratbuddyssey
         {
             var itemsControl = this.FindControl<ItemsControl>("measurementSlots");
             if (itemsControl != null) itemsControl.ItemsSource = measurementSlotItems;
+
+            // Idempotent: clear cached state and re-subscribe so calling this twice
+            // doesn't double-fire OnMeasurementSlotPropertyChanged or duplicate keys.
+            measurementKeys.Clear();
+            measurementColors.Clear();
             foreach (var slot in measurementSlotItems)
             {
+                slot.PropertyChanged -= OnMeasurementSlotPropertyChanged;
                 if (slot.IsChecked)
                 {
                     measurementKeys.Add(slot.Index);
@@ -226,40 +234,31 @@ namespace Ratbuddyssey
             for (int i = 0; i < measurementKeys.Count; i++)
             {
                 string key = measurementKeys[i].ToString(CultureInfo.InvariantCulture);
-                if (!channel.ResponseData.ContainsKey(key)) continue;
+                if (channel.ResponseData == null || !channel.ResponseData.ContainsKey(key)) continue;
 
                 string[] values = channel.ResponseData[key];
+                if (values == null || values.Length == 0) continue;
+
                 int count = values.Length;
                 var limits = AxisLimits[selectedXRange];
 
-                List<double> xList = new(count);
-                List<double> yList = new(count);
+                List<double> xList;
+                List<double> yList;
 
                 if (selectedXRange == XRange.Chirp)
                 {
-                    const float sampleRate = 48000f;
-                    float totalTimeMs = 1000f * count / sampleRate;
-                    for (int j = 0; j < count; j++)
-                    {
-                        double d = double.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
-                        xList.Add(j * totalTimeMs / count);
-                        yList.Add(d);
-                    }
+                    var (xs, ys) = ChartDataPrep.BuildChirpSeries(values);
+                    xList = new List<double>(xs);
+                    yList = new List<double>(ys);
                 }
                 else
                 {
-                    const float sampleRate = 48000f;
-                    var cValues = new Complex[count];
-                    var xs = new double[count];
-                    for (int j = 0; j < count; j++)
-                    {
-                        decimal d = decimal.Parse(values[j], NumberStyles.AllowExponent | NumberStyles.Float, CultureInfo.InvariantCulture);
-                        cValues[j] = 100 * (Complex)d;
-                        xs[j] = (double)j / count * sampleRate;
-                    }
+                    var (cValues, xs) = ChartDataPrep.BuildSpectrumInput(values);
                     MathNet.Numerics.IntegralTransforms.Fourier.Forward(cValues);
 
                     int half = count / 2;
+                    xList = new List<double>(half);
+                    yList = new List<double>(half);
                     if (smoothingFactor == 0)
                     {
                         for (int x = 0; x < half; x++)
@@ -333,7 +332,8 @@ namespace Ratbuddyssey
                 return;
             }
 
-            if (selectedChannel != null && !selectedChannel.ResponseData.ContainsKey(val.ToString(CultureInfo.InvariantCulture)))
+            if (selectedChannel != null && (selectedChannel.ResponseData == null ||
+                !selectedChannel.ResponseData.ContainsKey(val.ToString(CultureInfo.InvariantCulture))))
             {
                 slot.IsChecked = false;
                 return;

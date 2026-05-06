@@ -110,6 +110,9 @@ public partial class RatbuddysseyHome : Window, IDialogService
         "About Ratbuddyssey",
         "Shout out to AVS Forum, use at your own risk!");
 
+    Task IDialogService.ShowErrorAsync(string title, string message)
+        => MessageBoxHelper.ShowAsync(this, title, message);
+
     void IDialogService.RequestExit()
     {
         if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

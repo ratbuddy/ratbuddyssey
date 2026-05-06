@@ -55,6 +55,7 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             Trace.TraceError("OpenFileAsync failed: {0}", ex);
+            await SafeShowErrorAsync("Open failed", ex.Message);
         }
     }
 
@@ -69,11 +70,12 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             Trace.TraceError("ReloadFileAsync failed: {0}", ex);
+            await SafeShowErrorAsync("Reload failed", ex.Message);
         }
     }
 
     [RelayCommand]
-    private void SaveFile()
+    private async Task SaveFileAsync()
     {
         string path = CurrentFilePath;
 #if DEBUG
@@ -83,7 +85,15 @@ public partial class MainViewModel : ObservableObject
             CurrentFilePath = path;
         }
 #endif
-        WriteAppToFile(path);
+        try
+        {
+            WriteAppToFile(path);
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError("SaveFile failed: {0}", ex);
+            await SafeShowErrorAsync("Save failed", ex.Message);
+        }
     }
 
     [RelayCommand]
@@ -101,6 +111,7 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             Trace.TraceError("SaveFileAsAsync failed: {0}", ex);
+            await SafeShowErrorAsync("Save failed", ex.Message);
         }
     }
 
@@ -120,31 +131,107 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Public entry point used for drag-drop loading from the host window.</summary>
+    /// <summary>
+    /// Public entry point used for menu/drag-drop loading. Synchronous because all
+    /// the work is local file I/O on the UI thread; user-facing errors are surfaced
+    /// via the dialog service (fire-and-forget so the caller doesn't have to await).
+    /// </summary>
     public void LoadFile(string filePath)
     {
-        if (!File.Exists(filePath)) return;
-        var info = new FileInfo(filePath);
-        if (info.Length == 0 || info.Length > MaxAdyFileBytes)
+        if (string.IsNullOrEmpty(filePath))
         {
-            Trace.TraceWarning("Refusing to load '{0}': size {1} outside accepted range (1..{2}).",
-                filePath, info.Length, MaxAdyFileBytes);
+            return;
+        }
+        if (!File.Exists(filePath))
+        {
+            Trace.TraceWarning("LoadFile: '{0}' not found.", filePath);
+            _ = SafeShowErrorAsync("File not found", $"'{filePath}' could not be opened.");
             return;
         }
 
-        string serialized = File.ReadAllText(filePath);
+        var info = new FileInfo(filePath);
+        if (info.Length == 0)
+        {
+            Trace.TraceWarning("LoadFile: '{0}' is empty.", filePath);
+            _ = SafeShowErrorAsync("Empty file", $"'{Path.GetFileName(filePath)}' is empty.");
+            return;
+        }
+        if (info.Length > MaxAdyFileBytes)
+        {
+            Trace.TraceWarning("Refusing to load '{0}': size {1} exceeds {2} bytes.",
+                filePath, info.Length, MaxAdyFileBytes);
+            _ = SafeShowErrorAsync("File too large",
+                $"'{Path.GetFileName(filePath)}' is {info.Length / (1024 * 1024)} MiB; the limit is {MaxAdyFileBytes / (1024 * 1024)} MiB.");
+            return;
+        }
+
+        string serialized;
         try
         {
-            var parsed = JsonConvert.DeserializeObject<AudysseyMultEQApp>(serialized, AdyReadSettings);
-            if (parsed != null)
-            {
-                AudysseyMultEQApp = parsed;
-                CurrentFilePath = filePath;
-            }
+            serialized = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceWarning("LoadFile: could not read '{0}': {1}", filePath, ex.Message);
+            _ = SafeShowErrorAsync("Read failed", ex.Message);
+            return;
+        }
+
+        AudysseyMultEQApp parsed;
+        try
+        {
+            parsed = JsonConvert.DeserializeObject<AudysseyMultEQApp>(serialized, AdyReadSettings);
         }
         catch (JsonException ex)
         {
             Trace.TraceWarning("Failed to parse '{0}' as Audyssey calibration: {1}", filePath, ex.Message);
+            _ = SafeShowErrorAsync("Invalid .ady file",
+                $"'{Path.GetFileName(filePath)}' is not a valid Audyssey calibration: {ex.Message}");
+            return;
+        }
+
+        if (parsed == null)
+        {
+            _ = SafeShowErrorAsync("Invalid .ady file",
+                $"'{Path.GetFileName(filePath)}' did not parse to an Audyssey calibration.");
+            return;
+        }
+
+        NormalizeModel(parsed);
+        AudysseyMultEQApp = parsed;
+        CurrentFilePath = filePath;
+    }
+
+    /// <summary>
+    /// Defensive cleanup of a freshly deserialized model so chart/UI code can rely on
+    /// non-null collections. Does not invent data — only replaces nulls with empties.
+    /// </summary>
+    internal static void NormalizeModel(AudysseyMultEQApp app)
+    {
+        if (app == null) return;
+        if (app.DetectedChannels == null)
+        {
+            app.DetectedChannels = new System.Collections.ObjectModel.ObservableCollection<Audyssey.MultEQApp.DetectedChannel>();
+            return;
+        }
+        foreach (var ch in app.DetectedChannels)
+        {
+            if (ch != null && ch.ResponseData == null)
+            {
+                ch.ResponseData = new System.Collections.Generic.Dictionary<string, string[]>();
+            }
+        }
+    }
+
+    private async Task SafeShowErrorAsync(string title, string message)
+    {
+        try
+        {
+            await _dialogs.ShowErrorAsync(title, message);
+        }
+        catch (Exception ex)
+        {
+            Trace.TraceError("ShowErrorAsync failed: {0}", ex);
         }
     }
 
