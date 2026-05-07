@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+
+    <!-- xUnit convention is Method_Scenario_Expected; underscores are intentional. -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ratbuddyssey\Ratbuddyssey.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\high_frequency_roll_off_1.json" Link="high_frequency_roll_off_1.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\high_frequency_roll_off_2.json" Link="high_frequency_roll_off_2.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The sample .ady is gitignored (real-world calibration data). When absent
+         (CI, fresh clones) the dependent tests skip via [FactRequiresSample]. -->
+    <None Include="..\sample_ady\tv36ipal v1.ady"
+          Link="sample_ady\tv36ipal v1.ady"
+          CopyToOutputDirectory="PreserveNewest"
+          Condition="Exists('..\sample_ady\tv36ipal v1.ady')" />
+  </ItemGroup>
+
+</Project>

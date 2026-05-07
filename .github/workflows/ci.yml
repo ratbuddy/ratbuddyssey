@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [master, modernization]
+  pull_request:
+    branches: [master, modernization]
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Ratbuddyssey.sln
+
+      - name: Build
+        run: dotnet build Ratbuddyssey.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test Ratbuddyssey.Tests/Ratbuddyssey.Tests.csproj --configuration Release --no-build --verbosity normal
+
+  publish:
+    name: Publish (${{ matrix.rid }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: macos-latest
+            rid: osx-x64
+          - os: macos-latest
+            rid: osx-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish
+        run: >
+          dotnet publish Ratbuddyssey/Ratbuddyssey.csproj
+          --configuration Release
+          --runtime ${{ matrix.rid }}
+          --self-contained false
+          --output artifacts/${{ matrix.rid }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ratbuddyssey-${{ matrix.rid }}
+          path: artifacts/${{ matrix.rid }}
+          if-no-files-found: error

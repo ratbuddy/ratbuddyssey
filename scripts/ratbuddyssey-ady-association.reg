@@ -1,0 +1,19 @@
+Windows Registry Editor Version 5.00
+
+; Associates .ady files with Ratbuddyssey. Edit the EXE path on the
+; "Ratbuddyssey.AdyFile\shell\open\command" line to match your install.
+;
+; Apply by double-clicking this file. Remove with
+; ratbuddyssey-ady-association-remove.reg.
+
+[HKEY_CURRENT_USER\Software\Classes\.ady]
+@="Ratbuddyssey.AdyFile"
+
+[HKEY_CURRENT_USER\Software\Classes\Ratbuddyssey.AdyFile]
+@="Audyssey MultEQ calibration"
+
+[HKEY_CURRENT_USER\Software\Classes\Ratbuddyssey.AdyFile\DefaultIcon]
+@="\"C:\\Program Files\\Ratbuddyssey\\Ratbuddyssey.exe\",0"
+
+[HKEY_CURRENT_USER\Software\Classes\Ratbuddyssey.AdyFile\shell\open\command]
+@="\"C:\\Program Files\\Ratbuddyssey\\Ratbuddyssey.exe\" \"%1\""
