@@ -5,6 +5,8 @@ on:
     branches: [master, modernization]
   pull_request:
     branches: [master, modernization]
+  release:
+    types: [published]
   workflow_dispatch:
 
 env:
@@ -42,6 +44,8 @@ jobs:
     name: Publish (${{ matrix.rid }})
     needs: build
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -77,3 +81,21 @@ jobs:
           name: Ratbuddyssey-${{ matrix.rid }}
           path: artifacts/${{ matrix.rid }}
           if-no-files-found: error
+
+      - name: Package release archive
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          cd artifacts/${{ matrix.rid }}
+          if [[ "${{ matrix.rid }}" == win-* ]]; then
+            7z a -tzip "../../Ratbuddyssey-${{ github.event.release.tag_name }}-${{ matrix.rid }}.zip" .
+          else
+            tar -czf "../../Ratbuddyssey-${{ github.event.release.tag_name }}-${{ matrix.rid }}.tar.gz" .
+          fi
+
+      - name: Attach archive to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            Ratbuddyssey-${{ github.event.release.tag_name }}-${{ matrix.rid }}.*
